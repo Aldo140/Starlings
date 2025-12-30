@@ -60,6 +60,29 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
 - **Analytics**: Add privacy-preserving analytics (like Plausible) to track map engagement without IP tracking.
 - **Filtering**: Expand the `useMemo` filter in `MapView.tsx` to allow filtering by the specific "What Helped" tags.
 
+---
+
+## 🌐 GitHub Pages Deployment
+
+This project is configured to automatically deploy to GitHub Pages on every push to the `main` branch.
+
+### Setup Instructions
+1. Go to your repository **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+3. Push to the `main` branch to trigger deployment
+
+The workflow (`.github/workflows/deploy.yml`) will:
+- Install dependencies
+- Build the project using Vite
+- Deploy the built files to GitHub Pages
+
+The site will be available at: `https://[username].github.io/Starlings/`
+
+### Local Development
+- **Run dev server**: `npm run dev` (accessible at http://localhost:3000)
+- **Build for production**: `npm run build`
+- **Preview build**: `npm run preview`
+
 ## ⚠️ Important for Devs
 - **Leaflet CSS**: The Leaflet CSS is loaded via CDN in `index.html`. If moving to a production build system, ensure the icon assets are handled correctly.
 - **Geocoding Limits**: Nominatim has a strict usage policy. Always keep the debouncing in `ShareView` above 500ms and use the local `CANADIAN_HUBS` index for common queries.

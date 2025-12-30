@@ -119,10 +119,11 @@ Starlings Support Map is a modern, React-based web application designed to provi
 - **Type**: ES Modules (ESM)
 - **Import Maps**: Configured in `index.html` for browser-native module loading
 - **External Dependencies**: Loaded from esm.sh CDN
-  - React 19.0.0
-  - React DOM 19.0.0
+  - React 19.0.0 (Note: package.json specifies ^19.2.3)
+  - React DOM 19.0.0 (Note: package.json specifies ^19.2.3)
   - React Router DOM 6.22.3
   - Lucide React 0.475.0
+- **Version Note**: The importmap uses React 19.0.0 while package.json specifies ^19.2.3. For production builds via Vite, the package.json versions will be used.
 
 ---
 
@@ -311,8 +312,10 @@ views/
 |---------|---------|---------|
 | react | ^19.2.3 | Core UI framework |
 | react-dom | ^19.2.3 | DOM rendering |
-| react-router-dom | 6.22.3 | Client-side routing |
-| lucide-react | 0.475.0 | Icon library |
+| react-router-dom | 6.22.3 | Client-side routing (exact version) |
+| lucide-react | 0.475.0 | Icon library (exact version) |
+
+**Note**: Versions without prefixes (^, ~) are exact versions as specified in package.json.
 
 ### Development Dependencies
 | Package | Version | Purpose |

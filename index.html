@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Starlings Support Map</title>
+    <!-- Use the Play CDN for development/prototype flexibility -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -35,7 +35,6 @@
             color: var(--ink-900);
             -webkit-font-smoothing: antialiased;
         }
-        /* Leaflet Performance & UI */
         .leaflet-container {
             background: #f0f4f3 !important;
             outline: none;
@@ -60,7 +59,6 @@
             line-height: 36px !important;
             background: white !important;
         }
-        /* Dynamic Scaling Hero Title - Precise clamp for absolute fit */
         .hero-title {
             letter-spacing: -0.05em;
             line-height: 0.95;
@@ -82,7 +80,6 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
-        /* Smooth Entrance */
         @keyframes reveal {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
@@ -92,27 +89,27 @@
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Ensure mobile buttons stay above map overlays */
         .ui-overlay {
             z-index: 2000 !important;
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
-    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
+        "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
+        "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+        "react/": "https://esm.sh/react@19.0.0/"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
+    <!-- Explicitly load the application entry point -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

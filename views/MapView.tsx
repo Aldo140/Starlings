@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Map from '../components/Map';
-import PostCard from '../components/PostCard';
-import { apiService } from '../services/api';
-import { Post } from '../types';
-import { ICONS, COLORS } from '../constants';
+import Map from '../components/Map.tsx';
+import PostCard from '../components/PostCard.tsx';
+import { apiService } from '../services/api.ts';
+import { Post } from '../types.ts';
+import { ICONS, COLORS } from '../constants.tsx';
 
 const MapView: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -104,7 +103,7 @@ const MapView: React.FC = () => {
           selectedPostId={selectedPost?.id}
         />
         
-        {/* Mobile FAB Overlays - Boosted Z-Index to stay above map elements */}
+        {/* Mobile FAB Overlays */}
         <div className="md:hidden absolute top-4 right-4 ui-overlay flex flex-col gap-3">
           <button 
             onClick={() => navigate('/share')}

@@ -1,0 +1,7 @@
+{
+  "name": "Starlings Support Map",
+  "description": "An interactive world map for Starlings Community where users can share anonymous supportive notes, moderated via Google Sheets.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

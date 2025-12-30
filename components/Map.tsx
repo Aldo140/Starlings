@@ -1,0 +1,178 @@
+
+import React, { useEffect, useRef, useState } from 'react';
+import { Post } from '../types';
+import { COLORS, ICONS } from '../constants';
+
+declare const L: any;
+
+interface MapProps {
+  posts: Post[];
+  onMarkerClick: (post: Post) => void;
+  selectedPostId?: string;
+}
+
+const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId }) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<any>(null);
+  const markersLayer = useRef<any>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    if (!mapContainer.current || mapInstance.current) return;
+
+    try {
+      // Create map with Leaflet Canvas renderer for maximum snappiness
+      const map = L.map(mapContainer.current, {
+        center: [54, -98], 
+        zoom: 4,
+        zoomControl: false,
+        attributionControl: false,
+        preferCanvas: true,
+        inertia: true,
+      });
+
+      // Quick-loading clean tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
+        updateWhenIdle: true,
+        keepBuffer: 2
+      }).addTo(map);
+
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      markersLayer.current = L.layerGroup().addTo(map);
+      mapInstance.current = map;
+      
+      map.whenReady(() => {
+        setMapReady(true);
+        map.invalidateSize();
+      });
+
+      // Handle screen size analysis and render adjustments
+      const resizeObserver = new ResizeObserver(() => {
+        if (mapInstance.current) {
+          mapInstance.current.invalidateSize();
+        }
+      });
+      resizeObserver.observe(mapContainer.current);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    } catch (err) {
+      console.error("Map load error:", err);
+    }
+
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
+    };
+  }, []);
+
+  const handleNearMe = () => {
+    if (!mapInstance.current) return;
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapInstance.current.flyTo([pos.coords.latitude, pos.coords.longitude], 10, { animate: true, duration: 1 });
+        setIsLocating(false);
+      },
+      () => {
+        mapInstance.current.flyTo([43.6532, -79.3832], 9, { animate: true, duration: 1 });
+        setIsLocating(false);
+      },
+      { timeout: 3000 }
+    );
+  };
+
+  useEffect(() => {
+    if (!mapInstance.current || !markersLayer.current) return;
+
+    markersLayer.current.clearLayers();
+
+    posts.forEach(post => {
+      const isSelected = post.id === selectedPostId;
+      
+      const icon = L.divIcon({
+        className: `custom-marker-wrapper`,
+        html: `
+          <div style="
+            width: ${isSelected ? '48px' : '36px'};
+            height: ${isSelected ? '48px' : '36px'};
+            background-color: ${isSelected ? COLORS.coral400 : COLORS.teal500};
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(30,58,52,0.2);
+            transform: translate(-50%, -50%);
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: ${isSelected ? 1000 : 1};
+          ">
+            <svg xmlns="http://www.w3.org/2000/svg" width="${isSelected ? 24 : 18}" height="${isSelected ? 24 : 18}" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </div>
+        `,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+
+      const marker = L.marker([post.lat, post.lng], { icon })
+        .on('click', (e: any) => {
+          L.DomEvent.stopPropagation(e);
+          onMarkerClick(post);
+          mapInstance.current.setView([post.lat, post.lng], 9, { animate: true });
+        });
+
+      markersLayer.current.addLayer(marker);
+    });
+  }, [posts, selectedPostId, onMarkerClick]);
+
+  return (
+    <div className="w-full h-full relative bg-[#f0f4f3] overflow-hidden">
+      {!mapReady && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-[2000] bg-white">
+          <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-[#1e3a34] font-black text-[10px] uppercase tracking-widest opacity-40">Initializing Map...</p>
+        </div>
+      )}
+      <div ref={mapContainer} className="w-full h-full" />
+      
+      {/* Dynamic Location Button */}
+      <div className="absolute top-6 left-6 z-[1000]">
+        <button 
+          onClick={handleNearMe}
+          disabled={isLocating}
+          className="bg-white/95 backdrop-blur-xl px-6 py-4 rounded-[1.5rem] shadow-2xl border border-white hover:bg-white transition-all flex items-center gap-3 font-bold text-sm text-[#1e3a34] active:scale-90"
+        >
+          {isLocating ? (
+            <div className="w-4 h-4 border-2 border-[#1e3a34] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <div className="text-[#448a7d]">{ICONS.Navigation}</div>
+          )}
+          <span>{isLocating ? 'Locating...' : 'Near Me'}</span>
+        </button>
+      </div>
+
+      {/* Legend - Responsive Visibility */}
+      <div className="absolute bottom-8 left-8 z-[1000] glass-panel p-6 rounded-[2.5rem] shadow-2xl border border-white/20 hidden md:block">
+        <p className="text-[10px] font-black text-[#448a7d] uppercase tracking-[0.2em] mb-4">Support Connection</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-[#448a7d] border-2 border-white shadow-sm" />
+            <span className="text-sm font-bold text-[#1e3a34]">Support Note</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded-full bg-[#e57c6e] border-2 border-white shadow-sm" />
+            <span className="text-sm font-bold text-[#1e3a34]">Viewing Note</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Map;

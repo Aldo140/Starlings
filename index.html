@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Starlings Support Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --brand-teal-900: #1e3a34;
+            --brand-teal-700: #2d5a52;
+            --brand-teal-500: #448a7d;
+            --brand-mint: #e8f3f1;
+            --sky-500: #6c949f;
+            --coral-400: #e57c6e;
+            --coral-200: #fbd6d1;
+            --ink-900: #0f172a;
+            --surface: #ffffff;
+            --border: rgba(30, 58, 52, 0.1);
+        }
+        html, body, #root {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #fff;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--ink-900);
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Leaflet Performance & UI */
+        .leaflet-container {
+            background: #f0f4f3 !important;
+            outline: none;
+            width: 100%;
+            height: 100%;
+        }
+        .leaflet-control-zoom {
+            border: none !important;
+            margin: 12px !important;
+        }
+        @media (min-width: 768px) {
+            .leaflet-control-zoom { margin: 20px !important; }
+        }
+        .leaflet-control-zoom a {
+            border-radius: 12px !important;
+            margin-bottom: 6px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            border: none !important;
+            color: var(--brand-teal-900) !important;
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 36px !important;
+            background: white !important;
+        }
+        /* Dynamic Scaling Hero Title - Precise clamp for absolute fit */
+        .hero-title {
+            letter-spacing: -0.05em;
+            line-height: 0.95;
+            font-size: clamp(2.4rem, 8.5vh, 7rem);
+        }
+        @media (min-width: 768px) {
+            .hero-title {
+                font-size: clamp(4rem, 12vh, 8.5rem);
+            }
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--brand-teal-900) 0%, var(--brand-teal-500) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        /* Smooth Entrance */
+        @keyframes reveal {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reveal {
+            animation: reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Ensure mobile buttons stay above map overlays */
+        .ui-overlay {
+            z-index: 2000 !important;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react,react-dom",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>

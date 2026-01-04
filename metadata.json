@@ -1,0 +1,7 @@
+{
+  "name": "Starlings Support Map",
+  "description": "An interactive map for Starlings Community where youth can share anonymous supportive notes.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

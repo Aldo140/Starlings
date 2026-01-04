@@ -21,14 +21,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 text-[#1e3a34]">
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selected ? 'bg-[#448a7d] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-600'}`}>
-            {ICONS.MapPin}
+            {ICONS.Users}
           </div>
           <div>
-            <span className="font-black text-sm block tracking-tight">{post.city}</span>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{post.country}</span>
+            <span className="font-black text-sm block tracking-tight">{post.alias || 'Anonymous'}</span>
           </div>
         </div>
-        <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full">
+        <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
           {new Date(post.timestamp).toLocaleDateString()}
         </span>
       </div>

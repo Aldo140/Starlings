@@ -23,6 +23,7 @@ export interface Post {
   lng: number;
   message: string;
   what_helped: string[]; // Stored as comma-separated or JSON in Sheets
+  alias: string;
   flagged: boolean;
   reject_reason?: RejectReason;
   internal_notes?: string;

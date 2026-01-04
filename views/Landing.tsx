@@ -6,7 +6,7 @@ const Landing: React.FC = () => {
   return (
     <div className="relative overflow-x-hidden bg-white min-h-screen flex flex-col">
       {/* Centered Hero Section - Optimized for Vertical Viewport Safety */}
-      <section className="relative flex-grow flex items-center justify-center py-6 md:py-12 px-4 overflow-hidden min-h-[calc(100vh-160px)] md:min-h-[85vh]">
+      <section className="relative flex-grow flex items-center justify-center py-6 md:py-12 px-4 max-[400px]:py-4 max-[400px]:px-3 overflow-hidden min-h-[calc(100vh-160px)] md:min-h-[85vh]">
         {/* Background Atmosphere */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[-15%] right-[-10%] w-[90vw] h-[90vw] max-w-[800px] bg-[#e8f3f1] rounded-full blur-[100px] opacity-60 animate-pulse" />
@@ -35,7 +35,7 @@ const Landing: React.FC = () => {
             
             {/* Core Message Block */}
             <div className="max-w-xl mx-auto space-y-2 md:space-y-4">
-              <p className="text-[11px] md:text-xl lg:text-2xl text-gray-500 leading-relaxed font-light px-2">
+              <p className="text-[11px] md:text-xl lg:text-2xl max-[400px]:text-[10px] text-gray-500 leading-relaxed font-light px-2">
                 An anonymous, safe space for youth to share what helps them navigate family substance use.
               </p>
               <div className="inline-block py-0.5 md:py-1 px-3 md:px-4 bg-teal-50 border border-teal-100 rounded-lg">
@@ -49,14 +49,14 @@ const Landing: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-2.5 md:gap-4 w-full sm:w-auto px-4 pt-4 md:pt-4">
               <Link 
                 to="/map" 
-                className="group w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 bg-[#1e3a34] text-white rounded-[2rem] font-bold text-sm md:text-xl hover:bg-[#2d5a52] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-[0_20px_40px_-10px_rgba(30,58,52,0.3)] hover:scale-[1.05] active:scale-95"
+                className="group w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-[#1e3a34] text-white rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:bg-[#2d5a52] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-[0_20px_40px_-10px_rgba(30,58,52,0.3)] hover:scale-[1.05] active:scale-95"
               >
                 Explore the Map 
                 <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>
               </Link>
               <Link 
                 to="/share" 
-                className="w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 bg-white text-[#1e3a34] border-2 border-[#1e3a34]/10 rounded-[2rem] font-bold text-sm md:text-xl hover:border-[#1e3a34]/40 transition-all flex items-center justify-center gap-2 md:gap-3 hover:bg-gray-50 active:scale-95"
+                className="w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-white text-[#1e3a34] border-2 border-[#1e3a34]/10 rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:border-[#1e3a34]/40 transition-all flex items-center justify-center gap-2 md:gap-3 hover:bg-gray-50 active:scale-95"
               >
                 Share a Note {ICONS.Plus}
               </Link>
@@ -65,12 +65,12 @@ const Landing: React.FC = () => {
         </div>
 
         {/* Floating Images (Safe for Ultra-Wide Desktop) */}
-        <div className="absolute top-[20%] left-[6%] hidden 2xl:block animate-reveal" style={{ animationDelay: '0.4s' }}>
+        <div className="absolute top-[20%] left-[6%] hidden xl:block animate-reveal" style={{ animationDelay: '0.4s' }}>
            <div className="w-40 h-56 rounded-[2.5rem] overflow-hidden shadow-2xl -rotate-6 border-[6px] border-white group cursor-default">
               <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=600" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Self Care" />
            </div>
         </div>
-        <div className="absolute bottom-[20%] right-[6%] hidden 2xl:block animate-reveal" style={{ animationDelay: '0.6s' }}>
+        <div className="absolute bottom-[20%] right-[6%] hidden xl:block animate-reveal" style={{ animationDelay: '0.6s' }}>
            <div className="w-48 h-60 rounded-[2.5rem] overflow-hidden shadow-2xl rotate-3 border-[6px] border-white group cursor-default">
               <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Supportive Peers" />
            </div>
@@ -78,8 +78,8 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Philosophy Grid - Fixed Dead Images for Reliable Branding */}
-      <section className="bg-gray-50 py-16 md:py-32">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <section className="bg-gray-50 py-16 md:py-32 max-[400px]:py-12">
+        <div className="container mx-auto px-6 max-[400px]:px-4 max-w-6xl">
           <div className="text-center mb-10 md:mb-20 space-y-3 md:space-y-4">
             <p className="text-[#448a7d] font-black text-[10px] md:text-xs uppercase tracking-[0.5em]">Our Promise</p>
             <h2 className="text-2xl md:text-5xl font-black text-[#1e3a34] tracking-tight">Rooted in your safety.</h2>
@@ -116,7 +116,7 @@ const Landing: React.FC = () => {
                     <div className="scale-90 md:scale-110">{item.icon}</div>
                   </div>
                 </div>
-                <div className="p-8 md:p-10 space-y-2 md:space-y-4">
+                <div className="p-8 md:p-10 max-[400px]:p-6 space-y-2 md:space-y-4">
                   <h3 className="text-xl md:text-2xl font-black text-[#1e3a34]">{item.title}</h3>
                   <p className="text-sm md:text-lg text-gray-500 font-light leading-relaxed">{item.desc}</p>
                 </div>
@@ -127,8 +127,8 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Visual Support Gallery Section */}
-      <section className="bg-white py-16 md:py-32">
-        <div className="container mx-auto px-6 max-w-7xl">
+      <section className="bg-white py-16 md:py-32 max-[400px]:py-12">
+        <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
             <div className="space-y-6 md:space-y-8 md:pr-12">
               <h2 className="text-3xl md:text-6xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
@@ -166,11 +166,11 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Immersive Final CTA */}
-      <section className="bg-[#1e3a34] py-16 md:py-40 text-center text-white relative overflow-hidden">
+      <section className="bg-[#1e3a34] py-16 md:py-40 max-[400px]:py-12 text-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover mix-blend-overlay" alt="Nature" />
         </div>
-        <div className="max-w-4xl mx-auto px-6 relative z-10 space-y-6 md:space-y-10">
+        <div className="max-w-4xl mx-auto px-6 max-[400px]:px-4 relative z-10 space-y-6 md:space-y-10">
           <div className="text-[#e57c6e] inline-block scale-[1.5] md:scale-[2.5] animate-pulse">
             {ICONS.Heart}
           </div>

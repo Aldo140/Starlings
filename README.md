@@ -63,6 +63,7 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
 ## ⚠️ Important for Devs
 - **Leaflet CSS**: The Leaflet CSS is loaded via CDN in `index.html`. If moving to a production build system, ensure the icon assets are handled correctly.
 - **Geocoding Limits**: Nominatim has a strict usage policy. Always keep the debouncing in `ShareView` above 500ms and use the local `CANADIAN_HUBS` index for common queries.
+- **2xl breakpoint (1536px)**: Landing page floating images (the tilted photo cards flanking the hero text) only render at `2xl` to avoid overlapping the core message on smaller desktops.
 
 ---
 

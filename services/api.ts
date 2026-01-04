@@ -35,11 +35,55 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 };
 
 export const apiService = {
+  generateAlias(): string {
+    const adjectives = [
+      "Quiet",
+      "Brave",
+      "Golden",
+      "Soft",
+      "True",
+      "Bright",
+      "Gentle",
+      "Steady",
+      "Kind",
+      "Clear",
+    ];
+    const nouns = [
+      "River",
+      "Harbor",
+      "Meadow",
+      "Cedar",
+      "Sparrow",
+      "Lantern",
+      "Willow",
+      "Ember",
+      "Prairie",
+      "North",
+    ];
+    const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+    const suffix = Math.floor(100 + Math.random() * 900);
+    return `${pick(adjectives)} ${pick(nouns)} ${suffix}`;
+  },
+
+  ensureAlias(post: Post): Post {
+    if (post.alias && post.alias.trim()) return post;
+    return { ...post, alias: apiService.generateAlias() };
+  },
+
   async getApprovedPosts(): Promise<Post[]> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const localApproved = JSON.parse(localStorage.getItem('starlings_approved') || '[]');
-        resolve([...MOCK_POSTS, ...localApproved] as Post[]);
+        const localApproved = JSON.parse(localStorage.getItem('starlings_approved') || '[]') as Post[];
+        const normalizedLocal = localApproved.map(apiService.ensureAlias);
+        if (normalizedLocal.some((post, idx) => post.alias !== localApproved[idx]?.alias)) {
+          localStorage.setItem('starlings_approved', JSON.stringify(normalizedLocal));
+        }
+        const localPending = JSON.parse(localStorage.getItem('starlings_pending') || '[]') as Post[];
+        const normalizedPending = localPending.map(apiService.ensureAlias);
+        if (normalizedPending.some((post, idx) => post.alias !== localPending[idx]?.alias)) {
+          localStorage.setItem('starlings_pending', JSON.stringify(normalizedPending));
+        }
+        resolve([...MOCK_POSTS, ...normalizedLocal].map(apiService.ensureAlias) as Post[]);
       }, 500);
     });
   },
@@ -63,10 +107,12 @@ export const apiService = {
       lng: postData.lng || 0,
       message: combinedText,
       what_helped: postData.what_helped || [],
+      alias: apiService.generateAlias(),
       flagged: flagged,
     } as Post;
-    const pending = JSON.parse(localStorage.getItem('starlings_pending') || '[]');
-    localStorage.setItem('starlings_pending', JSON.stringify([...pending, newPost]));
+    const pending = JSON.parse(localStorage.getItem('starlings_pending') || '[]') as Post[];
+    const normalizedPending = pending.map(apiService.ensureAlias);
+    localStorage.setItem('starlings_pending', JSON.stringify([...normalizedPending, newPost]));
     return { success: true, flagged };
   },
 

@@ -9,12 +9,12 @@ const Guidelines: React.FC = () => {
          <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-20" alt="Supportive Hands" />
          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
          <div className="relative text-center space-y-4 px-6">
-            <h1 className="text-4xl md:text-7xl font-black text-[#1e3a34] tracking-tight italic">Safe Sharing.</h1>
+            <h1 className="text-4xl md:text-7xl max-[400px]:text-3xl font-black text-[#1e3a34] tracking-tight italic">Safe Sharing.</h1>
             <p className="text-gray-500 max-w-lg mx-auto font-light text-lg">How we keep this space supportive, resilient, and safe for everyone.</p>
          </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+      <div className="max-w-6xl mx-auto px-6 max-[400px]:px-4 py-16 md:py-24 max-[400px]:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 md:gap-24">
           
           <div className="lg:col-span-7 space-y-16">
@@ -72,7 +72,7 @@ const Guidelines: React.FC = () => {
 
           {/* Process Sidebar */}
           <div className="lg:col-span-5 space-y-8">
-            <div className="glass-panel p-10 md:p-14 rounded-[3.5rem] shadow-2xl border border-white space-y-10 sticky top-32">
+            <div className="glass-panel p-10 md:p-14 max-[400px]:p-6 rounded-[3.5rem] shadow-2xl border border-white space-y-10 sticky top-32">
               <div className="space-y-4">
                 <h3 className="text-2xl font-black text-[#1e3a34]">Moderation</h3>
                 <p className="text-gray-500 font-light leading-relaxed">

@@ -18,6 +18,7 @@
         body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; color: var(--brand-teal-900); }
         .leaflet-container { background: #f0f4f3 !important; outline: none; }
         .hero-title { letter-spacing: -0.05em; line-height: 0.95; font-size: clamp(2.4rem, 8.5vh, 7rem); }
+        @media (max-width: 400px) { .hero-title { font-size: clamp(2rem, 7vh, 3.4rem); } }
         @media (min-width: 768px) { .hero-title { font-size: clamp(4rem, 12vh, 8.5rem); } }
         .hero-gradient { background: linear-gradient(135deg, var(--brand-teal-900) 0%, var(--brand-teal-500) 100%); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.4); }

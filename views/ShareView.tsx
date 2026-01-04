@@ -127,12 +127,12 @@ const ShareView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12 md:py-24 animate-reveal">
+    <div className="max-w-3xl mx-auto px-6 py-12 md:py-24 max-[400px]:px-4 max-[400px]:py-8 animate-reveal">
       <div className="mb-12 text-center">
-        <h1 className="text-3xl md:text-5xl font-black text-[#1e3a34] italic tracking-tight">Share your light.</h1>
+        <h1 className="text-3xl md:text-5xl max-[400px]:text-2xl font-black text-[#1e3a34] italic tracking-tight">Share your light.</h1>
       </div>
 
-      <div className="bg-white rounded-[3rem] shadow-xl border border-gray-50 p-8 md:p-16">
+      <div className="bg-white rounded-[3rem] shadow-xl border border-gray-50 p-8 md:p-16 max-[400px]:p-6">
         <form onSubmit={handleSubmit} className="space-y-12">
           <section className="space-y-4">
             <label className="block text-[#1e3a34] font-black text-xl italic">Where are you sharing from?</label>
@@ -165,14 +165,34 @@ const ShareView: React.FC = () => {
 
           <section className="space-y-8">
             <textarea 
-              className="w-full p-6 bg-gray-50 border-transparent border-2 rounded-[1.5rem] focus:bg-white focus:outline-none min-h-[140px] text-lg"
+              className="w-full p-6 bg-gray-50 border-transparent border-2 rounded-[1.5rem] focus:bg-white focus:outline-none min-h-[140px] max-[400px]:min-h-[120px] text-lg max-[400px]:text-base"
               placeholder="One thing that helped me was..."
               value={formData.promptA}
               onChange={(e) => setFormData(prev => ({ ...prev, promptA: e.target.value }))}
             />
           </section>
 
-          <section className="space-y-4 p-8 bg-gray-50 rounded-[2rem]">
+          <section className="space-y-4">
+            <div className="flex items-baseline justify-between">
+              <label className="block text-[#1e3a34] font-black text-xl italic">What helped?</label>
+              <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {HELP_OPTIONS.map((option) => (
+                <label key={option} className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 cursor-pointer hover:bg-white border border-transparent hover:border-gray-100 transition-colors">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 accent-[#1e3a34]"
+                    checked={formData.what_helped.includes(option)}
+                    onChange={() => toggleHelpOption(option)}
+                  />
+                  <span className="text-sm text-[#1e3a34] font-semibold">{option}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4 p-8 max-[400px]:p-6 bg-gray-50 rounded-[2rem]">
             <label className="flex items-start gap-4 cursor-pointer py-2">
               <input 
                 type="checkbox" 
@@ -205,7 +225,7 @@ const ShareView: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting || !isFormValid}
-            className={`w-full py-6 rounded-[2rem] font-bold text-xl transition-all ${
+            className={`w-full py-6 max-[400px]:py-4 rounded-[2rem] font-bold text-xl max-[400px]:text-lg transition-all ${
               !isFormValid ? 'bg-gray-100 text-gray-300' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52]'
             }`}
           >

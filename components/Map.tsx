@@ -1,17 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Post } from '../types.ts';
 import { COLORS, ICONS } from '../constants.tsx';
 
 declare const L: any;
 
+interface CityGroup {
+  id: string;
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  count: number;
+}
+
 interface MapProps {
-  posts: Post[];
-  onMarkerClick: (post: Post) => void;
-  selectedPostId?: string;
+  groups: CityGroup[];
+  onMarkerClick: (group: CityGroup) => void;
+  selectedGroupId?: string;
   flyToLocation?: { lat: number, lng: number };
 }
 
-const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId, flyToLocation }) => {
+const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId, flyToLocation }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markersLayer = useRef<any>(null);
@@ -53,9 +61,16 @@ const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId, flyToLo
     }
   }, []);
 
+  const getFocusZoom = () => {
+    if (typeof window === 'undefined') return 10;
+    if (window.innerWidth < 480) return 9;
+    if (window.innerWidth < 768) return 9.5;
+    return 10.5;
+  };
+
   useEffect(() => {
     if (mapInstance.current && flyToLocation) {
-      mapInstance.current.flyTo([flyToLocation.lat, flyToLocation.lng], 10, {
+      mapInstance.current.flyTo([flyToLocation.lat, flyToLocation.lng], getFocusZoom(), {
         animate: true,
         duration: 1.5
       });
@@ -67,15 +82,31 @@ const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId, flyToLo
 
     markersLayer.current.clearLayers();
 
-    posts.forEach(post => {
-      const isSelected = post.id === selectedPostId;
+    const positionCounts = new Map<string, number>();
+    const positionIndex = new Map<string, number>();
+
+    groups.forEach(group => {
+      const key = `${group.lat},${group.lng}`;
+      positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
+    });
+
+    groups.forEach(group => {
+      const key = `${group.lat},${group.lng}`;
+      const index = positionIndex.get(key) || 0;
+      positionIndex.set(key, index + 1);
+      const total = positionCounts.get(key) || 1;
+      const spreadRadius = 0.02;
+      const angle = total > 1 ? (index / total) * Math.PI * 2 : 0;
+      const lat = total > 1 ? group.lat + Math.sin(angle) * spreadRadius : group.lat;
+      const lng = total > 1 ? group.lng + Math.cos(angle) * spreadRadius : group.lng;
+      const isSelected = group.id === selectedGroupId;
       
       const icon = L.divIcon({
         className: `custom-marker-wrapper`,
         html: `
           <div style="
-            width: ${isSelected ? '48px' : '36px'};
-            height: ${isSelected ? '48px' : '36px'};
+            width: ${isSelected ? '56px' : '46px'};
+            height: ${isSelected ? '56px' : '46px'};
             background-color: ${isSelected ? COLORS.coral400 : COLORS.teal500};
             border: 3px solid white;
             border-radius: 50%;
@@ -85,24 +116,57 @@ const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId, flyToLo
             box-shadow: 0 8px 24px rgba(30,58,52,0.2);
             transform: translate(-50%, -50%);
             transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
           ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="${isSelected ? 24 : 18}" height="${isSelected ? 24 : 18}" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <div style="
+              width: ${isSelected ? '30px' : '24px'};
+              height: ${isSelected ? '30px' : '24px'};
+              border-radius: 10px;
+              background: rgba(255,255,255,0.18);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 800;
+              font-size: ${isSelected ? '14px' : '12px'};
+              letter-spacing: 0.04em;
+            ">
+              ${group.count}
+            </div>
+            <div style="
+              position: absolute;
+              bottom: -10px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: white;
+              color: ${COLORS.teal900};
+              font-weight: 700;
+              font-size: 9px;
+              padding: 2px 8px;
+              border-radius: 999px;
+              box-shadow: 0 6px 12px rgba(15,23,42,0.12);
+              text-transform: uppercase;
+              letter-spacing: 0.12em;
+              white-space: nowrap;
+            ">
+              notes
+            </div>
           </div>
         `,
         iconSize: [0, 0],
         iconAnchor: [0, 0]
       });
 
-      const marker = L.marker([post.lat, post.lng], { icon })
+      const marker = L.marker([lat, lng], { icon })
         .on('click', (e: any) => {
           L.DomEvent.stopPropagation(e);
-          onMarkerClick(post);
-          mapInstance.current.setView([post.lat, post.lng], 9, { animate: true });
+          onMarkerClick(group);
+          mapInstance.current.setView([lat, lng], getFocusZoom(), { animate: true });
         });
 
       markersLayer.current.addLayer(marker);
     });
-  }, [posts, selectedPostId, onMarkerClick]);
+  }, [groups, selectedGroupId, onMarkerClick]);
 
   return (
     <div className="w-full h-full relative bg-[#f0f4f3] overflow-hidden">
@@ -117,4 +181,4 @@ const Map: React.FC<MapProps> = ({ posts, onMarkerClick, selectedPostId, flyToLo
   );
 };
 
-export default Map;
+export default SupportMap;

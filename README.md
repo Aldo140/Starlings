@@ -1,4 +1,4 @@
-#https://aldo140.github.io/Starlings/#
+# https://aldo140.github.io/Starlings/
 
 
 # Starlings Support Map - Developer Guide

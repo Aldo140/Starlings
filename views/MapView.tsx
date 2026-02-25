@@ -4,7 +4,7 @@ import SupportMap from '../components/Map.tsx';
 import PostCard from '../components/PostCard.tsx';
 import { apiService, calculateDistance } from '../services/api.ts';
 import { Post } from '../types.ts';
-import { ICONS } from '../constants.tsx';
+import { ICONS, MOCK_POSTS } from '../constants.tsx';
 
 interface CityGroup {
   id: string;
@@ -20,6 +20,7 @@ interface CityGroup {
 const MapView: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isMobileListOpen, setIsMobileListOpen] = useState(false);
@@ -29,9 +30,20 @@ const MapView: React.FC = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const data = await apiService.getApprovedPosts();
-      setPosts(data);
+      // Show mock data instantly - ZERO loading wait on first visit
+      setPosts(MOCK_POSTS.map(p => ({ ...p, alias: p.alias || apiService.generateAlias() })));
       setLoading(false);
+
+      // Fetch real data in background
+      setRefreshing(true);
+      try {
+        const realData = await apiService.getApprovedPosts();
+        setPosts(realData);
+      } catch (error) {
+        console.error('Fetch failed:', error);
+      } finally {
+        setRefreshing(false);
+      }
     };
     fetchPosts();
   }, []);
@@ -47,7 +59,6 @@ const MapView: React.FC = () => {
         const { latitude, longitude } = pos.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setIsLocating(false);
-        // Map will respond to userLocation changes if we pass it as a flyTo prop
       },
       (err) => {
         console.error(err);
@@ -56,6 +67,19 @@ const MapView: React.FC = () => {
       },
       { enableHighAccuracy: true }
     );
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+
+      const freshData = await apiService.getApprovedPosts();
+      setPosts(freshData);
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const groupedPosts = useMemo<CityGroup[]>(() => {
@@ -132,18 +156,34 @@ const MapView: React.FC = () => {
   return (
     <div className="h-[calc(100vh-124px)] max-[400px]:h-[calc(100vh-104px)] flex flex-col md:flex-row overflow-hidden relative bg-[#f0f4f3] w-full">
       <aside className="hidden md:flex flex-col w-[440px] bg-white border-r border-gray-100 h-full overflow-hidden shadow-xl z-20">
-        <div className="p-8 space-y-6 shrink-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-[#1e3a34] tracking-tight italic">Support Map.</h2>
-            <div className="flex gap-2">
+        <div className="p-6 md:p-8 space-y-6 shrink-0">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <h2 className="text-2xl md:text-3xl font-black text-[#1e3a34] tracking-tight italic">Support Map.</h2>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 bg-gray-100 text-[#1e3a34] hover:bg-teal-50 disabled:opacity-60 flex-shrink-0"
+                title="Refresh data"
+              >
+                {refreshing ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                )}
+              </button>
               <button
                 onClick={handleNearMe}
                 disabled={isLocating}
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-[#e8f3f1] text-[#1e3a34] hover:bg-teal-100'}`}
+                className={`h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 flex-shrink-0 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-[#e8f3f1] text-[#1e3a34] hover:bg-teal-100'}`}
               >
                 {isLocating ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : ICONS.Navigation}
               </button>
-              <button onClick={() => navigate('/share')} className="w-12 h-12 bg-[#e8f3f1] rounded-2xl hover:bg-[#1e3a34] hover:text-white transition-all flex items-center justify-center text-[#1e3a34] shadow-sm">
+              <button onClick={() => navigate('/share')} className="h-10 w-10 md:h-12 md:w-12 bg-[#e8f3f1] rounded-xl md:rounded-2xl hover:bg-[#1e3a34] hover:text-white transition-all flex items-center justify-center text-[#1e3a34] shadow-sm flex-shrink-0">
                 {ICONS.Plus}
               </button>
             </div>
@@ -180,8 +220,9 @@ const MapView: React.FC = () => {
         <div className="flex-grow overflow-y-auto p-8 space-y-6 no-scrollbar">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-[0.25em] text-gray-400">City Pulse</h3>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#448a7d] bg-teal-50 px-3 py-1 rounded-full">
-              Tap a city
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#448a7d] bg-teal-50 px-3 py-1 rounded-full flex items-center gap-1">
+              {refreshing && <div className="w-1.5 h-1.5 bg-[#448a7d] rounded-full animate-pulse" />}
+              {refreshing ? 'Updating...' : 'Tap a city'}
             </span>
           </div>
           {loading ? (

@@ -36,6 +36,38 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
 
+// Cache management
+const CACHE_KEY = 'starlings_approved_posts';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let inFlightRequest: Promise<Post[]> | null = null;
+
+const getCachedPosts = (): { data: Post[], timestamp: number } | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+    if (age < CACHE_TTL) return parsed;
+    // Cache expired, clear it
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  } catch (e) {
+    console.error('Error reading cache:', e);
+    return null;
+  }
+};
+
+const setCachedPosts = (posts: Post[]): void => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data: posts,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.error('Error writing cache:', e);
+  }
+};
+
 export const apiService = {
   generateAlias(): string {
     const adjectives = [
@@ -56,31 +88,53 @@ export const apiService = {
     return { ...post, alias: apiService.generateAlias() };
   },
 
-  async getApprovedPosts(): Promise<Post[]> {
-    try {
-      const res = await fetch(GAS_URL);
-      const data = await res.json();
-
-      const approvedPosts = Array.isArray(data) ? data : [];
-      const normalizedApproved = approvedPosts.map(apiService.ensureAlias) as Post[];
-
-      // If the spreadsheet returned any real posts, prefer those and do not include
-      // the local `MOCK_POSTS`. This prevents hardcoded mock entries (e.g. Prairie Leaf)
-      // from appearing when the sheet is the source of truth.
-      if (normalizedApproved.length > 0) {
-        const uniquePostsMap = new Map<string, Post>();
-        normalizedApproved.forEach(post => uniquePostsMap.set(post.id, post));
-        const uniquePosts = Array.from(uniquePostsMap.values());
-        return uniquePosts.map(apiService.ensureAlias) as Post[];
+  async getApprovedPosts(skipCache?: boolean): Promise<Post[]> {
+    // Return cached data immediately if valid (unless skipping cache for manual refresh)
+    if (!skipCache) {
+      const cached = getCachedPosts();
+      if (cached) {
+        return cached.data;
       }
-
-      // Fallback to mock posts only when the sheet is empty/unavailable
-      return MOCK_POSTS.map(apiService.ensureAlias) as Post[];
-    } catch (error) {
-      console.error("Error fetching approved posts from Google Sheets:", error);
-      // On error, return the mock posts so the app remains usable offline/dev
-      return MOCK_POSTS.map(apiService.ensureAlias) as Post[];
     }
+
+    // Deduplicate: if a request is already in flight, return that promise
+    if (inFlightRequest) {
+      return inFlightRequest;
+    }
+
+    // Make new request and cache the promise to prevent duplicate requests
+    inFlightRequest = (async () => {
+      try {
+        const res = await fetch(GAS_URL);
+        const data = await res.json();
+
+        const approvedPosts = Array.isArray(data) ? data : [];
+        const normalizedApproved = approvedPosts.map(apiService.ensureAlias) as Post[];
+
+        if (normalizedApproved.length > 0) {
+          const uniquePostsMap = new Map<string, Post>();
+          normalizedApproved.forEach(post => uniquePostsMap.set(post.id, post));
+          const uniquePosts = Array.from(uniquePostsMap.values());
+          const result = uniquePosts.map(apiService.ensureAlias) as Post[];
+          setCachedPosts(result);
+          return result;
+        }
+
+        // Fallback to mock posts
+        const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
+        setCachedPosts(fallback);
+        return fallback;
+      } catch (error) {
+        console.error("Error fetching approved posts from Google Sheets:", error);
+        const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
+        setCachedPosts(fallback);
+        return fallback;
+      } finally {
+        inFlightRequest = null;
+      }
+    })();
+
+    return inFlightRequest;
   },
 
   async submitPost(postData: Partial<Post>): Promise<{ success: boolean; flagged: boolean }> {

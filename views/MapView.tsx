@@ -136,7 +136,7 @@ const MapView: React.FC = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-[#1e3a34] tracking-tight italic">Support Map.</h2>
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleNearMe}
                 disabled={isLocating}
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-[#e8f3f1] text-[#1e3a34] hover:bg-teal-100'}`}
@@ -160,23 +160,23 @@ const MapView: React.FC = () => {
           </div>
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300">{ICONS.Search}</div>
-            <input 
-              type="text" placeholder="Search by city..." 
+            <input
+              type="text" placeholder="Search by city..."
               className="w-full pl-12 pr-6 py-4 bg-[#f9fbfa] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#448a7d]/10 transition-all"
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           {userLocation && (
             <div className="flex items-center justify-between px-2 py-1 bg-teal-50 rounded-xl">
-               <span className="text-[10px] font-black text-[#448a7d] uppercase tracking-widest flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 bg-[#448a7d] rounded-full animate-pulse" />
-                 Nearest First
-               </span>
-               <button onClick={() => setUserLocation(null)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase tracking-widest">Clear</button>
+              <span className="text-[10px] font-black text-[#448a7d] uppercase tracking-widest flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#448a7d] rounded-full animate-pulse" />
+                Nearest First
+              </span>
+              <button onClick={() => setUserLocation(null)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase tracking-widest">Clear</button>
             </div>
           )}
         </div>
-        
+
         <div className="flex-grow overflow-y-auto p-8 space-y-6 no-scrollbar">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-[0.25em] text-gray-400">City Pulse</h3>
@@ -186,18 +186,17 @@ const MapView: React.FC = () => {
           </div>
           {loading ? (
             <div className="flex flex-col items-center justify-center h-40">
-               <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-               <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading light...</p>
+              <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading light...</p>
             </div>
           ) : filteredGroups.map(group => (
-            <div 
+            <div
               key={group.id}
               onClick={() => setSelectedGroupId(group.id)}
-              className={`p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 group ${
-                selectedGroupId === group.id
+              className={`p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 group ${selectedGroupId === group.id
                   ? 'border-[#448a7d] bg-[#448a7d]/5 shadow-xl -translate-y-1'
                   : 'border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3 text-[#1e3a34]">
@@ -215,8 +214,8 @@ const MapView: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.topTags.map((tag, idx) => (
-                  <span 
-                    key={idx}
+                  <span
+                    key={`${tag}-${idx}`}
                     className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
                   >
                     {tag}
@@ -229,13 +228,13 @@ const MapView: React.FC = () => {
       </aside>
 
       <div className="flex-grow h-full relative z-10 w-full overflow-hidden">
-        <SupportMap 
-          groups={filteredGroups} 
-          onMarkerClick={(group) => setSelectedGroupId(group.id)} 
+        <SupportMap
+          groups={filteredGroups}
+          onMarkerClick={(group) => setSelectedGroupId(group.id)}
           selectedGroupId={selectedGroupId || undefined}
           flyToLocation={mapFocus}
         />
-        
+
         <div className="md:hidden absolute top-4 right-4 ui-overlay flex flex-col gap-3">
           <button onClick={handleNearMe} className={`${userLocation ? 'bg-[#448a7d] text-white' : 'bg-white text-[#1e3a34]'} w-12 h-12 max-[400px]:w-10 max-[400px]:h-10 rounded-2xl shadow-2xl flex items-center justify-center active:scale-90`}>
             {ICONS.Navigation}
@@ -262,8 +261,8 @@ const MapView: React.FC = () => {
               {selectedGroup.topTags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedGroup.topTags.map((tag, idx) => (
-                    <span 
-                      key={idx}
+                    <span
+                      key={`${tag}-${idx}`}
                       className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
                     >
                       {tag}
@@ -302,7 +301,7 @@ const MapView: React.FC = () => {
           </div>
           <div className="p-6 max-[400px]:p-4 overflow-y-auto flex-grow space-y-6">
             {filteredGroups.map(group => (
-              <div 
+              <div
                 key={group.id}
                 onClick={() => { setSelectedGroupId(group.id); setIsMobileListOpen(false); }}
                 className="p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1"
@@ -323,8 +322,8 @@ const MapView: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {group.topTags.map((tag, idx) => (
-                    <span 
-                      key={idx}
+                    <span
+                      key={`${tag}-${idx}`}
                       className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
                     >
                       {tag}

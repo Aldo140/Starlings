@@ -7,7 +7,7 @@ import { HELP_OPTIONS, ICONS } from '../constants.tsx';
 const ShareView: React.FC = () => {
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState({
     promptA: '',
     promptB: '',
@@ -19,7 +19,7 @@ const ShareView: React.FC = () => {
     confirmNoDetails: false,
     confirmReviewed: false
   });
-  
+
   const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,11 +74,11 @@ const ShareView: React.FC = () => {
     setLocationResults([]);
   };
 
-  const isFormValid = formData.selectedLocation && 
-                      formData.confirmAge && 
-                      formData.confirmNoDetails && 
-                      formData.confirmReviewed &&
-                      (formData.promptA || formData.promptB);
+  const isFormValid = formData.selectedLocation &&
+    formData.confirmAge &&
+    formData.confirmNoDetails &&
+    formData.confirmReviewed &&
+    (formData.promptA || formData.promptB);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,9 +92,9 @@ const ShareView: React.FC = () => {
     ].filter(Boolean).join(' ');
 
     const result = await apiService.submitPost({
-      city: formData.selectedLocation!.address.city || 
-            formData.selectedLocation!.address.town || 
-            formData.selectedLocation!.address.village || 'Unknown',
+      city: formData.selectedLocation!.address.city ||
+        formData.selectedLocation!.address.town ||
+        formData.selectedLocation!.address.village || 'Unknown',
       country: formData.selectedLocation!.address.country,
       lat: parseFloat(formData.selectedLocation!.lat),
       lng: parseFloat(formData.selectedLocation!.lon),
@@ -116,7 +116,7 @@ const ShareView: React.FC = () => {
           <div className="scale-150">{ICONS.ShieldCheck}</div>
         </div>
         <h2 className="text-4xl font-black text-[#1e3a34] mb-4 italic tracking-tight">Note Received.</h2>
-        <button 
+        <button
           onClick={() => navigate('/map')}
           className="px-10 py-5 bg-[#1e3a34] text-white rounded-full font-bold text-lg"
         >
@@ -135,9 +135,10 @@ const ShareView: React.FC = () => {
       <div className="bg-white rounded-[3rem] shadow-xl border border-gray-50 p-8 md:p-16 max-[400px]:p-6">
         <form onSubmit={handleSubmit} className="space-y-12">
           <section className="space-y-4">
-            <label className="block text-[#1e3a34] font-black text-xl italic">Where are you sharing from?</label>
+            <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">Where are you sharing from?</label>
             <div className="relative">
-              <input 
+              <input
+                id="citySearch"
                 ref={searchInputRef}
                 type="text"
                 autoComplete="off"
@@ -164,7 +165,8 @@ const ShareView: React.FC = () => {
           </section>
 
           <section className="space-y-8">
-            <textarea 
+            <textarea
+              id="promptA"
               className="w-full p-6 bg-gray-50 border-transparent border-2 rounded-[1.5rem] focus:bg-white focus:outline-none min-h-[140px] max-[400px]:min-h-[120px] text-lg max-[400px]:text-base"
               placeholder="One thing that helped me was..."
               value={formData.promptA}
@@ -174,14 +176,15 @@ const ShareView: React.FC = () => {
 
           <section className="space-y-4">
             <div className="flex items-baseline justify-between">
-              <label className="block text-[#1e3a34] font-black text-xl italic">What helped?</label>
+              <label htmlFor="promptA" className="block text-[#1e3a34] font-black text-xl italic">What helped?</label>
               <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {HELP_OPTIONS.map((option) => (
-                <label key={option} className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 cursor-pointer hover:bg-white border border-transparent hover:border-gray-100 transition-colors">
-                  <input 
-                    type="checkbox" 
+              {HELP_OPTIONS.map((option, index) => (
+                <label key={option} htmlFor={`help-${index}`} className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 cursor-pointer hover:bg-white border border-transparent hover:border-gray-100 transition-colors">
+                  <input
+                    id={`help-${index}`}
+                    type="checkbox"
                     className="w-4 h-4 accent-[#1e3a34]"
                     checked={formData.what_helped.includes(option)}
                     onChange={() => toggleHelpOption(option)}
@@ -193,27 +196,30 @@ const ShareView: React.FC = () => {
           </section>
 
           <section className="space-y-4 p-8 max-[400px]:p-6 bg-gray-50 rounded-[2rem]">
-            <label className="flex items-start gap-4 cursor-pointer py-2">
-              <input 
-                type="checkbox" 
+            <label htmlFor="confirmAge" className="flex items-start gap-4 cursor-pointer py-2">
+              <input
+                id="confirmAge"
+                type="checkbox"
                 className="mt-1.5 w-5 h-5 accent-[#1e3a34]"
                 checked={formData.confirmAge}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmAge: e.target.checked }))}
               />
               <span className="text-sm text-gray-500">I confirm I am 18+ years old.</span>
             </label>
-            <label className="flex items-start gap-4 cursor-pointer py-2">
-              <input 
-                type="checkbox" 
+            <label htmlFor="confirmNoDetails" className="flex items-start gap-4 cursor-pointer py-2">
+              <input
+                id="confirmNoDetails"
+                type="checkbox"
                 className="mt-1.5 w-5 h-5 accent-[#1e3a34]"
                 checked={formData.confirmNoDetails}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmNoDetails: e.target.checked }))}
               />
               <span className="text-sm text-gray-500">I agree to avoid identifying details.</span>
             </label>
-            <label className="flex items-start gap-4 cursor-pointer py-2">
-              <input 
-                type="checkbox" 
+            <label htmlFor="confirmReviewed" className="flex items-start gap-4 cursor-pointer py-2">
+              <input
+                id="confirmReviewed"
+                type="checkbox"
                 className="mt-1.5 w-5 h-5 accent-[#1e3a34]"
                 checked={formData.confirmReviewed}
                 onChange={(e) => setFormData(prev => ({ ...prev, confirmReviewed: e.target.checked }))}
@@ -225,9 +231,8 @@ const ShareView: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting || !isFormValid}
-            className={`w-full py-6 max-[400px]:py-4 rounded-[2rem] font-bold text-xl max-[400px]:text-lg transition-all ${
-              !isFormValid ? 'bg-gray-100 text-gray-300' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52]'
-            }`}
+            className={`w-full py-6 max-[400px]:py-4 rounded-[2rem] font-bold text-xl max-[400px]:text-lg transition-all ${!isFormValid ? 'bg-gray-100 text-gray-300' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52]'
+              }`}
           >
             {isSubmitting ? 'Submitting...' : 'Share your Note'}
           </button>

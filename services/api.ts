@@ -26,39 +26,25 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
   const R = 6371; // Radius of the Earth in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = 
+  const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
 
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
+
 export const apiService = {
   generateAlias(): string {
     const adjectives = [
-      "Quiet",
-      "Brave",
-      "Golden",
-      "Soft",
-      "True",
-      "Bright",
-      "Gentle",
-      "Steady",
-      "Kind",
-      "Clear",
+      "Quiet", "Brave", "Golden", "Soft", "True",
+      "Bright", "Gentle", "Steady", "Kind", "Clear",
     ];
     const nouns = [
-      "River",
-      "Harbor",
-      "Meadow",
-      "Cedar",
-      "Sparrow",
-      "Lantern",
-      "Willow",
-      "Ember",
-      "Prairie",
-      "North",
+      "River", "Harbor", "Meadow", "Cedar", "Sparrow",
+      "Lantern", "Willow", "Ember", "Prairie", "North",
     ];
     const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
     const suffix = Math.floor(100 + Math.random() * 900);
@@ -71,21 +57,18 @@ export const apiService = {
   },
 
   async getApprovedPosts(): Promise<Post[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const localApproved = JSON.parse(localStorage.getItem('starlings_approved') || '[]') as Post[];
-        const normalizedLocal = localApproved.map(apiService.ensureAlias);
-        if (normalizedLocal.some((post, idx) => post.alias !== localApproved[idx]?.alias)) {
-          localStorage.setItem('starlings_approved', JSON.stringify(normalizedLocal));
-        }
-        const localPending = JSON.parse(localStorage.getItem('starlings_pending') || '[]') as Post[];
-        const normalizedPending = localPending.map(apiService.ensureAlias);
-        if (normalizedPending.some((post, idx) => post.alias !== localPending[idx]?.alias)) {
-          localStorage.setItem('starlings_pending', JSON.stringify(normalizedPending));
-        }
-        resolve([...MOCK_POSTS, ...normalizedLocal].map(apiService.ensureAlias) as Post[]);
-      }, 500);
-    });
+    try {
+      const res = await fetch(GAS_URL);
+      const data = await res.json();
+
+      const approvedPosts = Array.isArray(data) ? data : [];
+      const normalizedApproved = approvedPosts.map(apiService.ensureAlias) as Post[];
+
+      return [...MOCK_POSTS, ...normalizedApproved].map(apiService.ensureAlias) as Post[];
+    } catch (error) {
+      console.error("Error fetching approved posts from Google Sheets:", error);
+      return [...MOCK_POSTS].map(apiService.ensureAlias);
+    }
   },
 
   async submitPost(postData: Partial<Post>): Promise<{ success: boolean; flagged: boolean }> {
@@ -97,6 +80,7 @@ export const apiService = {
         break;
       }
     }
+
     const newPost: Post = {
       id: Math.random().toString(36).substring(7),
       timestamp: new Date().toISOString(),
@@ -110,10 +94,23 @@ export const apiService = {
       alias: apiService.generateAlias(),
       flagged: flagged,
     } as Post;
-    const pending = JSON.parse(localStorage.getItem('starlings_pending') || '[]') as Post[];
-    const normalizedPending = pending.map(apiService.ensureAlias);
-    localStorage.setItem('starlings_pending', JSON.stringify([...normalizedPending, newPost]));
-    return { success: true, flagged };
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(newPost)
+      });
+
+      const result = await res.json();
+      return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
+    } catch (error) {
+      console.error("Error submitting post to Google Sheets:", error);
+      return { success: false, flagged };
+    }
   },
 
   async searchLocation(query: string): Promise<LocationSearchResult[]> {

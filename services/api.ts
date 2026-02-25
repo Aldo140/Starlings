@@ -64,10 +64,22 @@ export const apiService = {
       const approvedPosts = Array.isArray(data) ? data : [];
       const normalizedApproved = approvedPosts.map(apiService.ensureAlias) as Post[];
 
-      return [...MOCK_POSTS, ...normalizedApproved].map(apiService.ensureAlias) as Post[];
+      // If the spreadsheet returned any real posts, prefer those and do not include
+      // the local `MOCK_POSTS`. This prevents hardcoded mock entries (e.g. Prairie Leaf)
+      // from appearing when the sheet is the source of truth.
+      if (normalizedApproved.length > 0) {
+        const uniquePostsMap = new Map<string, Post>();
+        normalizedApproved.forEach(post => uniquePostsMap.set(post.id, post));
+        const uniquePosts = Array.from(uniquePostsMap.values());
+        return uniquePosts.map(apiService.ensureAlias) as Post[];
+      }
+
+      // Fallback to mock posts only when the sheet is empty/unavailable
+      return MOCK_POSTS.map(apiService.ensureAlias) as Post[];
     } catch (error) {
       console.error("Error fetching approved posts from Google Sheets:", error);
-      return [...MOCK_POSTS].map(apiService.ensureAlias);
+      // On error, return the mock posts so the app remains usable offline/dev
+      return MOCK_POSTS.map(apiService.ensureAlias) as Post[];
     }
   },
 

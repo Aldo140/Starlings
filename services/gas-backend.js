@@ -124,6 +124,8 @@ function doPost(e) {
 
             // Override the mapped values with safety enforcement
             if (header === 'timestamp') return new Date().toISOString()
+            // Always generate a fresh stable unique id for the row on submit
+            if (header === 'id') return Utilities.getUuid()
             if (header === 'status') return 'PENDING'
             if (header === 'flagged') return isFlagged
 
@@ -205,6 +207,17 @@ function onEdit(e) {
     const rowData = sheet.getRange(rowNumber, 1, 1, numColumns).getValues();
 
     // Append the row to the Approved tab
+    // Ensure the moved row has a stable unique id (in case an incoming id was empty or duplicated)
+    try {
+        const headers = sheet.getRange(1, 1, 1, numColumns).getValues()[0];
+        const idIndex = headers.indexOf('id');
+        if (idIndex >= 0) {
+            rowData[0][idIndex] = Utilities.getUuid();
+        }
+    } catch (err) {
+        // If anything goes wrong, proceed without overwriting id
+    }
+
     approvedSheet.getRange(approvedSheet.getLastRow() + 1, 1, 1, numColumns).setValues(rowData);
 
     // Delete the row from the Pending tab

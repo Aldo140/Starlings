@@ -271,8 +271,8 @@ const MapView: React.FC = () => {
                 </div>
               )}
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                {selectedGroup.posts.map((post) => (
-                  <PostCard key={post.id} post={post} />
+                {selectedGroup.posts.map((post, idx) => (
+                  <PostCard key={`${post.id}-${idx}`} post={post} />
                 ))}
               </div>
               <div className="mt-6">

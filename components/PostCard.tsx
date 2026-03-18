@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Post } from '../types.ts';
 import { ICONS, COLORS } from '../constants.tsx';
 
@@ -9,12 +9,15 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isLong = post.message.length > 120; // Arbitrary threshold
+
   return (
     <div
       onClick={onClick}
       className={`p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 group ${selected
-          ? 'border-[#448a7d] bg-[#448a7d]/5 shadow-xl -translate-y-1'
-          : 'border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1'
+        ? 'border-[#448a7d] bg-[#448a7d]/5 shadow-xl -translate-y-1'
+        : 'border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1'
         }`}
     >
       <div className="flex items-center justify-between mb-4">
@@ -31,9 +34,27 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
         </span>
       </div>
 
-      <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3 italic font-light">
+      <p className={`text-gray-600 text-sm leading-relaxed ${isExpanded ? 'mb-6' : (isLong ? 'mb-2' : 'mb-6')} ${isExpanded ? '' : 'line-clamp-3'} italic font-light`}>
         "{post.message}"
       </p>
+
+      {!isExpanded && isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
+          className="text-[#448a7d] text-xs font-bold uppercase tracking-widest hover:underline mb-6 block"
+        >
+          Read more
+        </button>
+      )}
+
+      {isExpanded && isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}
+          className="text-[#448a7d] text-xs font-bold uppercase tracking-widest hover:underline mb-6 block"
+        >
+          Show less
+        </button>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {post.what_helped.map((tag, idx) => (
@@ -49,4 +70,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
   );
 };
 
-export default PostCard;
+export default React.memo(PostCard, (prevProps, nextProps) => {
+  return prevProps.post.id === nextProps.post.id && prevProps.selected === nextProps.selected;
+});

@@ -40,3 +40,25 @@ export interface LocationSearchResult {
     country: string;
   };
 }
+
+export enum ResourceType {
+  VIDEO = 'video',
+  PUBLICATION = 'publication',
+  WEBSITE = 'website',
+  TOOL = 'tool'
+}
+
+export interface Resource {
+  id: string;
+  timestamp: string;
+  status: PostStatus;
+  type: ResourceType;
+  title: string;
+  url: string;
+  description?: string;
+  submitterEmail?: string;
+  isVerifiedPartner?: boolean;
+  category?: 'general' | 'community' | 'partner';
+  location?: string; // Optional field for partner resources
+  imageUrl?: string;
+}

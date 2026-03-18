@@ -30,7 +30,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
 
     try {
       const map = L.map(mapContainer.current, {
-        center: [54, -98], 
+        center: [54, -98],
         zoom: 4,
         zoomControl: false,
         attributionControl: false,
@@ -44,7 +44,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       L.control.zoom({ position: 'topright' }).addTo(map);
       markersLayer.current = L.layerGroup().addTo(map);
       mapInstance.current = map;
-      
+
       map.whenReady(() => {
         setMapReady(true);
         map.invalidateSize();
@@ -100,11 +100,15 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       const lat = total > 1 ? group.lat + Math.sin(angle) * spreadRadius : group.lat;
       const lng = total > 1 ? group.lng + Math.cos(angle) * spreadRadius : group.lng;
       const isSelected = group.id === selectedGroupId;
-      
+
       const icon = L.divIcon({
         className: `custom-marker-wrapper`,
         html: `
-          <div style="
+          <div 
+            role="button" 
+            tabindex="0" 
+            aria-label="${group.count} notes from ${group.city}"
+            style="
             width: ${isSelected ? '56px' : '46px'};
             height: ${isSelected ? '56px' : '46px'};
             background-color: ${isSelected ? COLORS.coral400 : COLORS.teal500};
@@ -117,7 +121,9 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
             transform: translate(-50%, -50%);
             transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
             position: relative;
-          ">
+            cursor: pointer;
+            outline-offset: 4px;
+          " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
             <div style="
               width: ${isSelected ? '30px' : '24px'};
               height: ${isSelected ? '30px' : '24px'};
@@ -169,14 +175,14 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
   }, [groups, selectedGroupId, onMarkerClick]);
 
   return (
-    <div className="w-full h-full relative bg-[#f0f4f3] overflow-hidden">
+    <div className="absolute inset-0 w-full h-full bg-[#f0f4f3] overflow-hidden">
       {!mapReady && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-[2000] bg-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-[2000] bg-[#f0f4f3]">
           <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-[#1e3a34] font-black text-[10px] uppercase tracking-widest opacity-40">Initializing Map...</p>
         </div>
       )}
-      <div ref={mapContainer} className="w-full h-full" />
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full z-10" />
     </div>
   );
 };

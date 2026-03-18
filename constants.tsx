@@ -1,12 +1,12 @@
-
 import React from 'react';
-import { 
-  Heart, 
-  MapPin, 
-  ShieldCheck, 
-  Users, 
-  MessageCircle, 
-  Info, 
+import { Resource, ResourceType, PostStatus } from './types.ts';
+import {
+  Heart,
+  MapPin,
+  ShieldCheck,
+  Users,
+  MessageCircle,
+  Info,
   AlertCircle,
   Menu,
   X,
@@ -50,10 +50,8 @@ export const ICONS = {
 export const BANNED_PATTERNS = [
   /https?:\/\/\S+/gi, // URLs
   /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // Emails
-  /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, // Phone numbers (US/CAN)
-  /kill myself/gi,
-  /suicide/gi,
-  /self-harm/gi,
+  /(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, // Phone numbers (US/CAN)
+  /\b(?:suicide|kill myself|end my life|die|self harm|self-harm|cut myself|overdose|OD)\b/gi // Crisis keywords
 ];
 
 export const HELP_OPTIONS = [
@@ -249,5 +247,106 @@ export const MOCK_POSTS = [
     what_helped: ["Trusted friend", "Boundaries"],
     alias: "Amber Ridge",
     flagged: false
+  }
+];
+
+export const MOCK_RESOURCES: Resource[] = [
+  // GENERAL RESOURCES
+  {
+    id: "r1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Starlings Community",
+    url: "https://www.starlings.ca/",
+    description: "Support for youth impacted by parental substance use through caregiver supports, youth leadership, and peer connection.",
+    category: 'general',
+    imageUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "r2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Camp Mariposa (Eluna Network)",
+    url: "https://elunanetwork.org/camps-programs/camp-mariposa",
+    description: "A free, nationwide addiction prevention and mentoring camp program for youth impacted by the substance use disorder of a family member.",
+    category: 'general',
+    imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800'
+  },
+
+  {
+    id: "r_adult_1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Adult Children of Alcoholics (ACA)",
+    url: "https://adultchildren.org/",
+    description: "A global recovery program for adults who grew up in alcoholic or otherwise dysfunctional homes.",
+    category: 'general',
+    imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES
+  {
+    id: "r4",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.VIDEO,
+    title: "Healing Family Trauma",
+    url: "https://example.com/video1",
+    description: "Recommended by 'HopefulOwl': A short, powerful documentary on escaping the cycle of family addiction.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "r5",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.PUBLICATION,
+    title: "Finding Your Way Toolkit",
+    url: "https://example.com/guide",
+    description: "Recommended by 'Sarah': A free digital guide explaining the science of addiction and resilience strategies.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1456406644174-8ddd4cd52a06?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "r6",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Toronto Youth Support Group",
+    url: "https://example.com/torontoyouth",
+    description: "A community-run peer support network holding weekly virtual meetings for teens in the GTA.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // PARTNER RESOURCES
+  {
+    id: "r7",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Calgary Youth Therapy Center",
+    url: "https://example.com/calgaryclinic",
+    description: "Providing specialized trauma-informed counseling for teens and young adults dealing with family substance use.",
+    category: 'partner',
+    location: 'Calgary, AB',
+    isVerifiedPartner: true,
+    imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "r8",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Vancouver Coastal Counseling",
+    url: "https://example.com/vancouverclinic",
+    description: "Professional therapeutic services and outpatient support for youth mental health and addiction recovery.",
+    category: 'partner',
+    location: 'Vancouver, BC',
+    isVerifiedPartner: true,
+    imageUrl: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=80&w=800'
   }
 ];

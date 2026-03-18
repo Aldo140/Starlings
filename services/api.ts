@@ -1,5 +1,5 @@
-import { Post, PostStatus, LocationSearchResult } from '../types.ts';
-import { MOCK_POSTS, BANNED_PATTERNS } from '../constants.tsx';
+import { Post, PostStatus, LocationSearchResult, Resource, ResourceType } from '../types.ts';
+import { MOCK_POSTS, BANNED_PATTERNS, MOCK_RESOURCES } from '../constants.tsx';
 
 /**
  * High-priority Canadian cities for instant, zero-latency suggestions.
@@ -174,8 +174,66 @@ export const apiService = {
       const result = await res.json();
       return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
     } catch (error) {
-      console.error("Error submitting post to Google Sheets:", error);
-      return { success: false, flagged };
+      console.error("Error submitting post, network issue detected:", error);
+      apiService.queueOfflinePost(newPost);
+      // Return success true so the UI thinks it succeeded and transitions to success state
+      // The post is safely stored and will be synced later
+      return { success: true, flagged };
+    }
+  },
+
+  queueOfflinePost(post: Post): void {
+    try {
+      const queueStr = localStorage.getItem('starlings_sync_queue');
+      const queue: Post[] = queueStr ? JSON.parse(queueStr) : [];
+      queue.push(post);
+      localStorage.setItem('starlings_sync_queue', JSON.stringify(queue));
+    } catch (e) {
+      console.error("Failed to queue post offline", e);
+    }
+  },
+
+  async syncOfflinePosts(): Promise<void> {
+    try {
+      const queueStr = localStorage.getItem('starlings_sync_queue');
+      if (!queueStr) return;
+
+      let queue: Post[] = JSON.parse(queueStr);
+      if (queue.length === 0) return;
+
+      console.log(`Attempting to sync ${queue.length} offline posts...`);
+      const remainingQueue: Post[] = [];
+
+      for (const post of queue) {
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(post)
+          });
+          const result = await res.json();
+          if (!result.success) {
+            console.error("Failed to sync post with server:", result);
+            remainingQueue.push(post);
+          }
+        } catch (error) {
+          console.error("Network still unavailable, keeping post in queue", error);
+          remainingQueue.push(post);
+        }
+      }
+
+      if (remainingQueue.length === 0) {
+        localStorage.removeItem('starlings_sync_queue');
+        console.log("All offline posts synced successfully.");
+      } else {
+        localStorage.setItem('starlings_sync_queue', JSON.stringify(remainingQueue));
+        console.log(`${remainingQueue.length} posts remain in offline queue.`);
+      }
+    } catch (e) {
+      console.error("Error syncing offline posts", e);
     }
   },
 
@@ -201,5 +259,32 @@ export const apiService = {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&addressdetails=1&limit=5&countrycodes=ca&featuretype=settlement`);
       return res.ok ? await res.json() : [];
     } catch { return []; }
+  },
+
+  async getApprovedResources(): Promise<Resource[]> {
+    // For this prototype, we will rely on mock data combined with any offline queued resources if implemented
+    return MOCK_RESOURCES as Resource[];
+  },
+
+  async submitResource(resourceData: Partial<Resource>): Promise<{ success: boolean }> {
+    const newResource: Resource = {
+      id: Math.random().toString(36).substring(7),
+      timestamp: new Date().toISOString(),
+      status: PostStatus.PENDING, // Needs approval
+      type: resourceData.type || ResourceType.WEBSITE,
+      title: resourceData.title || '',
+      url: resourceData.url || '',
+      description: resourceData.description || '',
+      submitterEmail: resourceData.submitterEmail || '',
+    };
+
+    // In a real app this would be a fetch POST request to the backend or Google Apps Script. 
+    // We simulate a successful network submission going to "Pending" status here.
+    console.log("Submitting new resource to pending queue:", newResource);
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    return { success: true };
   }
 };

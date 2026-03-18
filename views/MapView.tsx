@@ -5,6 +5,7 @@ import PostCard from '../components/PostCard.tsx';
 import { apiService, calculateDistance } from '../services/api.ts';
 import { Post } from '../types.ts';
 import { ICONS, MOCK_POSTS } from '../constants.tsx';
+import { Drawer } from 'vaul';
 
 interface CityGroup {
   id: string;
@@ -23,7 +24,6 @@ const MapView: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [isMobileListOpen, setIsMobileListOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
@@ -72,7 +72,6 @@ const MapView: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-
       const freshData = await apiService.getApprovedPosts();
       setPosts(freshData);
     } catch (error) {
@@ -123,13 +122,15 @@ const MapView: React.FC = () => {
   }, [posts]);
 
   const filteredGroups = useMemo(() => {
-    let result = groupedPosts.filter(group =>
-      group.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.posts.some(post =>
-        post.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.what_helped.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    );
+    let result = groupedPosts.filter(group => {
+      const matchesSearch = group.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        group.posts.some(post =>
+          post.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.what_helped.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+
+      return matchesSearch && group.count > 0;
+    });
 
     if (userLocation) {
       result = [...result].sort((a, b) => {
@@ -153,122 +154,282 @@ const MapView: React.FC = () => {
     ? { lat: selectedGroup.lat, lng: selectedGroup.lng }
     : userLocation || undefined;
 
+  const [isListVisible, setIsListVisible] = useState(false);
+
   return (
-    <div className="h-[calc(100vh-124px)] max-[400px]:h-[calc(100vh-104px)] flex flex-col md:flex-row overflow-hidden relative bg-[#f0f4f3] w-full">
-      <aside className="hidden md:flex flex-col w-[440px] bg-white border-r border-gray-100 h-full overflow-hidden shadow-xl z-20">
-        <div className="p-6 md:p-8 space-y-6 shrink-0">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h2 className="text-2xl md:text-3xl font-black text-[#1e3a34] tracking-tight italic">Support Map.</h2>
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 bg-gray-100 text-[#1e3a34] hover:bg-teal-50 disabled:opacity-60 flex-shrink-0"
-                title="Refresh data"
-              >
-                {refreshing ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                )}
-              </button>
-              <button
-                onClick={handleNearMe}
-                disabled={isLocating}
-                className={`h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 flex-shrink-0 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-[#e8f3f1] text-[#1e3a34] hover:bg-teal-100'}`}
-              >
-                {isLocating ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : ICONS.Navigation}
-              </button>
-              <button onClick={() => navigate('/share')} className="h-10 w-10 md:h-12 md:w-12 bg-[#e8f3f1] rounded-xl md:rounded-2xl hover:bg-[#1e3a34] hover:text-white transition-all flex items-center justify-center text-[#1e3a34] shadow-sm flex-shrink-0">
-                {ICONS.Plus}
-              </button>
-            </div>
+    <div className="flex-grow h-full flex flex-col md:flex-row overflow-hidden relative bg-[#f0f4f3] w-full">
+
+      {/* FLOATING TOP BAR (Mobile Only) */}
+      <div className="md:hidden absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
+
+        {/* Floating Search */}
+        <div className="relative flex-grow shadow-lg rounded-xl pointer-events-auto">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            {ICONS.Search}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-teal-100 bg-[#f5fbf9] p-4">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.25em]">Cities</p>
-              <p className="text-2xl font-black text-[#1e3a34]">{groupedPosts.length}</p>
-            </div>
-            <div className="rounded-2xl border border-[#fbd6d1] bg-[#fff6f5] p-4">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.25em]">Notes</p>
-              <p className="text-2xl font-black text-[#1e3a34]">{posts.length}</p>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300">{ICONS.Search}</div>
-            <input
-              type="text" placeholder="Search by city..."
-              className="w-full pl-12 pr-6 py-4 bg-[#f9fbfa] rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#448a7d]/10 transition-all"
-              value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          {userLocation && (
-            <div className="flex items-center justify-between px-2 py-1 bg-teal-50 rounded-xl">
-              <span className="text-[10px] font-black text-[#448a7d] uppercase tracking-widest flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-[#448a7d] rounded-full animate-pulse" />
-                Nearest First
-              </span>
-              <button onClick={() => setUserLocation(null)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold uppercase tracking-widest">Clear</button>
+          <input
+            type="text"
+            placeholder="Search city or tag..."
+            className="w-full pl-10 pr-4 py-3 bg-white/95 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-[#448a7d] transition-all text-sm border-0 font-medium text-[#1e3a34] placeholder:text-gray-400"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden z-40 border border-gray-100 flex flex-col pointer-events-auto">
+              {filteredGroups.length > 0 ? (
+                <div className="overflow-y-auto max-h-48 divide-y divide-gray-50 flex flex-col">
+                  {filteredGroups.slice(0, 5).map(group => (
+                    <button
+                      key={group.id}
+                      onClick={() => {
+                        setSelectedGroupId(group.id);
+                        setSearchTerm(''); // clear after selecting
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-teal-50 text-left active:bg-teal-100 transition-colors w-full"
+                    >
+                      <span className="font-bold text-sm text-[#1e3a34]">{group.city}</span>
+                      <span className="text-[10px] text-white font-black uppercase tracking-widest bg-[#448a7d] px-2 py-0.5 rounded-full">
+                        {group.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-5 flex flex-col items-center justify-center text-center opacity-70 bg-gray-50/50">
+                  <div className="text-gray-400 mb-2">{ICONS.Search}</div>
+                  <p className="font-bold text-[#1e3a34] text-xs">No cities found</p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex-grow overflow-y-auto p-8 space-y-6 no-scrollbar">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-gray-400">City Pulse</h3>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#448a7d] bg-teal-50 px-3 py-1 rounded-full flex items-center gap-1">
-              {refreshing && <div className="w-1.5 h-1.5 bg-[#448a7d] rounded-full animate-pulse" />}
-              {refreshing ? 'Updating...' : 'Tap a city'}
-            </span>
-          </div>
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-40">
-              <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading light...</p>
+        {/* Floating Near Me Right */}
+        <button
+          onClick={handleNearMe}
+          disabled={isLocating}
+          className={`shrink-0 w-12 h-12 rounded-xl shadow-lg flex items-center justify-center pointer-events-auto transition-colors active:scale-95 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-white/95 backdrop-blur-md text-[#1e3a34]'}`}
+        >
+          {isLocating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : ICONS.Navigation}
+        </button>
+      </div>
+
+      {/* DESKTOP SPLIT DASHBOARD */}
+      <aside className={`hidden md:flex flex-row bg-white/95 backdrop-blur-3xl border border-white/40 shadow-[0_30px_60px_-15px_rgba(30,58,52,0.15)] z-20 overflow-hidden absolute top-6 left-6 bottom-6 rounded-[2.5rem] transition-all duration-300 ${selectedGroup ? 'w-[760px] lg:w-[840px] xl:w-[960px]' : 'w-[380px] lg:w-[420px] xl:w-[460px]'}`}>
+
+        {/* LEFT PANEL - CITIES LIST & DASHBOARD */}
+        <div className="w-[380px] lg:w-[420px] xl:w-[460px] shrink-0 flex flex-col border-r border-[#448a7d]/10 bg-white/40 relative z-20">
+
+          {/* Top Dashboard Actions & Stats */}
+          <div className="p-6 pb-5 border-b border-gray-100 flex flex-col gap-5 bg-white/60">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-[#1e3a34] tracking-tight italic leading-none mb-2">Support Map.</h2>
+                <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
+                  <span>{groupedPosts.length} Cities</span>
+                  <span className="text-[#1e3a34]/20">•</span>
+                  <span>{posts.length} Notes</span>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => navigate('/share')} className="h-10 w-10 rounded-xl bg-[#1e3a34] text-white flex items-center justify-center hover:bg-[#2d5a52] transition-colors shadow-sm active:scale-95" title="Share a note">
+                  {ICONS.Plus}
+                </button>
+                <button onClick={handleRefresh} disabled={refreshing} className="h-10 w-10 rounded-xl bg-gray-100 text-[#1e3a34] flex items-center justify-center hover:bg-gray-200 transition-colors shadow-sm active:scale-95 disabled:opacity-50" title="Refresh">
+                  <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
+                <button onClick={handleNearMe} disabled={isLocating} className={`h-10 w-10 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 ${userLocation ? 'bg-[#448a7d] text-white' : 'bg-[#e8f3f1] text-[#448a7d] hover:bg-[#cde4df]'}`} title="My Location">
+                  {isLocating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : ICONS.Navigation}
+                </button>
+              </div>
             </div>
-          ) : filteredGroups.map(group => (
-            <div
-              key={group.id}
-              onClick={() => setSelectedGroupId(group.id)}
-              className={`p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 group ${selectedGroupId === group.id
-                  ? 'border-[#448a7d] bg-[#448a7d]/5 shadow-xl -translate-y-1'
-                  : 'border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1'
-                }`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3 text-[#1e3a34]">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${selectedGroupId === group.id ? 'bg-[#448a7d] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-600'}`}>
-                    {ICONS.MapPin}
+
+            {/* Desktop Search */}
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">{ICONS.Search}</div>
+              <input
+                type="text"
+                placeholder="Search cities or tags..."
+                className="w-full bg-white border border-gray-200/80 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-[#448a7d] focus:border-transparent focus:outline-none transition-all placeholder:text-gray-400 text-[#1e3a34] font-medium shadow-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* List of Cities */}
+          <div className="flex-grow overflow-y-auto p-4 space-y-3 no-scrollbar">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-40">
+                <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading...</p>
+              </div>
+            ) : filteredGroups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center h-56 px-6 opacity-60">
+                <div className="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-6">{ICONS.Search}</div>
+                <p className="font-black text-[#1e3a34] text-lg mb-2">No Cities Found</p>
+                <p className="text-sm text-gray-500 font-medium">We couldn't find any notes matching "{searchTerm}". Try adjusting your search.</p>
+              </div>
+            ) : (
+              filteredGroups.map(group => (
+                <div
+                  key={group.id}
+                  onClick={() => setSelectedGroupId(group.id)}
+                  className={`p-5 rounded-2xl transition-all duration-300 cursor-pointer border-2 group relative overflow-hidden ${selectedGroupId === group.id
+                    ? 'border-[#448a7d] bg-[#448a7d] text-white shadow-md -translate-y-0.5'
+                    : 'border-transparent bg-white shadow-sm hover:border-[#448a7d]/20 hover:shadow-md'
+                    }`}
+                >
+                  <div className="flex items-center justify-between mb-4 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${selectedGroupId === group.id ? 'bg-white/20 text-white' : 'bg-[#e8f3f1] text-[#448a7d]'}`}>
+                        {ICONS.MapPin}
+                      </div>
+                      <div>
+                        <span className={`font-black text-base block tracking-tight ${selectedGroupId === group.id ? 'text-white' : 'text-[#1e3a34]'}`}>{group.city}</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedGroupId === group.id ? 'text-white/70' : 'text-gray-400'}`}>{group.country}</span>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${selectedGroupId === group.id ? 'bg-white text-[#448a7d]' : 'bg-[#1e3a34] text-white'}`}>
+                      {group.count}
+                    </span>
                   </div>
-                  <div>
-                    <span className="font-black text-sm block tracking-tight">{group.city}</span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{group.country}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.topTags.map((tag, idx) => (
+                      <span key={`${tag}-${idx}`} className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${selectedGroupId === group.id ? 'border-white/30 bg-white/10 text-white' : 'border-[#448a7d]/10 bg-[#f9fbfa] text-[#448a7d]'}`}>
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <span className="text-[10px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-3 py-1 rounded-full">
-                  {group.count} Notes
-                </span>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT PANEL - SELECTED NOTE DETAIL */}
+        {selectedGroup && (
+          <div className="flex-1 flex flex-col bg-[#f9fbfa] relative z-10 min-w-[380px]">
+            <div className="h-full flex flex-col animate-in fade-in duration-500">
+              <div className="flex-shrink-0 bg-white px-8 py-6 border-b border-gray-100 shadow-sm z-10 sticky top-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#e8f3f1] text-[#448a7d] rounded-2xl flex flex-shrink-0 items-center justify-center">
+                      {ICONS.MapPin}
+                    </div>
+                    <div>
+                      <h3 className="font-black text-2xl text-[#1e3a34] tracking-tight">{selectedGroup.city}</h3>
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{selectedGroup.country}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-white font-black uppercase tracking-widest bg-[#448a7d] px-4 py-2 rounded-full shadow-md">
+                      {selectedGroup.count} Notes
+                    </span>
+                    <button onClick={() => setSelectedGroupId(null)} className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors" title="Close">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {group.topTags.map((tag, idx) => (
-                  <span
-                    key={`${tag}-${idx}`}
-                    className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
-                  >
-                    {tag}
-                  </span>
+              <div className="flex-grow overflow-y-auto p-8 space-y-5 no-scrollbar bg-gray-50/30">
+                {selectedGroup.posts.map((post, idx) => (
+                  <PostCard key={`${post.id}-${idx}`} post={post} />
                 ))}
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </aside>
 
-      <div className="flex-grow h-full relative z-10 w-full overflow-hidden">
+      {/* VAUL MOBILE BOTTOM SHEET */}
+      <div className="md:hidden">
+        <Drawer.Root
+          open={isListVisible}
+          onOpenChange={setIsListVisible}
+          shouldScaleBackground
+          snapPoints={[0.5, 1]}
+          fadeFromIndex={0}
+        >
+          {/* FAB button triggers the Drawer when closed */}
+          {!isListVisible && (
+            <Drawer.Trigger asChild>
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[2000]">
+                <button className="bg-[#1e3a34] text-white px-8 py-4 rounded-full shadow-2xl font-black uppercase tracking-widest text-[12px] flex items-center justify-center gap-2 active:scale-95 transition-all outline-none">
+                  {ICONS.Menu} Browse List
+                </button>
+              </div>
+            </Drawer.Trigger>
+          )}
+
+          <Drawer.Portal>
+            <Drawer.Overlay className="fixed inset-0 bg-black/20 z-[3000]" />
+            <Drawer.Content className="bg-[#f0f4f3] flex flex-col rounded-t-[32px] mt-24 h-[96%] fixed bottom-0 left-0 right-0 z-[3100] outline-none shadow-2xl">
+
+              <div className="p-4 bg-[#f0f4f3] rounded-t-[32px] w-full flex-shrink-0 sticky top-0 z-10 border-b border-gray-200/50">
+                {/* Pull Handle */}
+                <div className="mx-auto w-12 h-1.5 bg-gray-300 rounded-full mb-4" />
+
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-black text-xl text-[#1e3a34]">Explore Notes</h3>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{posts.length} Total</span>
+                </div>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="px-4 py-4 overflow-y-auto flex-grow no-scrollbar space-y-4">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-40">
+                    <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading...</p>
+                  </div>
+                ) : filteredGroups.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
+                    <div className="w-16 h-16 bg-white shadow-sm text-gray-400 rounded-full flex items-center justify-center mb-4">{ICONS.Search}</div>
+                    <p className="font-black text-[#1e3a34] text-lg mb-1">No Cities Found</p>
+                    <p className="text-xs text-gray-500 font-medium">We couldn't find any notes matching "{searchTerm}".</p>
+                  </div>
+                ) : filteredGroups.map(group => (
+                  <div
+                    key={group.id}
+                    onClick={() => {
+                      setSelectedGroupId(group.id);
+                      setIsListVisible(false); // Close list to show overlay
+                    }}
+                    className="p-5 rounded-3xl bg-white shadow-sm border border-gray-50 active:scale-[0.98] transition-all"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3 text-[#1e3a34]">
+                        <div className="w-10 h-10 rounded-2xl bg-[#e8f3f1] text-[#448a7d] flex items-center justify-center">
+                          {ICONS.MapPin}
+                        </div>
+                        <div>
+                          <span className="font-black text-base block tracking-tight">{group.city}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{group.country}</span>
+                        </div>
+                      </div>
+                      <span className="text-[12px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-4 py-1.5 rounded-full">
+                        {group.count}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {group.topTags.map((tag, idx) => (
+                        <span key={`${tag}-${idx}`} className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[10px] font-black uppercase tracking-widest border border-gray-100">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </Drawer.Content>
+          </Drawer.Portal>
+        </Drawer.Root>
+      </div>
+
+      {/* MAP FULL SCREEN */}
+      <div className="flex-grow relative z-10 w-full h-full overflow-hidden bg-[#e8f3f1]">
         <SupportMap
           groups={filteredGroups}
           onMarkerClick={(group) => setSelectedGroupId(group.id)}
@@ -276,106 +437,59 @@ const MapView: React.FC = () => {
           flyToLocation={mapFocus}
         />
 
-        <div className="md:hidden absolute top-4 right-4 ui-overlay flex flex-col gap-3">
-          <button onClick={handleNearMe} className={`${userLocation ? 'bg-[#448a7d] text-white' : 'bg-white text-[#1e3a34]'} w-12 h-12 max-[400px]:w-10 max-[400px]:h-10 rounded-2xl shadow-2xl flex items-center justify-center active:scale-90`}>
-            {ICONS.Navigation}
-          </button>
-          <button onClick={() => navigate('/share')} className="bg-[#1e3a34] text-white w-12 h-12 max-[400px]:w-10 max-[400px]:h-10 rounded-2xl shadow-2xl flex items-center justify-center active:scale-90">
+        <div className="absolute bottom-8 right-6 z-30 md:hidden">
+          <button onClick={() => navigate('/share')} className="w-14 h-14 bg-[#448a7d] text-white rounded-full shadow-[0_8px_30px_rgba(68,138,125,0.4)] flex items-center justify-center flex-shrink-0 active:scale-90 transition-all border-2 border-white">
             {ICONS.Plus}
           </button>
         </div>
+      </div>
 
-        {selectedGroup && (
-          <div className="absolute bottom-8 left-4 right-4 md:left-auto md:right-8 ui-overlay max-w-xl md:w-[420px]">
-            <div className="glass-panel rounded-[2rem] shadow-2xl p-6 max-[400px]:p-4 relative animate-reveal border border-white/60">
-              <button onClick={() => setSelectedGroupId(null)} className="absolute top-4 right-4 text-gray-300 hover:text-gray-800">{ICONS.X}</button>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[#e8f3f1] flex items-center justify-center text-[#448a7d]">{ICONS.MapPin}</div>
-                <div>
-                  <h4 className="font-black text-lg text-[#1e3a34]">{selectedGroup.city}</h4>
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{selectedGroup.country}</span>
+      {/* MOBILE FULL PAGE CITY OVERLAY */}
+      {selectedGroup && (
+        <div className="md:hidden absolute inset-0 z-[4000] bg-[#f0f4f3] flex flex-col animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
+          {/* Glass Header */}
+          <div className="flex-shrink-0 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 pt-safe relative z-20 shadow-sm">
+            <div className="p-4 flex flex-col gap-4">
+              <button
+                onClick={() => setSelectedGroupId(null)}
+                className="self-start inline-flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl text-[#448a7d] font-bold text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors border border-gray-200/50 active:scale-95"
+              >
+                ← Back
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#e8f3f1] flex flex-shrink-0 items-center justify-center text-[#448a7d]">
+                  {ICONS.MapPin}
                 </div>
-                <span className="ml-auto text-[10px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-3 py-1 rounded-full">
+                <div className="flex flex-col flex-grow min-w-0">
+                  <h4 className="font-black text-2xl text-[#1e3a34] leading-tight truncate">{selectedGroup.city}</h4>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate">{selectedGroup.country}</span>
+                </div>
+                <span className="flex-shrink-0 text-[11px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-3 py-1.5 rounded-full shadow-sm">
                   {selectedGroup.count} Notes
                 </span>
               </div>
-              {selectedGroup.topTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedGroup.topTags.map((tag, idx) => (
-                    <span
-                      key={`${tag}-${idx}`}
-                      className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                {selectedGroup.posts.map((post, idx) => (
-                  <PostCard key={`${post.id}-${idx}`} post={post} />
-                ))}
-              </div>
-              <div className="mt-6">
-                <button onClick={() => navigate('/share')} className="w-full py-4 max-[400px]:py-3 bg-[#1e3a34] text-white rounded-2xl font-bold flex items-center justify-center gap-2">
-                  Share your light {ICONS.ArrowRight}
-                </button>
-              </div>
             </div>
           </div>
-        )}
 
-        {!selectedGroup && (
-          <div className="md:hidden absolute bottom-6 left-6 right-6 ui-overlay max-[400px]:left-4 max-[400px]:right-4">
-            <button onClick={() => setIsMobileListOpen(true)} className="w-full bg-[#1e3a34] text-white py-4 max-[400px]:py-3 rounded-2xl shadow-2xl font-black uppercase tracking-widest text-xs max-[400px]:text-[10px]">
-              List View ({filteredGroups.length})
-            </button>
-          </div>
-        )}
-      </div>
-
-      {isMobileListOpen && (
-        <div className="md:hidden fixed inset-0 z-[3000] bg-white flex flex-col animate-reveal">
-          <div className="p-6 max-[400px]:p-4 border-b flex items-center justify-between sticky top-0 bg-white">
-            <h2 className="text-xl font-black text-[#1e3a34] italic">Support Map.</h2>
-            <button onClick={() => setIsMobileListOpen(false)} className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center">{ICONS.X}</button>
-          </div>
-          <div className="p-6 max-[400px]:p-4 overflow-y-auto flex-grow space-y-6">
-            {filteredGroups.map(group => (
-              <div
-                key={group.id}
-                onClick={() => { setSelectedGroupId(group.id); setIsMobileListOpen(false); }}
-                className="p-6 rounded-[32px] transition-all duration-300 cursor-pointer border-2 border-transparent bg-white hover:border-gray-100 hover:shadow-lg hover:-translate-y-1"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3 text-[#1e3a34]">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-gray-100 text-gray-400">
-                      {ICONS.MapPin}
-                    </div>
-                    <div>
-                      <span className="font-black text-sm block tracking-tight">{group.city}</span>
-                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{group.country}</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-3 py-1 rounded-full">
-                    {group.count} Notes
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {group.topTags.map((tag, idx) => (
-                    <span
-                      key={`${tag}-${idx}`}
-                      className="px-3 py-1.5 rounded-full bg-[#f9fbfa] text-[#448a7d] text-[9px] font-black uppercase tracking-widest border border-gray-100"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
+          {/* Scrollable List */}
+          <div className="flex-grow overflow-y-auto px-4 pt-6 pb-28 space-y-4 relative z-10 no-scrollbar">
+            {selectedGroup.posts.map((post, idx) => (
+              <PostCard key={`${post.id}-${idx}`} post={post} />
             ))}
+          </div>
+
+          {/* Floating Add Note Action */}
+          <div className="absolute bottom-6 left-4 right-4 z-30 flex justify-center pointer-events-none pb-safe">
+            <button
+              onClick={() => navigate('/share')}
+              className="w-full max-w-sm bg-[#1e3a34] pointer-events-auto text-white py-4 rounded-[1.5rem] shadow-[0_12px_24px_-8px_rgba(30,58,52,0.6)] font-black uppercase tracking-widest text-[12px] flex items-center justify-center gap-2 active:scale-95 transition-all outline-none border border-white/10"
+            >
+              {ICONS.Plus} Add Note to {selectedGroup.city}
+            </button>
           </div>
         </div>
       )}
+
     </div>
   );
 };

@@ -35,11 +35,11 @@ The map uses `preferCanvas: true` in the Leaflet configuration. This ensures tha
 
 ## 🚦 Feature Logic
 
-### Moderation Workflow
-1. **Submission**: Users fill out guided prompts.
-2. **Auto-Flagging**: The `BANNED_PATTERNS` regex automatically checks for URLs, emails, phone numbers, and crisis keywords.
-3. **Storage**: In this prototype, posts are stored locally. In production, these go to a "Pending" tab in Google Sheets.
-4. **Approval**: A moderator moves the row to an "Approved" tab, which the frontend then fetches.
+### Moderation Workflow (Map & Resources)
+1. **Submission**: Users fill out guided prompts for map sharing or recommend a resource.
+2. **Auto-Flagging**: The `BANNED_PATTERNS` regex automatically checks for URLs, emails, phone numbers, and crisis keywords across map notes.
+3. **Storage**: In this prototype, posts and recommended resources are stored locally or printed to console as "pending". In production, these go to a "Pending" tab in Google Sheets.
+4. **Approval**: A moderator moves the row to an "Approved" tab, which the frontend then fetches for either Posts or Resources.
 
 ### Safety & Crisis
 The app features a persistent **Crisis Banner**. Per the Starlings policy, the `ShareView` requires explicit agreement to three safety checks (Age, Anonymity, and Moderation) before the "Share Note" button becomes active.
@@ -55,6 +55,8 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
     - `Landing.tsx`: High-conversion hero page.
     - `MapView.tsx`: The interactive dual-view (Sidebar + Map).
     - `ShareView.tsx`: The multi-step submission form with city autocomplete.
+    - `ResourcesView.tsx`: Displays curated resources (Websites, Videos, Publications).
+    - `AddResourceView.tsx`: Form for recommending new resources to the community.
 
 ---
 

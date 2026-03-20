@@ -10,6 +10,7 @@ This prototype is a working "Support Map" for Starlings Community. It is designe
 - **Styling**: Tailwind CSS (Utility-first)
 - **Mapping**: Leaflet.js with CartoDB Light tiles
 - **Icons**: Lucide React
+- **UI Components**: Vaul (Bottom Sheets)
 - **Geocoding**: Hybrid (Local JSON Index + OpenStreetMap Nominatim API)
 - **Routing**: React Router 6 (HashRouter)
 
@@ -22,11 +23,11 @@ To avoid the latency and rate-limiting issues of third-party geocoding APIs, we 
 - **Stage 1 (Instant)**: A local constant `CANADIAN_HUBS` containing the top 40+ Canadian cities by population. This provides zero-latency autocomplete for ~80% of users.
 - **Stage 2 (Deep Search)**: If no local match is found, or as the user stops typing, a debounced call is made to the **Nominatim (OSM) API** filtered strictly to `countrycodes=ca` and `featuretype=settlement`.
 
-### 2. Mock Backend & Google Sheets Strategy
-The `apiService` currently simulates a backend using `localStorage`:
-- **GET**: Combines `MOCK_POSTS` with any approved posts in `localStorage`.
-- **POST**: Validates against `BANNED_PATTERNS` (Regex for safety) and saves to a `pending` key.
-- **Integration Path**: To move to a real Google Sheets backend, replace the `fetch` calls in `apiService` with a library like `google-spreadsheet` or a simple Google Apps Script Web App URL.
+### 2. Google Apps Script Backend & Offline Sync
+The `apiService` interacts with a deployed Google Apps Script (`services/gas-backend.js`) to use Google Sheets as a database:
+- **GET**: Fetches approved posts from the "Approved" tab in Google Sheets.
+- **POST**: Validates against `BANNED_PATTERNS` natively and saves to a "Pending" tab.
+- **Offline Reliability**: If a network failure occurs during submission, the client gracefully queues the post in `localStorage` and retries automatically when the connection is restored or upon application mount (`App.tsx`).
 
 ### 3. Performance Mapping
 The map uses `preferCanvas: true` in the Leaflet configuration. This ensures that even with hundreds of markers, the browser renders them as a single canvas element rather than individual DOM nodes, keeping the "Fly To" animations smooth on mobile devices.
@@ -38,7 +39,7 @@ The map uses `preferCanvas: true` in the Leaflet configuration. This ensures tha
 ### Moderation Workflow (Map & Resources)
 1. **Submission**: Users fill out guided prompts for map sharing or recommend a resource.
 2. **Auto-Flagging**: The `BANNED_PATTERNS` regex automatically checks for URLs, emails, phone numbers, and crisis keywords across map notes.
-3. **Storage**: In this prototype, posts and recommended resources are stored locally or printed to console as "pending". In production, these go to a "Pending" tab in Google Sheets.
+3. **Storage**: Submissions are sent directly via a `POST` request to the "Pending" tab in the Google Sheet. If offline, they are queued locally until connection is restored.
 4. **Approval**: A moderator moves the row to an "Approved" tab, which the frontend then fetches for either Posts or Resources.
 
 ### Safety & Crisis
@@ -47,21 +48,27 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
 ---
 
 ## 📂 Project Structure
+- `App.tsx`: Main entry point configuring HashRouter routes and offline sync listeners.
 - `types.ts`: TypeScript interfaces for Posts and Locations.
 - `constants.tsx`: Global configuration, ICONS, and Mock Data.
-- `services/api.ts`: All data fetching and geocoding logic.
-- `components/Map.tsx`: The Leaflet implementation and marker logic.
+- `services/api.ts`: All data fetching, offline queuing, and geocoding logic.
+- `services/gas-backend.js`: The Google Apps Script deployed as a Web App to interface between the frontend and Google Sheets.
+- `components/`:
+    - `Layout.tsx`: Main responsive layout shell containing the navigation and footer.
+    - `Map.tsx`: The Leaflet JS implementation and custom marker logic.
+    - `PostCard.tsx`: Reusable UI component for rendering individual notes.
 - `views/`:
     - `Landing.tsx`: High-conversion hero page.
     - `MapView.tsx`: The interactive dual-view (Sidebar + Map).
     - `ShareView.tsx`: The multi-step submission form with city autocomplete.
     - `ResourcesView.tsx`: Displays curated resources (Websites, Videos, Publications).
     - `AddResourceView.tsx`: Form for recommending new resources to the community.
+    - `Guidelines.tsx`: Details community rules and safety policies.
 
 ---
 
 ## 🚀 How to expand this
-- **Real Backend**: Implement a `POST` request to a Google Apps Script in `apiService.submitPost`.
+- **Database Migration**: Currently uses Google Sheets. For high traffic, migrate the GAS backend to a structured database like PostgreSQL or Supabase.
 - **Analytics**: Add privacy-preserving analytics (like Plausible) to track map engagement without IP tracking.
 - **Filtering**: Expand the `useMemo` filter in `MapView.tsx` to allow filtering by the specific "What Helped" tags.
 

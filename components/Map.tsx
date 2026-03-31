@@ -10,6 +10,7 @@ interface CityGroup {
   lat: number;
   lng: number;
   count: number;
+  posts: any[]; // Or Post[] if imported
 }
 
 interface MapProps {
@@ -101,61 +102,87 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       const lng = total > 1 ? group.lng + Math.cos(angle) * spreadRadius : group.lng;
       const isSelected = group.id === selectedGroupId;
 
+      // Intelligent Marker Coloring
+      const resourceCount = group.posts.filter((p: any) => typeof p.message === 'string' && p.message.startsWith('[RESOURCE')).length;
+      const storyCount = group.posts.length - resourceCount;
+
+      let backgroundStyle = `background-color: ${COLORS.teal500};`;
+      if (resourceCount > 0 && storyCount === 0) {
+        backgroundStyle = `background-color: ${COLORS.coral400};`;
+      } else if (resourceCount > 0 && storyCount > 0) {
+        backgroundStyle = `background: linear-gradient(135deg, ${COLORS.teal500} 50%, ${COLORS.coral400} 50%);`;
+      }
+
       const icon = L.divIcon({
         className: `custom-marker-wrapper`,
         html: `
-          <div 
-            role="button" 
-            tabindex="0" 
-            aria-label="${group.count} notes from ${group.city}"
-            style="
-            width: ${isSelected ? '56px' : '46px'};
-            height: ${isSelected ? '56px' : '46px'};
-            background-color: ${isSelected ? COLORS.coral400 : COLORS.teal500};
-            border: 3px solid white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 24px rgba(30,58,52,0.2);
-            transform: translate(-50%, -50%);
-            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-            position: relative;
-            cursor: pointer;
-            outline-offset: 4px;
-          " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+          <div style="position: relative; width: ${isSelected ? '64px' : '54px'}; height: ${isSelected ? '64px' : '54px'}; display: flex; align-items: center; justify-content: center;">
+            
+            <!-- Ambient Pulse Layer -->
             <div style="
-              width: ${isSelected ? '30px' : '24px'};
-              height: ${isSelected ? '30px' : '24px'};
-              border-radius: 10px;
-              background: rgba(255,255,255,0.18);
+              position: absolute;
+              inset: 0;
+              border-radius: 50%;
+              ${backgroundStyle}
+              opacity: 0.4;
+              animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+              z-index: 0;
+            "></div>
+
+            <!-- Main Marker Body -->
+            <div 
+              role="button" 
+              tabindex="0" 
+              aria-label="${group.count} items from ${group.city}"
+              style="
+              width: ${isSelected ? '56px' : '46px'};
+              height: ${isSelected ? '56px' : '46px'};
+              ${backgroundStyle}
+              border: 3px solid white;
+              border-radius: 50%;
               display: flex;
               align-items: center;
               justify-content: center;
-              color: white;
-              font-weight: 800;
-              font-size: ${isSelected ? '14px' : '12px'};
-              letter-spacing: 0.04em;
-            ">
-              ${group.count}
-            </div>
-            <div style="
-              position: absolute;
-              bottom: -10px;
-              left: 50%;
-              transform: translateX(-50%);
-              background: white;
-              color: ${COLORS.teal900};
-              font-weight: 700;
-              font-size: 9px;
-              padding: 2px 8px;
-              border-radius: 999px;
-              box-shadow: 0 6px 12px rgba(15,23,42,0.12);
-              text-transform: uppercase;
-              letter-spacing: 0.12em;
-              white-space: nowrap;
-            ">
-              notes
+              box-shadow: 0 8px 24px rgba(30,58,52,0.25);
+              transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+              position: relative;
+              z-index: 10;
+              cursor: pointer;
+            " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+              <div style="
+                width: ${isSelected ? '30px' : '24px'};
+                height: ${isSelected ? '30px' : '24px'};
+                border-radius: 10px;
+                background: rgba(255,255,255,0.25);
+                backdrop-filter: blur(4px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 800;
+                font-size: ${isSelected ? '14px' : '12px'};
+                letter-spacing: 0.04em;
+              ">
+                ${group.count}
+              </div>
+              <div style="
+                position: absolute;
+                bottom: -12px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: white;
+                color: ${COLORS.teal900};
+                font-weight: 800;
+                font-size: 9px;
+                padding: 3px 10px;
+                border-radius: 999px;
+                box-shadow: 0 6px 12px rgba(15,23,42,0.12);
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                white-space: nowrap;
+              ">
+                ${resourceCount > 0 && storyCount > 0 ? 'Mixed' : (resourceCount > 0 ? 'Resources' : 'Stories')}
+              </div>
             </div>
           </div>
         `,

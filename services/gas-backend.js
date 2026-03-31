@@ -1,187 +1,226 @@
 // ==========================================
-// STARLINGS SUPPORT MAP - GOOGLE APPS SCRIPT BACKEND
+// STARLINGS SUPPORT MAP - GOOGLE APPS SCRIPT BACKEND V2
 // ==========================================
 // 
 // INSTRUCTIONS FOR DEPLOYMENT:
-// 1. Create a Google Sheet named "Starlings Support Map Data"
-// 2. Create two tabs named: "Pending" and "Approved"
-// 3. In BOTH tabs, put these exact headers in row 1:
-//    id, timestamp, status, country, city, lat, lng, message, what_helped, alias, flagged
+// 1. In your existing "Starlings Support Map Data" Google Sheet
+// 2. Create the following exact tabs (case-sensitive):
+//    - Pending_Stories
+//    - Live_Stories
+//    - Pending_Resources
+//    - Live_Resources
+//    - Pending_QA
+//    - Live_QA
+//    - Flagged_Words
+// 3. For the Flagged_Words tab, just put words in column A (one per row).
 // 4. In the menu, click Extensions > Apps Script
-// 5. Delete all code in the script editor and paste this entire file.
-// 6. Click "Deploy" > "New deployment"
-// 7. Select type: "Web app"
-// 8. Execute as: "Me" (your email)
-// 9. Who has access: "Anyone"
-// 10. Click "Deploy", copy the "Web app URL", and paste it into `services/api.ts`
+// 5. Delete all old code, paste this entire file, and click "Deploy > Manage Deployments"
+// 6. Edit the existing deployment, select "New version", and click "Deploy".
 // ==========================================
 
-const SCRIPT_PROP = PropertiesService.getScriptProperties() // New property service
+const SCRIPT_PROP = PropertiesService.getScriptProperties();
 
-// Setup function to connect this script to the active spreadsheet
 function setup() {
-    const doc = SpreadsheetApp.getActiveSpreadsheet()
-    SCRIPT_PROP.setProperty('key', doc.getId())
+    const doc = SpreadsheetApp.getActiveSpreadsheet();
+    SCRIPT_PROP.setProperty('key', doc.getId());
 }
 
 // ------------------------------------------------------------------
-// GET REQUESTS: Fetch approved posts
+// GET REQUESTS: Fetch data from specific "Live" tabs dynamically
 // ------------------------------------------------------------------
 function doGet(e) {
     try {
-        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'))
+        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'));
 
-        // We ONLY fetch from the "Approved" tab to protect the public map
-        const sheet = doc.getSheetByName("Approved")
+        // Defaults to "Live_Stories" for backwards compatibility if no action is provided
+        const action = e.parameter.action || "getStories";
+        let sheetName = "Live_Stories";
 
-        // If the sheet doesn't exist or is empty, return an empty array
-        if (!sheet || sheet.getLastRow() < 2) {
-            return responseJSON([])
+        if (action === "getResources") sheetName = "Live_Resources";
+        if (action === "getQA") sheetName = "Live_QA";
+        if (action === "getFlaggedWords") sheetName = "Flagged_Words";
+
+        const sheet = doc.getSheetByName(sheetName);
+
+        if (!sheet || sheet.getLastRow() < (action === "getFlaggedWords" ? 1 : 2)) {
+            return responseJSON([]);
         }
 
-        const data = sheet.getDataRange().getValues()
-        const headers = data[0]
+        const data = sheet.getDataRange().getValues();
 
-        const rows = []
+        // Special simple parsing for Flagged Words (just an array of strings)
+        if (action === "getFlaggedWords") {
+            const words = data.map(row => row[0]).filter(word => word && typeof word === 'string');
+            return responseJSON(words);
+        }
 
-        // Loop through rows starting from row 2 (index 1), mapping values to headers
+        const headers = data[0];
+        const rows = [];
+
+        // Loop through rows starting from row 2
         for (let r = 1; r < data.length; r++) {
-            const rowData = {}
+            const rowData = {};
             for (let c = 0; c < headers.length; c++) {
-                let val = data[r][c]
+                let val = data[r][c];
 
-                // Handle the stringified JSON array for "what_helped"
-                if (headers[c] === 'what_helped') {
-                    try {
-                        rowData[headers[c]] = val ? JSON.parse(val) : []
-                    } catch (e) {
-                        rowData[headers[c]] = [val] // Fallback if not valid JSON
-                    }
+                // Automatically parse JSON if the text looks like an array or object
+                if (typeof val === 'string' && val.startsWith('[') && val.endsWith(']')) {
+                    try { val = JSON.parse(val); } catch (err) { }
                 }
-                // Handle boolean parsing for flagged
-                else if (headers[c] === 'flagged') {
-                    rowData[headers[c]] = val === true || val === 'true'
-                }
-                else {
-                    rowData[headers[c]] = val
-                }
+
+                rowData[headers[c]] = val;
             }
-            rows.push(rowData)
+            rows.push(rowData);
         }
 
-        return responseJSON(rows)
+        return responseJSON(rows);
 
     } catch (e) {
-        return responseError(e)
+        return responseError(e);
     }
 }
 
 // ------------------------------------------------------------------
-// POST REQUESTS: Submit a new post
+// POST REQUESTS: Submit new posts or increment insight counters
 // ------------------------------------------------------------------
 function doPost(e) {
     try {
-        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'))
+        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'));
 
-        // All new submissions land in "Pending" for moderation
-        const sheet = doc.getSheetByName("Pending")
-
-        if (!sheet) {
-            return responseError(new Error("Pending sheet not found. Please create a tab named 'Pending'."))
-        }
-
-        // Ensure headers exist
-        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
-
-        // Parse the incoming JSON body
         let postData;
         if (e.postData && e.postData.contents) {
-            postData = JSON.parse(e.postData.contents)
+            postData = JSON.parse(e.postData.contents);
         } else {
-            // Fallback for form data
-            postData = e.parameter
+            postData = e.parameter;
         }
 
-        // Double check for banned patterns natively in GAS to prevent API abuse
-        const message = postData.message || ""
-        const BANNED_PATTERNS = [
-            /https?:\/\/[^\s]+/gi,          // URLs
-            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // Emails
-            /(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, // North American phone numbers
-            /\b(?:suicide|kill myself|end my life|die|self harm|self-harm|cut myself|overdose|OD)\b/gi // Crisis keywords
-        ]
+        const action = postData.action || "addStory";
 
-        let isFlagged = postData.flagged === true || postData.flagged === 'true';
-        for (const pattern of BANNED_PATTERNS) {
-            if (pattern.test(message)) {
-                isFlagged = true;
-                break;
-            }
+        // SPECIAL ACTION: Incrementing Emoji "Likes" on a live Resource
+        if (action === "incrementInsight") {
+            return handleIncrementInsight(doc, postData);
         }
 
-        const nextRow = sheet.getLastRow() + 1
+        // Standard Add Actions (Routing to specific Pending tabs)
+        let targetSheetName = "Pending_Stories";
+        if (action === "addResource") targetSheetName = "Pending_Resources";
+        if (action === "addQA") targetSheetName = "Pending_QA";
+
+        const sheet = doc.getSheetByName(targetSheetName);
+
+        if (!sheet) {
+            return responseError(new Error(`Sheet not found. Please create a tab named '${targetSheetName}'.`));
+        }
+
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+        // Very basic hardcoded safety check (Frontend handles primary check via Flagged_Words)
+        const messageString = JSON.stringify(postData).toLowerCase();
+        let isFlagged = postData.flagged === true || messageString.includes("suicide") || messageString.includes("self harm");
+
+        const nextRow = sheet.getLastRow() + 1;
         const newRow = headers.map(function (header) {
+            if (header === 'timestamp') return new Date().toISOString();
+            if (header === 'id') return Utilities.getUuid();
+            if (header === 'status') return 'PENDING';
+            if (header === 'flagged') return isFlagged;
 
-            // Override the mapped values with safety enforcement
-            if (header === 'timestamp') return new Date().toISOString()
-            // Always generate a fresh stable unique id for the row on submit
-            if (header === 'id') return Utilities.getUuid()
-            if (header === 'status') return 'PENDING'
-            if (header === 'flagged') return isFlagged
+            // Deep stringify objects/arrays for Google Sheet cells
+            if (typeof postData[header] === 'object') return JSON.stringify(postData[header] || []);
 
-            // Stringify the array back to text for the spreadsheet cell
-            if (header === 'what_helped') return JSON.stringify(postData[header] || [])
+            return postData[header] || "";
+        });
 
-            return postData[header] || ""
-        })
-
-        // Append the row to Google Sheets
-        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow])
+        // Append the row
+        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
 
         return responseJSON({
             success: true,
-            message: "Successfully added to pending queue",
+            message: `Successfully added to ${targetSheetName} queue`,
             flagged: isFlagged
-        })
+        });
 
     } catch (e) {
-        return responseError(e)
+        return responseError(e);
     }
+}
+
+// ------------------------------------------------------------------
+// INSIGHT INCREMENTER LOGIC (Peer Insights)
+// ------------------------------------------------------------------
+function handleIncrementInsight(doc, postData) {
+    // 1. Read which resource ID they clicked
+    const resourceId = postData.resourceId;
+    const reactionType = postData.reactionType; // "helpful", "supportive", "exploring"
+
+    if (!resourceId || !reactionType) throw new Error("Missing ID or reaction type");
+
+    // 2. Open Live Resources
+    const liveSheet = doc.getSheetByName("Live_Resources");
+    if (!liveSheet) throw new Error("Live_Resources sheet not found");
+
+    const data = liveSheet.getDataRange().getValues();
+    const headers = data[0];
+    const idIndex = headers.indexOf('id');
+    const targetColumnHeader = reactionType + "_count"; // e.g., "helpful_count"
+    let targetColIndex = headers.indexOf(targetColumnHeader);
+
+    // 3. Find the row with matching ID
+    let targetRowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+        if (data[i][idIndex] === resourceId) {
+            targetRowIndex = i + 1; // Apps script ranges are 1-indexed!
+            break;
+        }
+    }
+
+    if (targetRowIndex === -1) throw new Error("Resource ID not found in Live_Resources");
+
+    // If the tracking column doesn't exist yet, create it dynamically!
+    if (targetColIndex === -1) {
+        targetColIndex = headers.length;
+        liveSheet.getRange(1, targetColIndex + 1).setValue(targetColumnHeader);
+    }
+
+    // 4. Increment the value in that cell
+    const cellRange = liveSheet.getRange(targetRowIndex, targetColIndex + 1);
+    let currentValue = cellRange.getValue();
+    if (!currentValue || isNaN(currentValue)) currentValue = 0;
+
+    cellRange.setValue(currentValue + 1);
+
+    return responseJSON({ success: true, newCount: currentValue + 1 });
 }
 
 // ------------------------------------------------------------------
 // HELPER FUNCTIONS
 // ------------------------------------------------------------------
-
 function responseJSON(data) {
     return ContentService
         .createTextOutput(JSON.stringify(data))
-        .setMimeType(ContentService.MimeType.JSON)
+        .setMimeType(ContentService.MimeType.JSON);
 }
 
 function responseError(error) {
     return ContentService
         .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-        .setMimeType(ContentService.MimeType.JSON)
+        .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Allow handling of CORS preflight OPTIONS requests required by fetch
 function doOptions(e) {
-    return ContentService.createTextOutput("")
-        .setMimeType(ContentService.MimeType.TEXT)
+    return ContentService.createTextOutput("").setMimeType(ContentService.MimeType.TEXT);
 }
 
 // ------------------------------------------------------------------
-// AUTOMATION: Move row from Pending to Approved
+// AUTOMATION: Move row from Pending to Live
 // ------------------------------------------------------------------
 function onEdit(e) {
-    // Make sure we have an event object (meaning real edit, not manually running this function)
     if (!e || !e.range) return;
-
     const sheet = e.range.getSheet();
+    const sheetName = sheet.getName();
 
-    // Only trigger on edits in the "Pending" tab
-    if (sheet.getName() !== "Pending") return;
+    // Only trigger on edits in tabs that start with "Pending_"
+    if (!sheetName.startsWith("Pending_")) return;
 
     // Only trigger if they edited column 3 ("status" column in position C)
     if (e.range.getColumn() !== 3) return;
@@ -190,36 +229,28 @@ function onEdit(e) {
     if (!e.value || typeof e.value !== 'string' || e.value.toUpperCase() !== "APPROVED") return;
 
     const rowNumber = e.range.getRow();
+    if (rowNumber === 1) return; // Don't move header
 
-    // Don't move the header row!
-    if (rowNumber === 1) return;
+    const doc = e.source;
+    const liveSheetName = sheetName.replace("Pending_", "Live_");
+    const liveSheet = doc.getSheetByName(liveSheetName);
 
-    const doc = e.source; // Get the active spreadsheet
-    const approvedSheet = doc.getSheetByName("Approved");
-
-    if (!approvedSheet) {
-        SpreadsheetApp.getUi().alert("Could not find the 'Approved' tab!");
+    if (!liveSheet) {
+        SpreadsheetApp.getUi().alert(`Could not find the '${liveSheetName}' tab! Please create it.`);
         return;
     }
 
-    // Grab the entire row of data
     const numColumns = sheet.getLastColumn();
     const rowData = sheet.getRange(rowNumber, 1, 1, numColumns).getValues();
 
-    // Append the row to the Approved tab
-    // Ensure the moved row has a stable unique id (in case an incoming id was empty or duplicated)
     try {
         const headers = sheet.getRange(1, 1, 1, numColumns).getValues()[0];
         const idIndex = headers.indexOf('id');
-        if (idIndex >= 0) {
+        if (idIndex >= 0 && (!rowData[0][idIndex] || rowData[0][idIndex] === "")) {
             rowData[0][idIndex] = Utilities.getUuid();
         }
-    } catch (err) {
-        // If anything goes wrong, proceed without overwriting id
-    }
+    } catch (err) { }
 
-    approvedSheet.getRange(approvedSheet.getLastRow() + 1, 1, 1, numColumns).setValues(rowData);
-
-    // Delete the row from the Pending tab
+    liveSheet.getRange(liveSheet.getLastRow() + 1, 1, 1, numColumns).setValues(rowData);
     sheet.deleteRow(rowNumber);
 }

@@ -6,6 +6,7 @@ import { apiService, calculateDistance } from '../services/api.ts';
 import { Post } from '../types.ts';
 import { ICONS, MOCK_POSTS } from '../constants.tsx';
 import { Drawer } from 'vaul';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CityGroup {
   id: string;
@@ -23,6 +24,7 @@ const MapView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'stories' | 'resources'>('all');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -108,7 +110,8 @@ const MapView: React.FC = () => {
     groups.forEach((group) => {
       const tagCounts = new globalThis.Map<string, number>();
       group.posts.forEach((post) => {
-        post.what_helped.forEach((tag) => {
+        const tags = Array.isArray(post.what_helped) ? post.what_helped : [];
+        tags.forEach((tag) => {
           tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
         });
       });
@@ -122,11 +125,25 @@ const MapView: React.FC = () => {
   }, [posts]);
 
   const filteredGroups = useMemo(() => {
-    let result = groupedPosts.filter(group => {
+    let result = groupedPosts.map(group => {
+      // Filter the posts inside the group directly based on filterMode
+      let filteredPosts = group.posts;
+      if (filterMode === 'stories') {
+        filteredPosts = group.posts.filter((p: any) => p.message && !p.message.startsWith('[RESOURCE'));
+      } else if (filterMode === 'resources') {
+        filteredPosts = group.posts.filter((p: any) => p.message && p.message.startsWith('[RESOURCE'));
+      }
+
+      return {
+        ...group,
+        posts: filteredPosts,
+        count: filteredPosts.length
+      };
+    }).filter(group => {
       const matchesSearch = group.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
         group.posts.some(post =>
-          post.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.what_helped.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+          (post.message && post.message.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (Array.isArray(post.what_helped) && post.what_helped.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
         );
 
       return matchesSearch && group.count > 0;
@@ -143,7 +160,7 @@ const MapView: React.FC = () => {
     }
 
     return result;
-  }, [groupedPosts, searchTerm, userLocation]);
+  }, [groupedPosts, searchTerm, userLocation, filterMode]);
 
   const selectedGroup = useMemo(() => {
     if (!selectedGroupId) return null;
@@ -215,7 +232,11 @@ const MapView: React.FC = () => {
       </div>
 
       {/* DESKTOP SPLIT DASHBOARD */}
-      <aside className={`hidden md:flex flex-row bg-white/95 backdrop-blur-3xl border border-white/40 shadow-[0_30px_60px_-15px_rgba(30,58,52,0.15)] z-20 overflow-hidden absolute top-6 left-6 bottom-6 rounded-[2.5rem] transition-all duration-300 ${selectedGroup ? 'w-[760px] lg:w-[840px] xl:w-[960px]' : 'w-[380px] lg:w-[420px] xl:w-[460px]'}`}>
+      <aside className={`hidden md:flex flex-row bg-white/80 backdrop-blur-3xl border border-white/60 shadow-[0_30px_60px_-15px_rgba(30,58,52,0.15)] z-20 overflow-hidden absolute top-6 left-6 bottom-6 rounded-[2.5rem] transition-all duration-300 ${selectedGroup ? 'w-[760px] lg:w-[840px] xl:w-[960px]' : 'w-[380px] lg:w-[420px] xl:w-[460px]'}`}>
+
+        {/* Ambient Glowing Blobs Behind Sidebar */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#448a7d]/10 rounded-full blur-[80px] pointer-events-none mix-blend-multiply" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#e57c6e]/10 rounded-full blur-[80px] pointer-events-none mix-blend-multiply" />
 
         {/* LEFT PANEL - CITIES LIST & DASHBOARD */}
         <div className="w-[380px] lg:w-[420px] xl:w-[460px] shrink-0 flex flex-col border-r border-[#448a7d]/10 bg-white/40 relative z-20">
@@ -228,11 +249,11 @@ const MapView: React.FC = () => {
                 <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
                   <span>{groupedPosts.length} Cities</span>
                   <span className="text-[#1e3a34]/20">•</span>
-                  <span>{posts.length} Notes</span>
+                  <span>{posts.length} Stories & Resources</span>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => navigate('/share')} className="h-10 w-10 rounded-xl bg-[#1e3a34] text-white flex items-center justify-center hover:bg-[#2d5a52] transition-colors shadow-sm active:scale-95" title="Share a note">
+                <button onClick={() => navigate('/share')} className="h-10 w-10 rounded-xl bg-[#1e3a34] text-white flex items-center justify-center hover:bg-[#2d5a52] transition-colors shadow-sm active:scale-95" title="Share your light">
                   {ICONS.Plus}
                 </button>
                 <button onClick={handleRefresh} disabled={refreshing} className="h-10 w-10 rounded-xl bg-gray-100 text-[#1e3a34] flex items-center justify-center hover:bg-gray-200 transition-colors shadow-sm active:scale-95 disabled:opacity-50" title="Refresh">
@@ -255,6 +276,26 @@ const MapView: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
+            {/* Framer Motion Segmented Filter */}
+            <div className="relative flex p-1.5 bg-gray-100/80 rounded-2xl">
+              {['all', 'stories', 'resources'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFilterMode(tab as any)}
+                  className={`flex-1 relative py-2.5 text-[11px] font-black uppercase tracking-widest z-10 transition-colors ${filterMode === tab ? 'text-[#1e3a34]' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {filterMode === tab && (
+                    <motion.div
+                      layoutId="filter-pill-desktop"
+                      className="absolute inset-0 bg-white rounded-xl shadow-sm z-[-1]"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* List of Cities */}
@@ -268,41 +309,48 @@ const MapView: React.FC = () => {
               <div className="flex flex-col items-center justify-center text-center h-56 px-6 opacity-60">
                 <div className="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-6">{ICONS.Search}</div>
                 <p className="font-black text-[#1e3a34] text-lg mb-2">No Cities Found</p>
-                <p className="text-sm text-gray-500 font-medium">We couldn't find any notes matching "{searchTerm}". Try adjusting your search.</p>
+                <p className="text-sm text-gray-500 font-medium">We couldn't find any items matching "{searchTerm}". Try adjusting your search.</p>
               </div>
             ) : (
-              filteredGroups.map(group => (
-                <div
-                  key={group.id}
-                  onClick={() => setSelectedGroupId(group.id)}
-                  className={`p-5 rounded-2xl transition-all duration-300 cursor-pointer border-2 group relative overflow-hidden ${selectedGroupId === group.id
-                    ? 'border-[#448a7d] bg-[#448a7d] text-white shadow-md -translate-y-0.5'
-                    : 'border-transparent bg-white shadow-sm hover:border-[#448a7d]/20 hover:shadow-md'
-                    }`}
-                >
-                  <div className="flex items-center justify-between mb-4 relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${selectedGroupId === group.id ? 'bg-white/20 text-white' : 'bg-[#e8f3f1] text-[#448a7d]'}`}>
-                        {ICONS.MapPin}
+              <AnimatePresence mode="popLayout">
+                {filteredGroups.map(group => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    key={group.id}
+                    onClick={() => setSelectedGroupId(group.id)}
+                    className={`p-5 rounded-2xl transition-all duration-300 cursor-pointer border-2 group relative overflow-hidden ${selectedGroupId === group.id
+                      ? 'border-[#448a7d] bg-[#448a7d] text-white shadow-md'
+                      : 'border-transparent bg-white shadow-sm hover:border-[#448a7d]/20 hover:shadow-md'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${selectedGroupId === group.id ? 'bg-white/20 text-white' : 'bg-[#e8f3f1] text-[#448a7d]'}`}>
+                          {ICONS.MapPin}
+                        </div>
+                        <div>
+                          <span className={`font-black text-base block tracking-tight ${selectedGroupId === group.id ? 'text-white' : 'text-[#1e3a34]'}`}>{group.city}</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedGroupId === group.id ? 'text-white/70' : 'text-gray-400'}`}>{group.country}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className={`font-black text-base block tracking-tight ${selectedGroupId === group.id ? 'text-white' : 'text-[#1e3a34]'}`}>{group.city}</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedGroupId === group.id ? 'text-white/70' : 'text-gray-400'}`}>{group.country}</span>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${selectedGroupId === group.id ? 'bg-white text-[#448a7d]' : 'bg-[#1e3a34] text-white'}`}>
-                      {group.count}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {group.topTags.map((tag, idx) => (
-                      <span key={`${tag}-${idx}`} className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${selectedGroupId === group.id ? 'border-white/30 bg-white/10 text-white' : 'border-[#448a7d]/10 bg-[#f9fbfa] text-[#448a7d]'}`}>
-                        {tag}
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${selectedGroupId === group.id ? 'bg-white text-[#448a7d]' : 'bg-[#1e3a34] text-white'}`}>
+                        {group.count}
                       </span>
-                    ))}
-                  </div>
-                </div>
-              ))
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.topTags.map((tag, idx) => (
+                        <span key={`${tag}-${idx}`} className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${selectedGroupId === group.id ? 'border-white/30 bg-white/10 text-white' : 'border-[#448a7d]/10 bg-[#f9fbfa] text-[#448a7d]'}`}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
@@ -324,7 +372,7 @@ const MapView: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[11px] text-white font-black uppercase tracking-widest bg-[#448a7d] px-4 py-2 rounded-full shadow-md">
-                      {selectedGroup.count} Notes
+                      {selectedGroup.count} Items
                     </span>
                     <button onClick={() => setSelectedGroupId(null)} className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors" title="Close">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -333,9 +381,20 @@ const MapView: React.FC = () => {
                 </div>
               </div>
               <div className="flex-grow overflow-y-auto p-8 space-y-5 no-scrollbar bg-gray-50/30">
-                {selectedGroup.posts.map((post, idx) => (
-                  <PostCard key={`${post.id}-${idx}`} post={post} />
-                ))}
+                <AnimatePresence mode="popLayout">
+                  {selectedGroup.posts.map((post, idx) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3, delay: idx * 0.05 }}
+                      key={`${post.id}`}
+                    >
+                      <PostCard post={post} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -370,9 +429,29 @@ const MapView: React.FC = () => {
                 {/* Pull Handle */}
                 <div className="mx-auto w-12 h-1.5 bg-gray-300 rounded-full mb-4" />
 
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-black text-xl text-[#1e3a34]">Explore Notes</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-black text-xl text-[#1e3a34]">Explore</h3>
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{posts.length} Total</span>
+                </div>
+
+                {/* Mobile Segmented Filter */}
+                <div className="relative flex p-1 bg-gray-100 rounded-2xl mb-2">
+                  {['all', 'stories', 'resources'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setFilterMode(tab as any)}
+                      className={`flex-1 relative py-2.5 text-[11px] font-black uppercase tracking-widest z-10 transition-colors ${filterMode === tab ? 'text-[#1e3a34]' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      {filterMode === tab && (
+                        <motion.div
+                          layoutId="filter-pill-mobile"
+                          className="absolute inset-0 bg-white rounded-xl shadow-sm z-[-1]"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      {tab}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -387,7 +466,7 @@ const MapView: React.FC = () => {
                   <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
                     <div className="w-16 h-16 bg-white shadow-sm text-gray-400 rounded-full flex items-center justify-center mb-4">{ICONS.Search}</div>
                     <p className="font-black text-[#1e3a34] text-lg mb-1">No Cities Found</p>
-                    <p className="text-xs text-gray-500 font-medium">We couldn't find any notes matching "{searchTerm}".</p>
+                    <p className="text-xs text-gray-500 font-medium">We couldn't find any items matching "{searchTerm}".</p>
                   </div>
                 ) : filteredGroups.map(group => (
                   <div
@@ -465,7 +544,7 @@ const MapView: React.FC = () => {
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate">{selectedGroup.country}</span>
                 </div>
                 <span className="flex-shrink-0 text-[11px] text-white font-black uppercase tracking-widest bg-[#1e3a34] px-3 py-1.5 rounded-full shadow-sm">
-                  {selectedGroup.count} Notes
+                  {selectedGroup.count} Items
                 </span>
               </div>
             </div>
@@ -473,9 +552,20 @@ const MapView: React.FC = () => {
 
           {/* Scrollable List */}
           <div className="flex-grow overflow-y-auto px-4 pt-6 pb-28 space-y-4 relative z-10 no-scrollbar">
-            {selectedGroup.posts.map((post, idx) => (
-              <PostCard key={`${post.id}-${idx}`} post={post} />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {selectedGroup.posts.map((post, idx) => (
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  key={`${post.id}`}
+                >
+                  <PostCard post={post} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
 
           {/* Floating Add Note Action */}
@@ -484,7 +574,7 @@ const MapView: React.FC = () => {
               onClick={() => navigate('/share')}
               className="w-full max-w-sm bg-[#1e3a34] pointer-events-auto text-white py-4 rounded-[1.5rem] shadow-[0_12px_24px_-8px_rgba(30,58,52,0.6)] font-black uppercase tracking-widest text-[12px] flex items-center justify-center gap-2 active:scale-95 transition-all outline-none border border-white/10"
             >
-              {ICONS.Plus} Add Note to {selectedGroup.city}
+              {ICONS.Plus} Share to {selectedGroup.city}
             </button>
           </div>
         </div>

@@ -45,7 +45,12 @@ export enum ResourceType {
   VIDEO = 'video',
   PUBLICATION = 'publication',
   WEBSITE = 'website',
-  TOOL = 'tool'
+  TOOL = 'tool',
+  BOOK = 'book',
+  PODCAST = 'podcast',
+  SONG = 'song',
+  SOCIAL_MEDIA = 'social_media',
+  MEME = 'meme'
 }
 
 export interface Resource {
@@ -56,9 +61,14 @@ export interface Resource {
   title: string;
   url: string;
   description?: string;
+  alias?: string;
   submitterEmail?: string;
+  qualifications?: string;
   isVerifiedPartner?: boolean;
   category?: 'general' | 'community' | 'partner';
   location?: string; // Optional field for partner resources
   imageUrl?: string;
+  helpful_count?: number;
+  supportive_count?: number;
+  exploring_count?: number;
 }

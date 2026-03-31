@@ -37,8 +37,10 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
 
 // Cache management
-const CACHE_KEY = 'starlings_approved_posts';
+const CACHE_KEY = 'starlings_approved_posts_v2';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 let inFlightRequest: Promise<Post[]> | null = null;
 
 const getCachedPosts = (): { data: Post[], timestamp: number } | null => {
@@ -68,6 +70,49 @@ const setCachedPosts = (posts: Post[]): void => {
   }
 };
 
+const getCachedResources = (): { data: Resource[], timestamp: number } | null => {
+  try {
+    const cached = localStorage.getItem('starlings_approved_resources_v2');
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    const age = Date.now() - parsed.timestamp;
+    if (age < CACHE_TTL) return parsed;
+    localStorage.removeItem('starlings_approved_resources_v2');
+    return null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const setCachedResources = (resources: Resource[]): void => {
+  try {
+    localStorage.setItem('starlings_approved_resources_v2', JSON.stringify({
+      data: resources,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.error('Error writing resource cache:', e);
+  }
+};
+
+// ----------------------------------------------------
+// ANTI-ABUSE GUARDRAIL: Rate Limiter (Max 5 POSTs per 10s)
+// ----------------------------------------------------
+const actionHistory: number[] = [];
+const checkRateLimit = (): boolean => {
+  const now = Date.now();
+  // Clear actions older than 10 seconds
+  while (actionHistory.length > 0 && actionHistory[0] < now - 10000) {
+    actionHistory.shift();
+  }
+  // Cap at 5 actions per 10 second window
+  if (actionHistory.length >= 5) {
+    return false; // Block actions
+  }
+  actionHistory.push(now);
+  return true; // Allow actions
+};
+
 export const apiService = {
   generateAlias(): string {
     const adjectives = [
@@ -89,8 +134,8 @@ export const apiService = {
   },
 
   async getApprovedPosts(skipCache?: boolean): Promise<Post[]> {
-    // Return cached data immediately if valid (unless skipping cache for manual refresh)
-    if (!skipCache) {
+    // Return cached data immediately if valid (unless skipping cache for manual refresh or running locally)
+    if (!skipCache && !isLocalhost) {
       const cached = getCachedPosts();
       if (cached) {
         return cached.data;
@@ -105,15 +150,42 @@ export const apiService = {
     // Make new request and cache the promise to prevent duplicate requests
     inFlightRequest = (async () => {
       try {
-        const res = await fetch(GAS_URL);
+        const res = await fetch(`${GAS_URL}?action=getStories`);
         const data = await res.json();
 
         const approvedPosts = Array.isArray(data) ? data : [];
-        const normalizedApproved = approvedPosts.map(apiService.ensureAlias) as Post[];
+        const normalizedApproved = approvedPosts.map(p => {
+          const post = apiService.ensureAlias(p) as Post;
+          // Protect against users typing plaintext strings into the 'what_helped' tags column
+          const rawTags: unknown = post.what_helped;
+          if (typeof rawTags === 'string') {
+            try {
+              post.what_helped = JSON.parse(rawTags);
+            } catch (e) {
+              // If it's a comma separated string, split it, otherwise wrap it
+              post.what_helped = rawTags.includes(',')
+                ? rawTags.split(',').map((s: string) => s.trim())
+                : [rawTags];
+            }
+          }
+          if (!Array.isArray(post.what_helped)) {
+            post.what_helped = [];
+          }
+          return post;
+        });
 
         if (normalizedApproved.length > 0) {
           const uniquePostsMap = new Map<string, Post>();
           normalizedApproved.forEach(post => uniquePostsMap.set(post.id, post));
+
+          // Inject MOCK_POSTS for demonstration purposes so the Map always has rich examples
+          const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
+          fallback.forEach(mock => {
+            if (!uniquePostsMap.has(mock.id)) {
+              uniquePostsMap.set(mock.id, mock);
+            }
+          });
+
           const uniquePosts = Array.from(uniquePostsMap.values());
           const result = uniquePosts.map(apiService.ensureAlias) as Post[];
           setCachedPosts(result);
@@ -138,6 +210,11 @@ export const apiService = {
   },
 
   async submitPost(postData: Partial<Post>): Promise<{ success: boolean; flagged: boolean }> {
+    if (!checkRateLimit()) {
+      console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
+      return { success: true, flagged: false }; // Silently drop, UI acts like success
+    }
+
     let flagged = false;
     const combinedText = postData.message || '';
     for (const pattern of BANNED_PATTERNS) {
@@ -162,13 +239,14 @@ export const apiService = {
     } as Post;
 
     try {
+      const payload = { ...newPost, action: "addStory" };
       const res = await fetch(GAS_URL, {
         method: 'POST',
         redirect: 'follow',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8'
         },
-        body: JSON.stringify(newPost)
+        body: JSON.stringify(payload)
       });
 
       const result = await res.json();
@@ -206,13 +284,14 @@ export const apiService = {
 
       for (const post of queue) {
         try {
+          const payload = { ...post, action: "addStory" };
           const res = await fetch(GAS_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: {
               'Content-Type': 'text/plain;charset=utf-8'
             },
-            body: JSON.stringify(post)
+            body: JSON.stringify(payload)
           });
           const result = await res.json();
           if (!result.success) {
@@ -261,30 +340,169 @@ export const apiService = {
     } catch { return []; }
   },
 
-  async getApprovedResources(): Promise<Resource[]> {
-    // For this prototype, we will rely on mock data combined with any offline queued resources if implemented
-    return MOCK_RESOURCES as Resource[];
+  async getApprovedResources(skipCache?: boolean): Promise<Resource[]> {
+    const cached = getCachedResources();
+    if (cached && !skipCache && !isLocalhost) {
+      // Fire and forget background sync
+      (async () => {
+        try {
+          const res = await fetch(`${GAS_URL}?action=getResources`);
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const mappedData: Resource[] = data.map(r => ({
+              ...r,
+              type: r.resource_type || r.type,
+              imageUrl: r.image_url || r.imageUrl,
+              submitterEmail: r.submitter_email || r.submitterEmail,
+              category: 'community', // FORCE to community accordion
+            }));
+            const unique = new Map<string, Resource>();
+            // Put mappedData in FIRST, then inject mocks if they don't overwrite
+            mappedData.forEach(r => unique.set(r.id, r));
+            MOCK_RESOURCES.forEach(m => {
+              if (!unique.has(m.id)) unique.set(m.id, m as Resource);
+            });
+            setCachedResources(Array.from(unique.values()));
+          }
+        } catch (e) { }
+      })();
+      return cached.data;
+    }
+
+    try {
+      console.log("Fetching live resources from Google Sheets...");
+      const res = await fetch(`${GAS_URL}?action=getResources`);
+      const data = await res.json();
+      console.log("RAW GOOGLE SHEETS payload:", data);
+
+      if (Array.isArray(data) && data.length > 0) {
+        const mappedData: Resource[] = data.map(r => ({
+          ...r,
+          type: r.resource_type || r.type,
+          imageUrl: r.image_url || r.imageUrl,
+          submitterEmail: r.submitter_email || r.submitterEmail,
+          category: 'community', // FORCE to community accordion
+        }));
+
+        // Put Live Google Sheets data in FIRST entirely!
+        const finalArr = [...mappedData];
+
+        // Then append mock data ONLY if ID doesn't already exist
+        MOCK_RESOURCES.forEach(m => {
+          if (!finalArr.find(r => r.id === m.id)) {
+            finalArr.push(m as Resource);
+          }
+        });
+
+        console.log("Mapped Final Resources Array:", finalArr);
+        setCachedResources(finalArr);
+        return finalArr;
+      }
+      setCachedResources(MOCK_RESOURCES as Resource[]);
+      return MOCK_RESOURCES as Resource[];
+    } catch (err) {
+      console.error("Failed to fetch Live_Resources:", err);
+      return MOCK_RESOURCES as Resource[];
+    }
   },
 
   async submitResource(resourceData: Partial<Resource>): Promise<{ success: boolean }> {
-    const newResource: Resource = {
+    if (!checkRateLimit()) {
+      console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
+      return { success: true };
+    }
+
+    const payload = {
+      action: "addResource",
       id: Math.random().toString(36).substring(7),
       timestamp: new Date().toISOString(),
-      status: PostStatus.PENDING, // Needs approval
-      type: resourceData.type || ResourceType.WEBSITE,
+      status: PostStatus.PENDING,
+      resource_type: resourceData.type || ResourceType.WEBSITE,
       title: resourceData.title || '',
       url: resourceData.url || '',
       description: resourceData.description || '',
+      alias: resourceData.alias || '',
       submitterEmail: resourceData.submitterEmail || '',
+      qualifications: resourceData.qualifications || '',
+      city: 'Unknown'
     };
 
-    // In a real app this would be a fetch POST request to the backend or Google Apps Script. 
-    // We simulate a successful network submission going to "Pending" status here.
-    console.log("Submitting new resource to pending queue:", newResource);
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      return { success: result.success };
+    } catch (e) {
+      console.error(e);
+      return { success: true }; // Optimistic fail
+    }
+  },
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+  async submitQuestion(question: string): Promise<{ success: boolean; flagged: boolean }> {
+    if (!checkRateLimit()) {
+      console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
+      return { success: true, flagged: false };
+    }
 
-    return { success: true };
+    let flagged = false;
+    const qLower = question.toLowerCase();
+    for (const pattern of BANNED_PATTERNS) {
+      if (pattern.test(question)) {
+        flagged = true;
+        break;
+      }
+    }
+    const FLAGGED_WORDS = ['spam', 'abuse', 'slur', 'hate', 'suicide', 'self-harm'];
+    if (FLAGGED_WORDS.some(w => qLower.includes(w))) {
+      flagged = true;
+    }
+
+    const payload = {
+      action: "addQA",
+      id: Math.random().toString(36).substring(7),
+      timestamp: new Date().toISOString(),
+      status: "PENDING",
+      question,
+      flagged
+    };
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
+    } catch (e) {
+      console.error(e);
+      return { success: true, flagged };
+    }
+  },
+
+  async incrementInsight(resourceId: string, reactionType: 'helpful' | 'supportive' | 'exploring'): Promise<{ success: boolean }> {
+    if (!checkRateLimit()) {
+      console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
+      return { success: true }; // Predict true so UI doesn't crash, but it won't persist to GS
+    }
+
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "incrementInsight", resourceId, reactionType })
+      });
+      const result = await res.json();
+      return { success: result.success };
+    } catch (e) {
+      console.error("Failed to increment insight", e);
+      return { success: false };
+    }
   }
 };

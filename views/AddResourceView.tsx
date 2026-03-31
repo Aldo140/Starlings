@@ -155,6 +155,11 @@ const AddResourceView: React.FC = () => {
                                 <option value={ResourceType.VIDEO}>Video</option>
                                 <option value={ResourceType.PUBLICATION}>Publication</option>
                                 <option value={ResourceType.TOOL}>Tool</option>
+                                <option value={ResourceType.BOOK}>Book</option>
+                                <option value={ResourceType.PODCAST}>Podcast</option>
+                                <option value={ResourceType.SONG}>Song</option>
+                                <option value={ResourceType.SOCIAL_MEDIA}>Social Media Channel</option>
+                                <option value={ResourceType.MEME}>Meme / Image</option>
                             </select>
                         </div>
                     </div>

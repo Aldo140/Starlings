@@ -247,6 +247,46 @@ export const MOCK_POSTS = [
     what_helped: ["Trusted friend", "Boundaries"],
     alias: "Amber Ridge",
     flagged: false
+  },
+  // Map-based Mock Resources (To demonstrate the new feature)
+  {
+    id: "r_map_1",
+    timestamp: new Date().toISOString(),
+    status: "approved",
+    country: "Canada",
+    city: "Toronto",
+    lat: 43.66,
+    lng: -79.4,
+    message: "[RESOURCE - Support Group] Youth Peer Support Meetup | Link: https://example.com/meetup\n\nReally helpful safe space for teens in the GTA dealing with family addiction. We meet every Tuesday.\n\nRecommended by: Harbord Teen",
+    what_helped: [],
+    alias: "System",
+    flagged: false
+  },
+  {
+    id: "r_map_2",
+    timestamp: new Date().toISOString(),
+    status: "approved",
+    country: "Canada",
+    city: "Vancouver",
+    lat: 49.25,
+    lng: -123.1,
+    message: "[RESOURCE - Website] BC Youth Centers Directory | Link: https://example.com/bc-dir\n\nA great list of local places that take youth walk-ins for therapy and peer groups. Saved me a lot of time searching.\n\nRecommended by: West Coast Ally",
+    what_helped: [],
+    alias: "System",
+    flagged: false
+  },
+  {
+    id: "r_map_3",
+    timestamp: new Date().toISOString(),
+    status: "approved",
+    country: "Canada",
+    city: "Halifax",
+    lat: 44.65,
+    lng: -63.6,
+    message: "[RESOURCE - Tool] Atlantic Healing Workbook | Link: https://example.com/ns-workbook\n\nA free printable workbook designed by a local counselor. Really helps with grounding exercises when things get overwhelming at home.\n\nRecommended by: Anonymous",
+    what_helped: [],
+    alias: "System",
+    flagged: false
   }
 ];
 
@@ -287,39 +327,148 @@ export const MOCK_RESOURCES: Resource[] = [
     imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800'
   },
 
-  // COMMUNITY RESOURCES
+  // COMMUNITY RESOURCES - BOOKS
   {
-    id: "r4",
+    id: "book_1",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
-    type: ResourceType.VIDEO,
-    title: "Healing Family Trauma",
-    url: "https://example.com/video1",
-    description: "Recommended by 'HopefulOwl': A short, powerful documentary on escaping the cycle of family addiction.",
+    type: ResourceType.BOOK,
+    title: "The Body Keeps the Score",
+    url: "https://example.com/book1",
+    description: "Recommended by 'Bookworm': A transformative book that helped me understand how family trauma physically affected me.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "r5",
+    id: "book_2",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
-    type: ResourceType.PUBLICATION,
-    title: "Finding Your Way Toolkit",
-    url: "https://example.com/guide",
-    description: "Recommended by 'Sarah': A free digital guide explaining the science of addiction and resilience strategies.",
+    type: ResourceType.BOOK,
+    title: "Understanding Co-dependency",
+    url: "https://example.com/book2",
+    description: "Recommended by 'Alex': A great read about breaking codependent habits when you grew up with a parent struggling with addiction.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1456406644174-8ddd4cd52a06?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES - PODCASTS
+  {
+    id: "pod_1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.PODCAST,
+    title: "Adult Child Podcast",
+    url: "https://example.com/pod1",
+    description: "Recommended by 'ListenWell': Deep dives into what it means to be an adult child of alcoholic parents. Hilarious and healing.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1590602847861-f357a80277bd?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "r6",
+    id: "pod_2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.PODCAST,
+    title: "We Can Do Hard Things",
+    url: "https://example.com/pod2",
+    description: "Recommended by 'Jane': Not just about addiction, but about setting boundaries and dealing with difficult family dynamics.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1478147424044-ee3654e56eb6?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES - SONGS
+  {
+    id: "song_1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.SONG,
+    title: "Matilda - Harry Styles",
+    url: "https://example.com/song1",
+    description: "Recommended by 'MusicHeals': 'You can let it go, you can throw a party full of everyone you know, and not invite your family.' Needs no explanation.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "song_2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.SONG,
+    title: "Family Line - Conan Gray",
+    url: "https://example.com/song2",
+    description: "Recommended by 'BlueSky': A song about looking at your family trauma and realizing it stops with you.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES - SOCIAL MEDIA
+  {
+    id: "social_1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.SOCIAL_MEDIA,
+    title: "@TheHolisticPsychologist",
+    url: "https://example.com/social1",
+    description: "Recommended by 'Sam': Great instagram account outlining reparenting yourself and navigating tough family situations.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1611162617263-4ec3060a058e?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "social_2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.SOCIAL_MEDIA,
+    title: "@NedraTawwab",
+    url: "https://example.com/social2",
+    description: "Recommended by 'Boundaries101': The absolute best content on setting practical, guilt-free boundaries with toxic family members.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES - WEBSITES
+  {
+    id: "web_1",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
     type: ResourceType.WEBSITE,
     title: "Toronto Youth Support Group",
     url: "https://example.com/torontoyouth",
-    description: "A community-run peer support network holding weekly virtual meetings for teens in the GTA.",
+    description: "Recommended by 'CityAlly': A community-run peer support network holding weekly virtual meetings for teens in the GTA.",
     category: 'community',
     imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "web_2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE,
+    title: "Finch: Self Care Widget",
+    url: "https://example.com/finch",
+    description: "Recommended by 'Sarah': This site/app turns self care into a fun little game. Really helps me remember to drink water and take deep breaths.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=800'
+  },
+
+  // COMMUNITY RESOURCES - MEMES & IMAGES
+  {
+    id: "meme_1",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.MEME,
+    title: "'Everything is Fine' Dog",
+    url: "https://example.com/meme1",
+    description: "Recommended by 'HumorHeals': When my parent tells me 'we're a normal family' while the house is metaphorically on fire. Humor is how I cope.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: "meme_2",
+    timestamp: new Date().toISOString(),
+    status: PostStatus.APPROVED,
+    type: ResourceType.MEME,
+    title: "Therapist Nodding Meme",
+    url: "https://example.com/meme2",
+    description: "Recommended by 'Anon': For when you drop the casual lore about your childhood and your therapist just writes aggressively.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1527362950785-f487a7c1fe48?auto=format&fit=crop&q=80&w=800'
   },
 
   // PARTNER RESOURCES

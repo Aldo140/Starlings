@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ICONS, COLORS } from '../constants.tsx';
+import { StarlingFlock } from './StarlingFlock';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,20 +17,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className={`flex flex-col selection:bg-[#448a7d] selection:text-white ${location.pathname === '/map' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'
       }`}>
+      {location.pathname !== '/map' && <StarlingFlock />}
       <div className="bg-[#fbd6d1] border-b border-[#e57c6e]/20 py-3 px-4 flex-shrink-0 text-center z-50">
         <p className="text-xs md:text-sm font-semibold text-[#1e3a34]">
-          Starlings is not crisis response. If you are in immediate danger, call 988 or local emergency services.
-          <a href="https://starlings.ca/crisis" className="ml-2 underline hover:text-[#e57c6e] transition-colors">Get help now</a>
+          Starlings is not crisis support. If you need support right now, you can find care options
+          <a href="https://starlings.ca/crisis" className="ml-1 underline hover:text-[#e57c6e] transition-colors">here</a>.
         </p>
       </div>
 
       <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-white z-[5000] flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#1e3a34] flex items-center justify-center text-white shadow-lg shadow-teal-900/10">
-              {ICONS.Heart}
-            </div>
-            <span className="font-bold text-2xl tracking-tight text-[#1e3a34]">starlings</span>
+          <Link to="/" className="flex items-center group">
+            <img src="/logo-star.avif" alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -109,9 +108,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </div>
               </div>
             </div>
-            <p className="text-xs text-teal-100/40 border-t border-white/5 pt-12 text-center md:text-left">
-              &copy; {new Date().getFullYear()} Starlings Community.
-            </p>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-teal-100/40 border-t border-white/5 pt-12 text-center md:text-left">
+              <p>&copy; {new Date().getFullYear()} Starlings Community.</p>
+              <p>Starlings is not crisis support. If you need support right now, you can find care options <a href="https://starlings.ca/crisis" className="underline hover:text-[#e57c6e] transition-colors">here</a>.</p>
+            </div>
           </div>
         </footer>
       )}

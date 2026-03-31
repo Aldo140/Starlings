@@ -37,10 +37,12 @@ The map uses `preferCanvas: true` in the Leaflet configuration. This ensures tha
 ## 🚦 Feature Logic
 
 ### Moderation Workflow (Map & Resources)
-1. **Submission**: Users fill out guided prompts for map sharing or recommend a resource.
+1. **Submission Options**: Users can submit a "Note of Hope" or "Recommend a Resource" directly from the map sharing view (`/share`). 
+   - **Location-Based**: If they attach a city to a Note or a Resource, it is plotted geographically on the map.  
+   - **Global Resources**: If a recommended resource has no specific city attachment (like a book or podcast), it bypasses the map and is queued for the global "Resources" tab.
 2. **Auto-Flagging**: The `BANNED_PATTERNS` regex automatically checks for URLs, emails, phone numbers, and crisis keywords across map notes.
-3. **Storage**: Submissions are sent directly via a `POST` request to the "Pending" tab in the Google Sheet. If offline, they are queued locally until connection is restored.
-4. **Approval**: A moderator moves the row to an "Approved" tab, which the frontend then fetches for either Posts or Resources.
+3. **Storage & Privacy Shielding**: Submissions are sent directly via a `POST` request to the "Pending" tab in the Google Sheet. This intentionally acts as a privacy shield for the 1-year pilot; no identifiable IP tracking data is stored alongside the Google Sheet submission. If offline, they are queued locally until connection is restored.
+4. **Approval**: A moderator drops into the Google Sheet to move the row to an "Approved" tab, which the frontend then fetches for either Posts or Resources.
 
 ### Safety & Crisis
 The app features a persistent **Crisis Banner**. Per the Starlings policy, the `ShareView` requires explicit agreement to three safety checks (Age, Anonymity, and Moderation) before the "Share Note" button becomes active.

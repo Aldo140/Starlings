@@ -388,7 +388,8 @@ const ResourcesView: React.FC = () => {
                             </div>
 
                             {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                            {activeCommunityIndex && (
+                            <div className="hidden xl:block">
+                                {activeCommunityIndex && (
                                     <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f3f1] rounded-full opacity-10 pointer-events-none"></div>
@@ -422,6 +423,7 @@ const ResourcesView: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
+                            </div>
                         </section>
 
                         {/* PARTNERS SECTION */}

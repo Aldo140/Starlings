@@ -128,7 +128,7 @@ const Landing: React.FC = () => {
             ].map((item, idx) => (
               <div key={idx} className="group bg-white rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-[0_20px_40px_-10px_rgba(0,0,0,0.05)] border border-gray-100 hover:shadow-2xl transition-all duration-700 hover:-translate-y-2">
                 <div className="h-44 md:h-56 overflow-hidden relative">
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
+                  <img src={item.img} alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                   <div className={`absolute top-4 md:top-6 left-4 md:left-6 w-10 md:w-14 h-10 md:h-14 ${item.color} rounded-xl flex items-center justify-center text-white shadow-xl transition-transform group-hover:rotate-6`}>
                     <div className="scale-90 md:scale-110">{item.icon}</div>
                   </div>
@@ -169,12 +169,12 @@ const Landing: React.FC = () => {
             <div className="relative">
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="space-y-3 md:space-y-4 pt-6 md:pt-10">
-                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
-                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
+                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
+                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
                 </div>
                 <div className="space-y-3 md:space-y-4">
-                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
-                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
+                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
+                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
                 </div>
               </div>
             </div>
@@ -186,8 +186,8 @@ const Landing: React.FC = () => {
       < section className="relative bg-[#1e3a34] py-20 md:py-32 overflow-hidden" >
         {/* Background elements */}
         < div className="absolute inset-0 pointer-events-none" >
-          <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] bg-[#2d5a52] rounded-full blur-[120px] opacity-60"></div>
-          <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] max-w-[700px] bg-[#448a7d] rounded-full blur-[150px] opacity-30"></div>
+          <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] bg-[#2d5a52] rounded-full blur-3xl opacity-40"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] max-w-[700px] bg-[#448a7d] rounded-full blur-2xl opacity-20"></div>
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
         </div >
 
@@ -220,7 +220,7 @@ const Landing: React.FC = () => {
             </div>
 
             <div className="lg:col-span-6">
-              <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden transform lg:scale-105">
+              <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden">
                 {/* Decorative accent */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#fbd6d1] to-[#e8f3f1] opacity-50 rounded-bl-[100%] pointer-events-none"></div>
 

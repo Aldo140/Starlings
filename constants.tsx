@@ -301,7 +301,7 @@ export const MOCK_RESOURCES: Resource[] = [
     url: "https://www.starlings.ca/",
     description: "Support for youth impacted by parental substance use through caregiver supports, youth leadership, and peer connection.",
     category: 'general',
-    imageUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=800'
+    imageUrl: '/images/starlingsWebsite.png'
   },
   {
     id: "r2",
@@ -457,7 +457,7 @@ export const MOCK_RESOURCES: Resource[] = [
     url: "https://example.com/meme1",
     description: "Recommended by 'HumorHeals': When my parent tells me 'we're a normal family' while the house is metaphorically on fire. Humor is how I cope.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=800'
+    imageUrl: '/images/meme1.gif'
   },
   {
     id: "meme_2",
@@ -468,7 +468,7 @@ export const MOCK_RESOURCES: Resource[] = [
     url: "https://example.com/meme2",
     description: "Recommended by 'Anon': For when you drop the casual lore about your childhood and your therapist just writes aggressively.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1527362950785-f487a7c1fe48?auto=format&fit=crop&q=80&w=800'
+    imageUrl: '/images/meme2.jpeg'
   },
 
   // PARTNER RESOURCES

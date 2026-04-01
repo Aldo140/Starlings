@@ -4,6 +4,7 @@ import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
 import { ICONS, MOCK_RESOURCES } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
     const [liked, setLiked] = useState(false);
@@ -43,7 +44,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
         <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 hover:-translate-y-1 transition-all group">
             {resource.type === ResourceType.MEME && resource.imageUrl && (
                 <div className="mb-6 rounded-2xl overflow-hidden shadow-inner border border-gray-100 bg-gray-50 flex items-center justify-center">
-                    <img src={resource.imageUrl} alt={resource.title} className="w-full max-h-64 object-contain mix-blend-multiply" />
+                    <img src={resource.imageUrl} alt={resource.title} className="w-full max-h-64 object-contain" />
                 </div>
             )}
 
@@ -99,6 +100,7 @@ const ResourcesView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(null);
     const [activeGeneralIndex, setActiveGeneralIndex] = useState<number>(0);
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchResources = async () => {
@@ -126,355 +128,457 @@ const ResourcesView: React.FC = () => {
         tool: { color: 'bg-amber-500', label: 'Tool' },
     } as Record<string, { color: string, label: string }>;
 
+    // BUCKETS CONFIGURATION (Shared across Mobile, Tablet, and Desktop layouts)
+    const COMMUNITY_BUCKETS = [
+        { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Book className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30' },
+        { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Headphones className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-purple-500', bg: 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/30' },
+        { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Music className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-pink-500', bg: 'bg-gradient-to-br from-pink-400 to-pink-600 shadow-pink-500/30' },
+        { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Share2 className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-blue-500', bg: 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-500/30' },
+        { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Globe className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
+        { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <ImageIcon className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
+    ];
+
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
+        <>
+            <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
 
-            {/* STUNNING HERO SECTION */}
-            <div className="relative overflow-hidden rounded-[3rem] bg-[#1e3a34] text-white p-10 md:p-16 mb-16 shadow-2xl">
-                <div className="absolute inset-0 opacity-60 bg-[url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center mix-blend-overlay"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a34] via-[#1e3a34]/80 to-transparent"></div>
+                {/* STUNNING HERO SECTION */}
+                <div className="relative overflow-hidden rounded-[3rem] bg-[#1e3a34] text-white p-10 md:p-16 mb-16 shadow-2xl">
+                    <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a34] via-[#1e3a34]/80 to-transparent"></div>
 
-                <div className="relative z-10 max-w-3xl">
-                    <h1 className="text-5xl md:text-7xl font-black italic tracking-tight mb-6">Light the way.</h1>
-                    <p className="text-gray-300 font-medium md:text-xl max-w-2xl mb-10 leading-relaxed">
-                        Resources suggested by Peers and Community Partners
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <Link
-                            to="/add-resource?mode=recommend"
-                            className="w-full sm:w-auto bg-[#e57c6e] text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-[#d46a5c] shadow-[0_10px_30px_-10px_rgba(229,124,110,0.5)] hover:-translate-y-1 transition-all active:scale-95"
-                        >
-                            {ICONS.Plus} Recommend
-                        </Link>
-                        <Link
-                            to="/add-resource?mode=apply"
-                            className="w-full sm:w-auto bg-white/10 backdrop-blur-md text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-white/20 border border-white/20 shadow-md hover:-translate-y-1 transition-all active:scale-95"
-                        >
-                            {ICONS.Users} Become a Community Partner
-                        </Link>
+                    <div className="relative z-10 max-w-3xl">
+                        <h1 className="text-5xl md:text-7xl font-black italic tracking-tight mb-6">Light the way.</h1>
+                        <p className="text-gray-300 font-medium md:text-xl max-w-2xl mb-10 leading-relaxed">
+                            Resources suggested by Peers and Community Partners
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <Link
+                                to="/add-resource?mode=recommend"
+                                className="w-full sm:w-auto bg-[#e57c6e] text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-[#d46a5c] shadow-[0_10px_30px_-10px_rgba(229,124,110,0.5)] hover:-translate-y-1 transition-all active:scale-95"
+                            >
+                                {ICONS.Plus} Recommend
+                            </Link>
+                            <Link
+                                to="/add-resource?mode=apply"
+                                className="w-full sm:w-auto bg-white/20 text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-white/30 border border-white/30 shadow-md hover:-translate-y-1 transition-all active:scale-95"
+                            >
+                                {ICONS.Users} Become a Community Partner
+                            </Link>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center h-64">
-                    <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-[#1e3a34]/40 font-bold text-xs uppercase tracking-widest">Loading resources...</p>
-                </div>
-            ) : resources.length === 0 ? (
-                <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-[3rem] border border-gray-100">
-                    <p className="text-gray-500 font-medium mb-6">No resources found yet.</p>
-                    <Link to="/add-resource" className="text-[#448a7d] font-bold underline hover:text-[#1e3a34] transition-colors">
-                        Be the first to recommend one
-                    </Link>
-                </div>
-            ) : (
-                <div className="space-y-20">
-                    {/* GENERAL RESOURCES SECTION */}
-                    <section>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-14 h-14 bg-[#e8f3f1] text-[#448a7d] rounded-2xl flex items-center justify-center shadow-sm">
-                                <div className="scale-125">{ICONS.Info}</div>
-                            </div>
-                            <div>
-                                <h2 className="text-3xl font-black text-[#1e3a34] italic tracking-tight">Community Partners</h2>
-                                <p className="text-gray-500 font-medium">Community Partners are Starlings-trained organizations offering specialized, verified care for youth and adults who have grown up with parental substance use, listed by location. Each partner is independent and responsible for their care.</p>
-                            </div>
-                        </div>
-                        {/* ACCORDION GALLERY CONTAINER for Community Partners */}
-                        <div className="flex flex-col md:flex-row w-full h-[600px] gap-2 md:gap-4 mt-8 mix-blend-normal">
-                            {resources.filter(r => r.category === 'general').map((resource, index) => {
-                                const config = typeConfig[resource.type] || typeConfig.website;
-                                const isActive = activeGeneralIndex === index;
-
-                                let recommender = null;
-                                let cleanDescription = resource.description || '';
-                                const recMatch = cleanDescription.match(/^Recommended by '([^']+)':\s*(.*)/);
-                                if (recMatch) {
-                                    recommender = recMatch[1];
-                                    cleanDescription = recMatch[2];
-                                }
-
-                                return (
-                                    <div
-                                        key={resource.id}
-                                        onMouseEnter={() => setActiveGeneralIndex(index)}
-                                        onClick={() => setActiveGeneralIndex(index)}
-                                        className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] transition-all duration-[800ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end ${isActive ? 'flex-[10] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)] border-2 border-indigo-100' : 'flex-[1] shadow-sm border border-gray-100/50 hover:flex-[1.5]'}`}
-                                    >
-                                        <div className="absolute inset-0">
-                                            {resource.imageUrl ? (
-                                                <img src={resource.imageUrl} alt={resource.title} className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`} />
-                                            ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center text-indigo-500/20">
-                                                    <div className="scale-[3]">{ICONS.Heart}</div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Gradient Overlay */}
-                                        <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-40 group-hover:opacity-60'}`}></div>
-
-                                        {/* Content Wrapper */}
-                                        <div className="relative z-10 p-5 md:p-10 w-full md:min-w-[500px] flex-shrink-0 transition-opacity duration-500 pointer-events-none">
-                                            {/* ACTIVE CONTENT */}
-                                            <div className={`flex flex-col transform transition-all duration-[800ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-100' : 'translate-y-16 opacity-0 absolute bottom-0'}`}>
-                                                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4 w-full">
-                                                    <span className={`text-[9px] md:text-[10px] text-white shadow-xl font-black uppercase tracking-widest px-3 md:px-4 py-1.5 md:py-2 rounded-full ${config.color} border border-white/20 backdrop-blur-md`}>
-                                                        {config.label}
-                                                    </span>
-                                                    {recommender && (
-                                                        <div className="flex items-center gap-1.5 md:gap-2">
-                                                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center text-[10px] md:text-xs font-black shadow-lg">
-                                                                {recommender.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#e8f3f1]">Found by {recommender}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <h3 className="text-white font-black text-2xl md:text-5xl leading-tight tracking-tight mb-2 md:mb-4 drop-shadow-md">
-                                                    {resource.title}
-                                                </h3>
-
-                                                <p className="text-indigo-100 font-medium text-xs md:text-base max-w-2xl leading-relaxed mb-4 md:mb-8 pointer-events-auto line-clamp-2 md:line-clamp-none">
-                                                    {cleanDescription}
-                                                </p>
-
-                                                {isActive && (
-                                                    <a
-                                                        href={resource.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="pointer-events-auto inline-flex items-center justify-center md:justify-start gap-2 md:gap-3 text-white font-black text-[10px] md:text-xs uppercase tracking-[0.2em] w-full md:w-fit px-6 md:px-8 py-3 md:py-4 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] transition-all active:scale-95 group/btn"
-                                                    >
-                                                        Explore Resource <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* INACTIVE / VERTICAL BADGE */}
-                                        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-100 flex-col justify-end pb-4 md:pb-12'}`}>
-                                            <div className="transform md:-rotate-90 origin-center text-white/90 font-black md:uppercase tracking-[0.1em] md:tracking-[0.4em] text-xs md:text-xs whitespace-nowrap drop-shadow-xl flex items-center gap-2 md:gap-4">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                                {config.label}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-
-                    {/* COMMUNITY RESOURCES SECTION (BUCKETS) */}
-                    <section className="relative w-full pb-16">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
-                                <div className="scale-125">{ICONS.Users}</div>
-                            </div>
-                            <div>
-                                <h2 className="text-4xl font-black text-[#1e3a34] italic tracking-tight">Community Suggested Resources</h2>
-                                <p className="text-gray-500 font-medium text-lg mt-1">Peer-recommended videos, tools, and local support networks.</p>
-                            </div>
-                        </div>
-
-                        {/* SIMPLE LAYOUT: Tablet, Small Desktop */}
-                        <div className="hidden md:block xl:hidden space-y-16 mt-8 pb-10">
-                            {[
-                                { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 text-amber-500" /> },
-                                { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 text-purple-500" /> },
-                                { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 text-pink-500" /> },
-                                { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 text-blue-500" /> },
-                                { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 text-teal-500" /> },
-                                { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 text-orange-500" /> },
-                            ].map((bucket) => {
-                                const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
-
-                                if (bucketResources.length === 0) return null;
-
-                                return (
-                                    <div key={bucket.id} className="flex flex-col animate-reveal">
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center">
-                                                {bucket.icon}
-                                            </div>
-                                            <h3 className="font-black text-[#1e3a34] text-3xl tracking-tight">{bucket.label}</h3>
-                                            <span className="text-[10px] font-black text-[#e57c6e] bg-orange-50 border border-orange-100/50 px-3 py-1.5 rounded-full uppercase tracking-widest">{bucketResources.length} Items</span>
-                                        </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* PREMIUM ACCORDION GALLERY For Mobile (<768px) and Large Desktop (>1280px) */}
-                        <div className="grid md:hidden xl:grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8 mt-8">
-                            {[
-                                { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Book className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30' },
-                                { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Headphones className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-purple-500', bg: 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/30' },
-                                { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Music className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-pink-500', bg: 'bg-gradient-to-br from-pink-400 to-pink-600 shadow-pink-500/30' },
-                                { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Share2 className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-blue-500', bg: 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-500/30' },
-                                { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Globe className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
-                                { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <ImageIcon className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
-                            ].map((bucket, i) => {
-                                const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
-                                const isActive = activeCommunityIndex === bucket.id;
-
-                                return (
-                                    <div key={bucket.id} className="flex flex-col animate-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
-                                        <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-all duration-500 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-4 ring-indigo-500/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] scale-[1.02] z-10' : 'shadow-lg hover:shadow-2xl hover:-translate-y-2'}`}>
-                                            {bucket.bgIcon}
-                                            <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"></div>
-
-                                            <div className="relative z-10 flex w-full justify-between items-start">
-                                                <div className={`p-3 xl:p-4 rounded-xl xl:rounded-2xl bg-white ${bucket.color} shadow-inner`}>
-                                                    {bucket.icon}
-                                                </div>
-                                                <span className="text-[10px] xl:text-xs font-black text-white bg-black/20 backdrop-blur-md px-3 xl:px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">{bucketResources.length} Items</span>
-                                            </div>
-
-                                            <div className="relative z-10 w-full text-left mt-auto">
-                                                <h3 className="font-black text-white text-2xl xl:text-4xl tracking-tight leading-none drop-shadow-md mb-1 xl:mb-2">{bucket.label}</h3>
-                                                <div className="flex items-center gap-2 mt-2 xl:mt-3 text-white/90 text-xs xl:text-sm font-bold opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all duration-300 xl:translate-y-2 group-hover:translate-y-0">
-                                                    <span>{isActive ? 'Close Collection' : 'Explore Collection'}</span>
-                                                    <svg className={`w-3 h-3 xl:w-4 xl:h-4 transform transition-transform ${isActive ? 'rotate-180' : 'group-hover:translate-x-1'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={isActive ? "M5 15l7-7 7 7" : "M14 5l7 7m0 0l-7 7m7-7H3"} /></svg>
-                                                </div>
-                                            </div>
-                                        </button>
-
-                                        {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
-                                        <div className={`xl:hidden overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'} col-[1/-1]`}>
-                                            <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
-                                                {bucketResources.length === 0 ? (
-                                                    <div className="text-center py-8">
-                                                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">{ICONS.Heart}</div>
-                                                        <p className="text-gray-400 font-medium mb-3">No resources yet.</p>
-                                                        <Link to={`/add-resource?mode=recommend&type=${bucket.id}`} className="inline-block px-6 py-2 rounded-full bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wide text-xs hover:bg-indigo-100 transition-colors">Recommend</Link>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-4">
-                                                        {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                        <div className={`hidden xl:block overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] origin-top ${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}`}>
-                            {activeCommunityIndex && (
-                                <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f3f1] rounded-full blur-[100px] pointer-events-none"></div>
-
-                                    <div className="relative z-10 flex justify-between items-center mb-10">
-                                        <div>
-                                            <h3 className="text-4xl font-black text-[#1e3a34] capitalize italic tracking-tight">{activeCommunityIndex.replace('_', ' ')} Collection</h3>
-                                            <p className="text-gray-500 font-medium mt-2">Explore recommendations from peers below.</p>
-                                        </div>
-                                        <button onClick={() => setActiveCommunityIndex(null)} className="w-12 h-12 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors shadow-sm active:scale-95">
-                                            {ICONS.X}
-                                        </button>
-                                    </div>
-
-                                    <div className="relative z-10">
-                                        {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).length === 0 ? (
-                                            <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
-                                                <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 shadow-inner transform rotate-3">
-                                                    <div className="scale-[2]">{ICONS.Heart}</div>
-                                                </div>
-                                                <p className="text-gray-400 font-bold text-2xl mb-4 tracking-tight">No resources yet.</p>
-                                                <Link to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`} className="inline-flex px-10 py-4 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95">Recommend the First One</Link>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-2 gap-8">
-                                                {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).sort((a, b) => a.title.localeCompare(b.title)).map(res => (
-                                                    <ResourceCard key={res.id} resource={res} />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* PARTNERS SECTION */}
-                    {resources.filter(r => r.category === 'partner').length > 0 && (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-64">
+                        <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
+                        <p className="text-[#1e3a34]/40 font-bold text-xs uppercase tracking-widest">Loading resources...</p>
+                    </div>
+                ) : resources.length === 0 ? (
+                    <div className="text-center py-20 bg-white/80 rounded-[3rem] border border-gray-100">
+                        <p className="text-gray-500 font-medium mb-6">No resources found yet.</p>
+                        <Link to="/add-resource" className="text-[#448a7d] font-bold underline hover:text-[#1e3a34] transition-colors">
+                            Be the first to recommend one
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-20">
+                        {/* GENERAL RESOURCES SECTION */}
                         <section>
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="w-14 h-14 bg-orange-50 text-[#e57c6e] rounded-2xl flex items-center justify-center shadow-sm">
-                                    <div className="scale-125">{ICONS.ShieldCheck}</div>
-                                </div>
-                                <div>
-                                    <h2 className="text-3xl font-black text-[#1e3a34] italic tracking-tight">Starlings-Aligned Partners</h2>
-                                    <p className="text-gray-500 font-medium">Starlings-aligned partners are organizations reviewed by Starlings that offer resources for youth and adults affected by parental substance use. They are independent and not affiliated with or trained by Starlings. Inclusion does not imply endorsement, and we encourage you to explore what feels right for you.</p>
+                            <div className="mb-12 md:mb-16 lg:mb-20">
+                                {/* Accent bar */}
+                                <div className="h-1.5 md:h-2 w-20 md:w-32 bg-gradient-to-r from-[#448a7d] to-[#2d5a52] rounded-full mb-6 md:mb-8" />
+                                
+                                <div className="space-y-4 md:space-y-6">
+                                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl">
+                                        Community Partners
+                                    </h2>
+                                    
+                                    <div className="space-y-3 md:space-y-4 max-w-3xl">
+                                        <p className="text-lg md:text-xl text-gray-700 font-semibold leading-relaxed">
+                                            Starlings-trained organizations offering <span className="text-[#448a7d] font-black">specialized, verified care</span> for youth and adults who have grown up with parental substance use.
+                                        </p>
+                                        <p className="text-base md:text-lg text-gray-600 font-medium leading-relaxed">
+                                            Listed by location. Each partner is independent and responsible for their care.
+                                        </p>
+                                        <div className="flex items-center gap-2 pt-2">
+                                            <span className="inline-block text-xs md:text-sm font-black uppercase tracking-widest px-4 md:px-5 py-2 md:py-2.5 bg-[#448a7d] text-white rounded-full shadow-md">✓ Verified</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {resources.filter(r => r.category === 'partner').map((resource) => {
+                            {/* ACCORDION GALLERY CONTAINER for Community Partners */}
+                            <div className="flex flex-col md:flex-row w-full h-[600px] gap-2 md:gap-4 mt-8">
+                                {resources.filter(r => r.category === 'general').map((resource, index) => {
                                     const config = typeConfig[resource.type] || typeConfig.website;
-                                    return (
-                                        <a
-                                            key={resource.id}
-                                            href={resource.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="relative bg-white rounded-[3rem] shadow-[0_20px_50px_-15px_rgba(229,124,110,0.15)] hover:shadow-[0_30px_60px_-15px_rgba(229,124,110,0.25)] hover:-translate-y-2 transition-all duration-500 border-2 border-[#e57c6e]/10 group flex flex-col sm:flex-row h-full overflow-hidden"
-                                        >
-                                            <div className="absolute top-6 left-6 z-20 flex gap-2">
-                                                <div className="bg-white/95 backdrop-blur-md text-[#e57c6e] shadow-sm text-[10px] font-black uppercase tracking-widest px-4 py-2 flex items-center gap-1.5 rounded-full">
-                                                    {ICONS.ShieldCheck} Verified
-                                                </div>
-                                            </div>
+                                    const isActive = activeGeneralIndex === index;
 
-                                            <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                                    let recommender = null;
+                                    let cleanDescription = resource.description || '';
+                                    const recMatch = cleanDescription.match(/^Recommended by '([^']+)':\s*(.*)/);
+                                    if (recMatch) {
+                                        recommender = recMatch[1];
+                                        cleanDescription = recMatch[2];
+                                    }
+
+                                    return (
+                                        <div
+                                            key={resource.id}
+                                            onMouseEnter={() => setActiveGeneralIndex(index)}
+                                            onClick={() => setActiveGeneralIndex(index)}
+                                            className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] transition-all duration-[800ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end ${isActive ? 'flex-[10] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)] border-2 border-indigo-100' : 'flex-[1] shadow-sm border border-gray-100/50 hover:flex-[1.5]'}`}
+                                        >
+                                            <div className="absolute inset-0">
                                                 {resource.imageUrl ? (
-                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                                    <img src={resource.imageUrl} alt={resource.title} className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`} />
                                                 ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
-                                                        <div className="scale-150">{ICONS.Heart}</div>
+                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center text-indigo-500/20">
+                                                        <div className="scale-[3]">{ICONS.Heart}</div>
                                                     </div>
                                                 )}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 sm:bg-gradient-to-r sm:from-transparent sm:to-black/5"></div>
                                             </div>
 
-                                            <div className="p-8 sm:p-10 flex flex-col flex-grow justify-center relative z-10 bg-white sm:-ml-6 sm:rounded-l-[3rem] shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
-                                                <div className="flex flex-wrap items-center gap-3 mb-4">
-                                                    <span className={`text-[10px] text-white shadow-sm font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${config.color}`}>
-                                                        {config.label}
-                                                    </span>
-                                                    {resource.location && (
-                                                        <span className="text-[10px] text-[#448a7d] bg-[#448a7d]/10 font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                                                            {ICONS.MapPin} {resource.location}
+                                            {/* Gradient Overlay */}
+                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-40 group-hover:opacity-60'}`}></div>
+
+                                            {/* Content Wrapper */}
+                                            <div className="relative z-10 p-5 md:p-8 lg:p-10 w-full flex-shrink-0 transition-opacity duration-500 pointer-events-none">
+                                                {/* ACTIVE CONTENT */}
+                                                <div className={`flex flex-col transform transition-all duration-[800ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-100' : 'translate-y-16 opacity-0 absolute bottom-0'}`}>
+                                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4 w-full">
+                                                        <span className={`text-[9px] md:text-[10px] text-white shadow-xl font-black uppercase tracking-widest px-3 md:px-4 py-1.5 md:py-2 rounded-full ${config.color} border border-white/20`}>
+                                                            {config.label}
                                                         </span>
+                                                        {recommender && (
+                                                            <div className="flex items-center gap-1.5 md:gap-2">
+                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center text-[10px] md:text-xs font-black shadow-lg">
+                                                                    {recommender.charAt(0).toUpperCase()}
+                                                                </div>
+                                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#e8f3f1]">Found by {recommender}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <h3 className="text-white font-black text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight tracking-tight mb-2 md:mb-4 drop-shadow-md">
+                                                        {resource.title}
+                                                    </h3>
+
+                                                    <p className="text-indigo-100 font-medium text-xs md:text-sm lg:text-base max-w-2xl leading-relaxed mb-4 md:mb-6 lg:mb-8 pointer-events-auto line-clamp-2 md:line-clamp-none">
+                                                        {cleanDescription}
+                                                    </p>
+
+                                                    {isActive && (
+                                                        <a
+                                                            href={resource.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="pointer-events-auto inline-flex items-center justify-center md:justify-start gap-2 md:gap-3 text-white font-black text-[10px] md:text-xs uppercase tracking-[0.2em] w-full md:w-fit px-6 md:px-8 py-3 md:py-4 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] transition-all active:scale-95 group/btn"
+                                                        >
+                                                            Explore Resource <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                        </a>
                                                     )}
                                                 </div>
-                                                <h3 className="text-[#1e3a34] font-black text-3xl tracking-tight mb-4 group-hover:text-[#e57c6e] transition-colors leading-tight">
-                                                    {resource.title}
-                                                </h3>
-                                                <p className="text-gray-500 text-sm leading-relaxed flex-grow font-medium">
-                                                    {resource.description}
-                                                </p>
-                                                <div className="mt-8 flex items-center gap-2 text-[#e57c6e] font-bold text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
-                                                    Visit Partner <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                            </div>
+
+                                            {/* INACTIVE / VERTICAL BADGE */}
+                                            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-100 flex-col justify-end pb-4 md:pb-12'}`}>
+                                                <div className="transform md:-rotate-90 origin-center text-white/90 font-black md:uppercase tracking-[0.1em] md:tracking-[0.4em] text-xs md:text-xs whitespace-nowrap drop-shadow-xl flex items-center gap-2 md:gap-4">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                                                    {config.label}
                                                 </div>
                                             </div>
-                                        </a>
+                                        </div>
                                     );
                                 })}
                             </div>
                         </section>
-                    )}
-                </div>
-            )}
-        </div>
+
+                        {/* COMMUNITY RESOURCES SECTION (BUCKETS) */}
+                        <section className="relative w-full pb-16">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
+                                    <div className="scale-125">{ICONS.Users}</div>
+                                </div>
+                                <div>
+                                    <h2 className="text-4xl font-black text-[#1e3a34] italic tracking-tight">Community Suggested Resources</h2>
+                                    <p className="text-gray-500 font-medium text-lg mt-1">Peer-recommended videos, tools, and local support networks.</p>
+                                </div>
+                            </div>
+
+
+
+                            {/* APP STORE EXPANDABLE CARDS For Mid-Screens (Tablet / 13inch) - 768px to 1245px */}
+                            <div className="hidden md:block xl:hidden mt-8 mb-16 px-2">
+                                {/* Grid of Closed Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {COMMUNITY_BUCKETS.map((bucket) => {
+                                        const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id);
+
+                                        return (
+                                            <motion.div
+                                                layoutId={`app-store-card-${bucket.id}`}
+                                                key={bucket.id}
+                                                onClick={() => setExpandedCategory(bucket.id)}
+                                                className={`relative overflow-hidden cursor-pointer group rounded-[2.5rem] p-8 h-64 flex flex-col items-start justify-between shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 ${bucket.bg}`}
+                                            >
+                                                {bucket.bgIcon}
+                                                <div className="relative z-10 p-5 rounded-2xl bg-black/30 shadow-inner border border-white/10">
+                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: "w-8 h-8 text-white" })}
+                                                </div>
+                                                <div className="relative z-10 w-full mt-auto text-left">
+                                                    <h3 className="text-3xl font-black text-white drop-shadow-md tracking-tight leading-tight mb-2">{bucket.label}</h3>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-white bg-black/20 px-4 py-1.5 rounded-full inline-block shadow-sm">
+                                                        {bucketResources.length} Items Available
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+
+
+                            </div>
+
+                            {/* PREMIUM ACCORDION GALLERY For Mobile (<768px) and Large Desktop (>1280px) */}
+                            <div className="grid md:hidden xl:grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8 mt-8">
+                                {COMMUNITY_BUCKETS.map((bucket, i) => {
+                                    const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
+                                    const isActive = activeCommunityIndex === bucket.id;
+
+                                    return (
+                                        <div key={bucket.id} className="flex flex-col animate-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
+                                            <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-all duration-500 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-4 ring-indigo-500/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] scale-[1.02] z-10' : 'shadow-lg hover:shadow-2xl hover:-translate-y-2'}`}>
+                                                {bucket.bgIcon}
+                                                <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"></div>
+
+                                                <div className="relative z-10 flex w-full justify-between items-start">
+                                                    <div className={`p-3 xl:p-4 rounded-xl xl:rounded-2xl bg-white ${bucket.color} shadow-inner`}>
+                                                        {bucket.icon}
+                                                    </div>
+                                                    <span className="text-[10px] xl:text-xs font-black text-white bg-black/40 px-3 xl:px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">{bucketResources.length} Items</span>
+                                                </div>
+
+                                                <div className="relative z-10 w-full text-left mt-auto">
+                                                    <h3 className="font-black text-white text-2xl xl:text-4xl tracking-tight leading-none drop-shadow-md mb-1 xl:mb-2">{bucket.label}</h3>
+                                                    <div className="flex items-center gap-2 mt-2 xl:mt-3 text-white/90 text-xs xl:text-sm font-bold opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all duration-300 xl:translate-y-2 group-hover:translate-y-0">
+                                                        <span>{isActive ? 'Close Collection' : 'Explore Collection'}</span>
+                                                        <svg className={`w-3 h-3 xl:w-4 xl:h-4 transform transition-transform ${isActive ? 'rotate-180' : 'group-hover:translate-x-1'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={isActive ? "M5 15l7-7 7 7" : "M14 5l7 7m0 0l-7 7m7-7H3"} /></svg>
+                                                    </div>
+                                                </div>
+                                            </button>
+
+                                            {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
+                                            <div className={`xl:hidden overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'} col-[1/-1]`}>
+                                                <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
+                                                    {bucketResources.length === 0 ? (
+                                                        <div className="text-center py-8">
+                                                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">{ICONS.Heart}</div>
+                                                            <p className="text-gray-400 font-medium mb-3">No resources yet.</p>
+                                                            <Link to={`/add-resource?mode=recommend&type=${bucket.id}`} className="inline-block px-6 py-2 rounded-full bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wide text-xs hover:bg-indigo-100 transition-colors">Recommend</Link>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
+                            <div className={`hidden xl:block overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] origin-top ${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}`}>
+                                {activeCommunityIndex && (
+                                    <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f3f1] rounded-full opacity-10 pointer-events-none"></div>
+
+                                        <div className="relative z-10 flex justify-between items-center mb-10">
+                                            <div>
+                                                <h3 className="text-4xl font-black text-[#1e3a34] capitalize italic tracking-tight">{activeCommunityIndex.replace('_', ' ')} Collection</h3>
+                                                <p className="text-gray-500 font-medium mt-2">Explore recommendations from peers below.</p>
+                                            </div>
+                                            <button onClick={() => setActiveCommunityIndex(null)} className="w-12 h-12 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors shadow-sm active:scale-95">
+                                                {ICONS.X}
+                                            </button>
+                                        </div>
+
+                                        <div className="relative z-10">
+                                            {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).length === 0 ? (
+                                                <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
+                                                    <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 shadow-inner transform rotate-3">
+                                                        <div className="scale-[2]">{ICONS.Heart}</div>
+                                                    </div>
+                                                    <p className="text-gray-400 font-bold text-2xl mb-4 tracking-tight">No resources yet.</p>
+                                                    <Link to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`} className="inline-flex px-10 py-4 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95">Recommend the First One</Link>
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 gap-8">
+                                                    {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).sort((a, b) => a.title.localeCompare(b.title)).map(res => (
+                                                        <ResourceCard key={res.id} resource={res} />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+
+                        {/* PARTNERS SECTION */}
+                        {resources.filter(r => r.category === 'partner').length > 0 && (
+                            <section>
+                                <div className="mb-12 md:mb-16 lg:mb-20">
+                                    {/* Accent bar */}
+                                    <div className="h-1.5 md:h-2 w-20 md:w-32 bg-gradient-to-r from-[#e57c6e] to-[#d46a5c] rounded-full mb-6 md:mb-8" />
+                                    
+                                    <div className="space-y-4 md:space-y-6">
+                                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl">
+                                            Starlings-Aligned Partners
+                                        </h2>
+                                        
+                                        <div className="space-y-3 md:space-y-4 max-w-3xl">
+                                            <p className="text-lg md:text-xl text-gray-700 font-semibold leading-relaxed">
+                                                Organizations reviewed by Starlings that offer <span className="text-[#e57c6e] font-black">resources and support</span> for youth and adults affected by parental substance use.
+                                            </p>
+                                            <p className="text-base md:text-lg text-gray-600 font-medium leading-relaxed">
+                                                They are independent and not affiliated with or trained by Starlings. <span className="font-black">Inclusion does not imply endorsement</span> — we encourage you to explore what feels right for you.
+                                            </p>
+                                            <div className="flex items-center gap-2 pt-2">
+                                                <span className="inline-block text-xs md:text-sm font-black uppercase tracking-widest px-4 md:px-5 py-2 md:py-2.5 bg-[#e57c6e] text-white rounded-full shadow-md">◆ Reviewed</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {resources.filter(r => r.category === 'partner').map((resource) => {
+                                        const config = typeConfig[resource.type] || typeConfig.website;
+                                        return (
+                                            <a
+                                                key={resource.id}
+                                                href={resource.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="relative bg-white rounded-[3rem] shadow-[0_20px_50px_-15px_rgba(229,124,110,0.15)] hover:shadow-[0_30px_60px_-15px_rgba(229,124,110,0.25)] hover:-translate-y-2 transition-all duration-500 border-2 border-[#e57c6e]/10 group flex flex-col sm:flex-row h-full overflow-hidden"
+                                            >
+                                                <div className="absolute top-6 left-6 z-20 flex gap-2">
+                                                    <div className="bg-white/90 text-[#e57c6e] shadow-sm text-[10px] font-black uppercase tracking-widest px-4 py-2 flex items-center gap-1.5 rounded-full">
+                                                        {ICONS.ShieldCheck} Verified
+                                                    </div>
+                                                </div>
+
+                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                                                    {resource.imageUrl ? (
+                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
+                                                            <div className="scale-150">{ICONS.Heart}</div>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 sm:bg-gradient-to-r sm:from-transparent sm:to-black/5"></div>
+                                                </div>
+
+                                                <div className="p-8 sm:p-10 flex flex-col flex-grow justify-center relative z-10 bg-white sm:-ml-6 sm:rounded-l-[3rem] shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
+                                                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                                                        <span className={`text-[10px] text-white shadow-sm font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${config.color}`}>
+                                                            {config.label}
+                                                        </span>
+                                                        {resource.location && (
+                                                            <span className="text-[10px] text-[#448a7d] bg-[#448a7d]/10 font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                                                                {ICONS.MapPin} {resource.location}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <h3 className="text-[#1e3a34] font-black text-3xl tracking-tight mb-4 group-hover:text-[#e57c6e] transition-colors leading-tight">
+                                                        {resource.title}
+                                                    </h3>
+                                                    <p className="text-gray-500 text-sm leading-relaxed flex-grow font-medium">
+                                                        {resource.description}
+                                                    </p>
+                                                    <div className="mt-8 flex items-center gap-2 text-[#e57c6e] font-bold text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                                                        Visit Partner <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* EXPANDED FULL SCREEN OVERLAY (Extracted from transformed wrapper to guarantee viewport lock!) */}
+            <AnimatePresence>
+                {expandedCategory && (
+                    <>
+                        {/* Independent Ambient Background Fade */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[40] bg-black/70"
+                        />
+
+                        {/* The Morphing App Store Card */}
+                        {COMMUNITY_BUCKETS.filter(b => b.id === expandedCategory).map((bucket) => {
+                            const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
+
+                            return (
+                                <motion.div
+                                    layoutId={`app-store-card-${bucket.id}`}
+                                    key={`expanded-${bucket.id}`}
+                                    className={`fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[45] flex flex-col bg-slate-50 overflow-hidden outline-none origin-top rounded-none`}
+                                >
+                                    {/* Immersive Header (Compact for maximum internal grid space) */}
+                                    <div className={`relative px-6 py-6 md:px-10 md:py-8 shrink-0 ${bucket.bg}`}>
+                                        {bucket.bgIcon}
+
+                                        {/* Close Button X */}
+                                        <button
+                                            onClick={() => setExpandedCategory(null)}
+                                            className="absolute top-6 right-6 md:top-8 md:right-8 w-10 h-10 md:w-12 md:h-12 bg-black/40 hover:bg-black/60 transition-colors rounded-full flex items-center justify-center text-white shadow-xl border border-white/20 active:scale-95 z-50"
+                                        >
+                                            <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+
+                                        <div className="relative z-10 max-w-4xl pr-12 md:pr-16 flex items-center gap-4 md:gap-5">
+                                            <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/40 shadow-inner border border-white/10 flex items-center justify-center shrink-0">
+                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: "w-6 h-6 md:w-8 md:h-8 text-white" })}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg tracking-tight leading-tight mb-0.5 md:mb-1">{bucket.label} Collection</h3>
+                                                <p className="text-white/90 font-medium text-xs md:text-sm leading-snug hidden sm:block">Browse {bucketResources.length} peer-recommended resources dynamically sorted from the community.</p>
+                                                <p className="text-white/90 font-medium text-xs leading-snug sm:hidden">{bucketResources.length} resources</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Scrollable Internal Gallery */}
+                                    <div className="flex-1 overflow-y-auto p-6 md:p-10 hide-scrollbar scroll-smooth">
+                                        {bucketResources.length === 0 ? (
+                                            <div className="text-center py-20 bg-white rounded-[3rem] shadow-sm border border-gray-100">
+                                                <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 transform rotate-3 shadow-inner"><div className="scale-150">{ICONS.Heart}</div></div>
+                                                <p className="text-gray-400 font-bold text-2xl mb-4 tracking-tight">No resources in this category yet.</p>
+                                                <Link to={`/add-resource?mode=recommend&type=${bucket.id}`} onClick={() => setExpandedCategory(null)} className="inline-flex px-10 py-4 mt-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95">Be the first to share</Link>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-10">
+                                                {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
+                    </>
+                )}
+            </AnimatePresence>
+        </>
     );
 };
 

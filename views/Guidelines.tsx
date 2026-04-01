@@ -44,7 +44,7 @@ const AnimatedCard: React.FC<{ title: string; desc: string; delay?: number; vari
       }}
       onMouseLeave={() => setTilt({ x: 0, y: 0 })}
       style={{ transform: `perspective(800px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)` }}
-      className={`transform-gpu transition-all duration-500 will-change-transform ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${variant === 'soft' ? 'bg-gradient-to-br from-[#f9fbfa] to-white' : 'bg-white'} p-6 md:p-8 rounded-3xl border border-gray-100/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-gray-200/80`}
+      className={`transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${variant === 'soft' ? 'bg-gradient-to-br from-[#f9fbfa] to-white' : 'bg-white'} p-6 md:p-8 rounded-3xl border border-gray-100/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-gray-200/80`}
     >
       <h3 className="font-bold text-[#1e3a34] mb-2 text-lg">{title}</h3>
       <p className="text-gray-600 text-sm font-light leading-relaxed">{desc}</p>
@@ -131,7 +131,7 @@ const SafetyItem: React.FC<{ item: any; index: number }> = ({ item, index }) => 
       ref={ref}
       className={`relative overflow-hidden transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
     >
-      <div className={`group flex flex-col p-6 md:p-7 rounded-3xl border border-gray-100/50 bg-white/[0.7] backdrop-blur-sm shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] transform-gpu transition-all duration-500 hover:-translate-y-1 hover:border-gray-200/80`}>
+      <div className={`group flex flex-col p-6 md:p-7 rounded-3xl border border-gray-100/50 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-1 hover:border-gray-200/80`}>
         <div className="flex-1">
           <div className="flex items-start gap-3 mb-1">
             <h4 className="font-bold text-[#1e3a34] text-lg leading-tight">{item.title}</h4>
@@ -160,9 +160,9 @@ const Guidelines: React.FC = () => {
     <div className="bg-gradient-to-b from-white via-[#fbfdfc] to-white min-h-screen">
       {/* Header with Visual */}
       <div className="relative h-60 md:h-80 lg:h-96 flex items-center justify-center overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-20 scale-105 transform-gpu animate-[zoom_18s_ease-in-out_infinite]" alt="Supportive Hands" />
-        <div className="absolute -left-24 -top-24 w-72 h-72 bg-gradient-to-br from-[#e6fff8] to-[#e8f3f1] rounded-full opacity-60 blur-3xl mix-blend-multiply animate-[float_6s_ease-in-out_infinite]" />
-        <div className="absolute right-[-64px] bottom-[-40px] w-48 h-48 bg-gradient-to-tr from-[#fff0f0] to-[#fbd6d1] rounded-full opacity-50 blur-2xl mix-blend-screen animate-[float_8s_ease-in-out_infinite]" />
+        <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-20" alt="Supportive Hands" />
+        <div className="absolute -left-24 -top-24 w-72 h-72 bg-gradient-to-br from-[#e6fff8] to-[#e8f3f1] rounded-full opacity-30 blur-2xl" />
+        <div className="absolute right-[-64px] bottom-[-40px] w-48 h-48 bg-gradient-to-tr from-[#fff0f0] to-[#fbd6d1] rounded-full opacity-20 blur-2xl" />
         <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
         <div className="relative text-center space-y-3 md:space-y-4 px-6 max-w-4xl">
           <h1 className="text-3xl max-[400px]:text-2xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] tracking-tight italic leading-tight">Safe Sharing.</h1>
@@ -179,7 +179,7 @@ const Guidelines: React.FC = () => {
               <section className="space-y-6 relative">
                 <div className="absolute -left-6 top-0 w-1 h-24 bg-gradient-to-b from-[#448a7d] via-[#448a7d] to-transparent opacity-30 rounded-full" />
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#d1f2eb] to-[#e8f3f1] flex items-center justify-center text-[#448a7d] shadow-md transform-gpu hover:scale-110 transition-transform duration-300">
+                  <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#d1f2eb] to-[#e8f3f1] flex items-center justify-center text-[#448a7d] shadow-md hover:scale-110 transition-transform duration-300">
                     <div className="scale-125">{ICONS.ShieldCheck}</div>
                   </div>
                   <div>
@@ -209,7 +209,7 @@ const Guidelines: React.FC = () => {
               <section className="space-y-6 relative">
                 <div className="absolute -left-6 top-0 w-1 h-24 bg-gradient-to-b from-[#ef4444] via-[#ef4444] to-transparent opacity-30 rounded-full" />
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#ffe5e5] to-[#ffd9d4] flex items-center justify-center text-[#ef4444] shadow-md transform-gpu hover:scale-110 transition-transform duration-300">
+                  <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[#ffe5e5] to-[#ffd9d4] flex items-center justify-center text-[#ef4444] shadow-md hover:scale-110 transition-transform duration-300">
                     <div className="text-2xl">⚠️</div>
                   </div>
                   <div>
@@ -305,8 +305,8 @@ const Guidelines: React.FC = () => {
                 </div>
 
                 <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-gray-200/50 bg-gradient-to-br from-[#1e3a34] to-[#0f2620] rounded-2xl p-5 text-white space-y-4 relative overflow-hidden">
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white to-transparent rounded-full blur-2xl" />
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white to-transparent rounded-full" />
                   </div>
                   <div className="relative z-10 flex items-center gap-2">
                     <span className="text-xl">🚨</span>
@@ -317,7 +317,7 @@ const Guidelines: React.FC = () => {
                   </p>
                   <a 
                     href="https://starlings.ca/crisis" 
-                    className="relative z-10 inline-flex items-center gap-2 py-2.5 px-4 bg-white/15 hover:bg-white/25 rounded-xl text-xs font-bold transition-all duration-300 w-full justify-center backdrop-blur-sm"
+                    className="relative z-10 inline-flex items-center gap-2 py-2.5 px-4 bg-white/25 hover:bg-white/35 rounded-xl text-xs font-bold transition-all duration-300 w-full justify-center"
                   >
                     Find Crisis Lines {ICONS.ArrowRight}
                   </a>

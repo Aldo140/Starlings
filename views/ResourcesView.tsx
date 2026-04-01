@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
@@ -137,6 +137,17 @@ const ResourcesView: React.FC = () => {
         { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
         { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
     ];
+
+    // MEMOIZED: Compute bucket resources only when resources array changes
+    const communityBucketResources = useMemo(() => {
+        const result: Record<string, Resource[]> = {};
+        COMMUNITY_BUCKETS.forEach(bucket => {
+            result[bucket.id] = resources
+                .filter(r => r.category === 'community' && r.type === bucket.id)
+                .sort((a, b) => a.title.localeCompare(b.title));
+        });
+        return result;
+    }, [resources]);
 
     return (
         <>
@@ -312,7 +323,7 @@ const ResourcesView: React.FC = () => {
                                 {/* Grid of Closed Cards */}
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                                     {COMMUNITY_BUCKETS.map((bucket) => {
-                                        const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id);
+                                        const bucketResources = communityBucketResources[bucket.id];
 
                                         return (
                                             <div
@@ -339,7 +350,7 @@ const ResourcesView: React.FC = () => {
                             </div>
                             <div className="grid md:hidden xl:grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8 mt-8">
                                 {COMMUNITY_BUCKETS.map((bucket, i) => {
-                                    const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
+                                    const bucketResources = communityBucketResources[bucket.id];
                                     const isActive = activeCommunityIndex === bucket.id;
 
                                     return (
@@ -405,7 +416,7 @@ const ResourcesView: React.FC = () => {
                                         </div>
 
                                         <div className="relative z-10">
-                                            {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).length === 0 ? (
+                                            {(communityBucketResources[activeCommunityIndex] || []).length === 0 ? (
                                                 <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
                                                     <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 shadow-inner transform rotate-3">
                                                         <div className="scale-[2]">{ICONS.Heart}</div>
@@ -415,7 +426,7 @@ const ResourcesView: React.FC = () => {
                                                 </div>
                                             ) : (
                                                 <div className="grid grid-cols-2 gap-8">
-                                                    {resources.filter(r => r.category === 'community' && r.type === activeCommunityIndex).sort((a, b) => a.title.localeCompare(b.title)).map(res => (
+                                                    {(communityBucketResources[activeCommunityIndex] || []).map(res => (
                                                         <ResourceCard key={res.id} resource={res} />
                                                     ))}
                                                 </div>

@@ -130,12 +130,12 @@ const ResourcesView: React.FC = () => {
 
     // BUCKETS CONFIGURATION (Shared across Mobile, Tablet, and Desktop layouts)
     const COMMUNITY_BUCKETS = [
-        { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Book className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30' },
-        { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Headphones className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-purple-500', bg: 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/30' },
-        { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Music className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-pink-500', bg: 'bg-gradient-to-br from-pink-400 to-pink-600 shadow-pink-500/30' },
-        { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Share2 className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-blue-500', bg: 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-500/30' },
-        { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <Globe className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform -rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
-        { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <ImageIcon className="w-40 h-40 absolute -right-8 -bottom-8 text-white opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-700" />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
+        { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30' },
+        { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-purple-500', bg: 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/30' },
+        { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-pink-500', bg: 'bg-gradient-to-br from-pink-400 to-pink-600 shadow-pink-500/30' },
+        { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-blue-500', bg: 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-500/30' },
+        { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
+        { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
     ];
 
     return (
@@ -318,9 +318,9 @@ const ResourcesView: React.FC = () => {
                                             <div
                                                 key={bucket.id}
                                                 onClick={() => setExpandedCategory(bucket.id)}
-                                                className={`relative overflow-hidden cursor-pointer group rounded-[2.5rem] p-8 h-64 flex flex-col items-start justify-between shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 ${bucket.bg}`}
+                                                className={`relative overflow-hidden cursor-pointer group rounded-[2.5rem] p-8 h-64 flex flex-col items-start justify-between shadow-lg hover:shadow-lg ${bucket.bg}`}
                                             >
-                                                {bucket.bgIcon}
+                                                <div className="pointer-events-none">{bucket.bgIcon}</div>
                                                 <div className="relative z-10 p-5 rounded-2xl bg-black/30 shadow-inner border border-white/10">
                                                     {React.cloneElement(bucket.icon as React.ReactElement, { className: "w-8 h-8 text-white" })}
                                                 </div>
@@ -343,10 +343,10 @@ const ResourcesView: React.FC = () => {
                                     const isActive = activeCommunityIndex === bucket.id;
 
                                     return (
-                                        <div key={bucket.id} className="flex flex-col" style={{ animation: `reveal 0.6s ease-out forwards`, animationDelay: `${i * 0.08}s` }}>
-                                            <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-all duration-500 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-4 ring-indigo-500/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] scale-[1.02] z-10' : 'shadow-lg hover:shadow-2xl hover:-translate-y-2'}`}>
-                                                {bucket.bgIcon}
-                                                <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"></div>
+                                        <div key={bucket.id} className="flex flex-col opacity-100">
+                                            <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-shadow duration-200 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-2 ring-indigo-400 shadow-lg' : 'shadow-md hover:shadow-lg'}`}>
+                                                <div className="pointer-events-none opacity-30">{bucket.bgIcon}</div>
+                                                <div className="absolute inset-0 bg-black opacity-0 pointer-events-none"></div>
 
                                                 <div className="relative z-10 flex w-full justify-between items-start">
                                                     <div className={`p-3 xl:p-4 rounded-xl xl:rounded-2xl bg-white ${bucket.color} shadow-inner`}>
@@ -357,7 +357,7 @@ const ResourcesView: React.FC = () => {
 
                                                 <div className="relative z-10 w-full text-left mt-auto">
                                                     <h3 className="font-black text-white text-2xl xl:text-4xl tracking-tight leading-none drop-shadow-md mb-1 xl:mb-2">{bucket.label}</h3>
-                                                    <div className="flex items-center gap-2 mt-2 xl:mt-3 text-white/90 text-xs xl:text-sm font-bold opacity-100 xl:opacity-0 group-hover:opacity-100 transition-all duration-300 xl:translate-y-2 group-hover:translate-y-0">
+                                                    <div className="flex items-center gap-2 mt-2 xl:mt-3 text-white/90 text-xs xl:text-sm font-bold opacity-100">
                                                         <span>{isActive ? 'Close Collection' : 'Explore Collection'}</span>
                                                         <svg className={`w-3 h-3 xl:w-4 xl:h-4 transform transition-transform ${isActive ? 'rotate-180' : 'group-hover:translate-x-1'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={isActive ? "M5 15l7-7 7 7" : "M14 5l7 7m0 0l-7 7m7-7H3"} /></svg>
                                                     </div>
@@ -365,7 +365,7 @@ const ResourcesView: React.FC = () => {
                                             </button>
 
                                             {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
-                                            <div className={`xl:hidden overflow-hidden transition-all duration-300 ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'} col-[1/-1]`}>
+                                            <div className="xl:hidden overflow-hidden ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'}  col-[1/-1]">
                                                 <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
                                                     {bucketResources.length === 0 ? (
                                                         <div className="text-center py-8">
@@ -386,7 +386,7 @@ const ResourcesView: React.FC = () => {
                             </div>
 
                             {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                            <div className={`hidden xl:block overflow-hidden transition-all duration-300 ${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}`}>
+                            <div className="${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}">
                                 {activeCommunityIndex && (
                                     <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>

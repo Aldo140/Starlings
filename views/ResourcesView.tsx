@@ -315,8 +315,7 @@ const ResourcesView: React.FC = () => {
                                         const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id);
 
                                         return (
-                                            <motion.div
-                                                layoutId={`app-store-card-${bucket.id}`}
+                                            <div
                                                 key={bucket.id}
                                                 onClick={() => setExpandedCategory(bucket.id)}
                                                 className={`relative overflow-hidden cursor-pointer group rounded-[2.5rem] p-8 h-64 flex flex-col items-start justify-between shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 ${bucket.bg}`}
@@ -331,22 +330,20 @@ const ResourcesView: React.FC = () => {
                                                         {bucketResources.length} Items Available
                                                     </span>
                                                 </div>
-                                            </motion.div>
+                                            </div>
                                         );
                                     })}
                                 </div>
 
 
                             </div>
-
-                            {/* PREMIUM ACCORDION GALLERY For Mobile (<768px) and Large Desktop (>1280px) */}
                             <div className="grid md:hidden xl:grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8 mt-8">
                                 {COMMUNITY_BUCKETS.map((bucket, i) => {
                                     const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
                                     const isActive = activeCommunityIndex === bucket.id;
 
                                     return (
-                                        <div key={bucket.id} className="flex flex-col animate-reveal" style={{ animationDelay: `${i * 0.1}s` }}>
+                                        <div key={bucket.id} className="flex flex-col" style={{ animation: `reveal 0.6s ease-out forwards`, animationDelay: `${i * 0.08}s` }}>
                                             <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-all duration-500 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-4 ring-indigo-500/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] scale-[1.02] z-10' : 'shadow-lg hover:shadow-2xl hover:-translate-y-2'}`}>
                                                 {bucket.bgIcon}
                                                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"></div>
@@ -368,7 +365,7 @@ const ResourcesView: React.FC = () => {
                                             </button>
 
                                             {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
-                                            <div className={`xl:hidden overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'} col-[1/-1]`}>
+                                            <div className={`xl:hidden overflow-hidden transition-all duration-300 ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'} col-[1/-1]`}>
                                                 <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
                                                     {bucketResources.length === 0 ? (
                                                         <div className="text-center py-8">
@@ -389,7 +386,7 @@ const ResourcesView: React.FC = () => {
                             </div>
 
                             {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                            <div className={`hidden xl:block overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] origin-top ${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}`}>
+                            <div className={`hidden xl:block overflow-hidden transition-all duration-300 ${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}`}>
                                 {activeCommunityIndex && (
                                     <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
@@ -516,12 +513,9 @@ const ResourcesView: React.FC = () => {
                 {expandedCategory && (
                     <>
                         {/* Independent Ambient Background Fade */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[40] bg-black/70"
+                        <div
+                            className="fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[40] bg-black/70 transition-opacity duration-300"
+                            style={{ opacity: expandedCategory ? 1 : 0, pointerEvents: expandedCategory ? 'auto' : 'none' }}
                         />
 
                         {/* The Morphing App Store Card */}
@@ -529,10 +523,10 @@ const ResourcesView: React.FC = () => {
                             const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
 
                             return (
-                                <motion.div
-                                    layoutId={`app-store-card-${bucket.id}`}
+                                <div
                                     key={`expanded-${bucket.id}`}
-                                    className={`fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[45] flex flex-col bg-slate-50 overflow-hidden outline-none origin-top rounded-none`}
+                                    className={`fixed top-[72px] md:top-[88px] inset-x-0 bottom-0 z-[45] flex flex-col bg-slate-50 overflow-hidden outline-none origin-top rounded-none transition-all duration-300`}
+                                    style={{ opacity: expandedCategory === bucket.id ? 1 : 0, pointerEvents: expandedCategory === bucket.id ? 'auto' : 'none' }}
                                 >
                                     {/* Immersive Header (Compact for maximum internal grid space) */}
                                     <div className={`relative px-6 py-6 md:px-10 md:py-8 shrink-0 ${bucket.bg}`}>
@@ -572,7 +566,7 @@ const ResourcesView: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                </motion.div>
+                                </div>
                             )
                         })}
                     </>

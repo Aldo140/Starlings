@@ -365,7 +365,8 @@ const ResourcesView: React.FC = () => {
                                             </button>
 
                                             {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
-                                            <div className="xl:hidden overflow-hidden ${isActive ? 'max-h-[3000px] mt-4 opacity-100' : 'max-h-0 mt-0 opacity-0'}  col-[1/-1]">
+                                            {isActive && (
+                                            <div className="xl:hidden overflow-hidden mt-4 col-[1/-1]">
                                                 <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
                                                     {bucketResources.length === 0 ? (
                                                         <div className="text-center py-8">
@@ -380,14 +381,14 @@ const ResourcesView: React.FC = () => {
                                                     )}
                                                 </div>
                                             </div>
+                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
 
                             {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                            <div className="${activeCommunityIndex ? 'max-h-[3000px] opacity-100 mt-10' : 'max-h-0 opacity-0 mt-0'}">
-                                {activeCommunityIndex && (
+                            {activeCommunityIndex && (
                                     <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f3f1] rounded-full opacity-10 pointer-events-none"></div>
@@ -421,7 +422,6 @@ const ResourcesView: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
-                            </div>
                         </section>
 
                         {/* PARTNERS SECTION */}

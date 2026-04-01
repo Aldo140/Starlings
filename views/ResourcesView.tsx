@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
@@ -6,7 +6,7 @@ import { ICONS, MOCK_RESOURCES } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
+const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [liked, setLiked] = useState(false);
     const [supportive, setSupportive] = useState(false);
     const [exploring, setExploring] = useState(false);
@@ -41,7 +41,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
     const social = resource.type === ResourceType.SOCIAL_MEDIA ? getSocialDetails(resource.url) : null;
 
     return (
-        <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 hover:-translate-y-1 transition-all group">
+        <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
             {resource.type === ResourceType.MEME && resource.imageUrl && (
                 <div className="mb-6 rounded-2xl overflow-hidden shadow-inner border border-gray-100 bg-gray-50 flex items-center justify-center">
                     <img src={resource.imageUrl} alt={resource.title} className="w-full max-h-64 object-contain" />
@@ -55,7 +55,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
                 </div>
             )}
 
-            <h4 className="font-black text-2xl text-[#1e3a34] mb-2 leading-tight group-hover:text-indigo-600 transition-colors">{resource.title}</h4>
+            <h4 className="font-black text-2xl text-[#1e3a34] mb-2 leading-tight">{resource.title}</h4>
             {recommender && <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recommended by {recommender}</p>}
             <p className="text-base font-medium text-gray-600 mb-6 flex-grow leading-relaxed">{cleanDescription}</p>
             {resource.url && resource.type !== ResourceType.MEME && (
@@ -93,7 +93,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = ({ resource }) => {
             </div>
         </div>
     );
-};
+}, (prevProps, nextProps) => prevProps.resource.id === nextProps.resource.id);
 
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);

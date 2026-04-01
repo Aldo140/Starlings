@@ -21,7 +21,6 @@ const RevealOnScroll: React.FC<{ children: React.ReactNode; delay?: number }> = 
 const AnimatedCard: React.FC<{ title: string; desc: string; delay?: number; variant?: 'soft' | 'neutral' }> = ({ title, desc, delay = 0, variant = 'neutral' }) => {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const el = ref.current;
@@ -36,14 +35,6 @@ const AnimatedCard: React.FC<{ title: string; desc: string; delay?: number; vari
   return (
     <div
       ref={ref}
-      onMouseMove={(e) => {
-        const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-        const px = (e.clientX - rect.left) / rect.width - 0.5;
-        const py = (e.clientY - rect.top) / rect.height - 0.5;
-        setTilt({ x: px * 6, y: py * -6 });
-      }}
-      onMouseLeave={() => setTilt({ x: 0, y: 0 })}
-      style={{ transform: `perspective(800px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)` }}
       className={`transition-all duration-500 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${variant === 'soft' ? 'bg-gradient-to-br from-[#f9fbfa] to-white' : 'bg-white'} p-6 md:p-8 rounded-3xl border border-gray-100/50 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-gray-200/80`}
     >
       <h3 className="font-bold text-[#1e3a34] mb-2 text-lg">{title}</h3>

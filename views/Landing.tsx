@@ -302,7 +302,7 @@ const Landing: React.FC = () => {
                 A canvas for collective healing.<br className="hidden md:block" /> A space to navigate our experiences together.
               </h2>
               <p className="text-base md:text-xl text-gray-500 font-light leading-relaxed">
-                Starlings is more than a map. It’s a testament to the fact that you aren’t alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us stay whole, together.
+                Starlings is more than a map. It’s a testament to the fact that you aren’t alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us move forward with hope, together.
               </p>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">

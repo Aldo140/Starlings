@@ -68,70 +68,114 @@ export const HELP_OPTIONS = [
 export const SEED_POSTS: Post[] = [];
 
 export const SEED_RESOURCES: Resource[] = [
+  // --- BOOKS ---
   {
-    id: "r1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Starlings Community",
-    url: "https://www.starlings.ca/",
-    description: "Support for youth impacted by parental substance use through caregiver supports, youth leadership, and peer connection.",
-    category: 'community',
-    imageUrl: '/images/starlingsWebsite.png'
+    id: 'ex_book_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.BOOK, category: 'community', isExample: true,
+    title: 'Example Book Resource',
+    url: '#',
+    description: 'Sample entry. Peer-recommended books will appear here once submitted and approved through the backend.',
+    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "r2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Camp Mariposa (Eluna Network)",
-    url: "https://elunanetwork.org/camps-programs/camp-mariposa",
-    description: "A free, nationwide addiction prevention and mentoring camp program for youth impacted by the substance use disorder of a family member.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800'
+    id: 'ex_book_2', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.BOOK, category: 'community', isExample: true,
+    title: 'Example Book — Lived Experience',
+    url: '#',
+    description: 'Sample entry. This spot is reserved for a real peer-recommended book.',
+    imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800'
+  },
+  // --- PODCASTS ---
+  {
+    id: 'ex_podcast_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.PODCAST, category: 'community', isExample: true,
+    title: 'Example Podcast Resource',
+    url: '#',
+    description: 'Sample entry. Community-recommended podcasts will appear here after review.',
   },
   {
-    id: "r_adult_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Adult Children of Alcoholics (ACA)",
-    url: "https://adultchildren.org/",
-    description: "A global recovery program for adults who grew up in alcoholic or otherwise dysfunctional homes.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800'
+    id: 'ex_podcast_2', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.PODCAST, category: 'community', isExample: true,
+    title: 'Example Podcast — Healing & Recovery',
+    url: '#',
+    description: 'Sample entry. Add your podcast recommendations through the form.',
+  },
+  // --- SONGS ---
+  {
+    id: 'ex_song_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.SONG, category: 'community', isExample: true,
+    title: 'Example Song — Comfort & Connection',
+    url: '#',
+    description: 'Sample entry. Songs that help the community will appear here once added.',
   },
   {
-    id: "web_kickstand_connect",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Kickstand Connect",
-    url: "https://mykickstand.ca/connect/",
-    description: "A youth-focused virtual clinic and support hub connecting young people with mental health, substance use, peer support, and wellness services.",
-    category: 'community',
+    id: 'ex_song_2', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.SONG, category: 'community', isExample: true,
+    title: 'Example Song — Shared Playlist',
+    url: '#',
+    description: 'Sample entry. Share songs that have helped you on your journey.',
+  },
+  // --- SOCIAL MEDIA ---
+  {
+    id: 'ex_social_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.SOCIAL_MEDIA, category: 'community', isExample: true,
+    title: 'Example Social Account',
+    url: '#',
+    description: 'Sample entry. Peer-recommended social accounts will appear here after review.',
+  },
+  // --- WEBSITES ---
+  {
+    id: 'ex_web_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE, category: 'community', isExample: true,
+    title: 'Example Website Resource',
+    url: '#',
+    description: 'Sample entry. Community-recommended websites will appear here after review.',
     imageUrl: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "web_usay",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Urban Society for Aboriginal Youth",
-    url: "https://usay.ca/",
-    description: "Calgary-based programs and resources supporting Indigenous youth through culture, connection, learning, and community.",
-    category: 'community',
+    id: 'ex_web_2', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE, category: 'community', isExample: true,
+    title: 'Example Online Support Tool',
+    url: '#',
+    description: 'Sample entry. Add resources through the recommendation form.',
     imageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800'
   },
+  // --- MEMES / IMAGES ---
   {
-    id: "web_roots_of_hope_laronge",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Roots of Hope La Ronge",
-    url: "https://www.rootsofhope.ca/",
-    description: "A community-led suicide prevention and life promotion initiative focused on hope, connection, and locally grounded support.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800'
-  }
+    id: 'ex_meme_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.MEME, category: 'community', isExample: true,
+    title: 'Example Image or Meme',
+    url: '',
+    description: 'Sample entry. Community images and memes will appear here once added.',
+    imageUrl: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=800'
+  },
+  // --- COMMUNITY PARTNERS (category: general) ---
+  {
+    id: 'ex_general_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE, category: 'general', isExample: true,
+    title: 'Example Community Partner A',
+    url: '#',
+    description: 'Sample partner entry. Starlings-trained community organizations will be listed here once verified.',
+    location: 'Calgary, AB',
+    imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800'
+  },
+  {
+    id: 'ex_general_2', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE, category: 'general', isExample: true,
+    title: 'Example Community Partner B',
+    url: '#',
+    description: 'Sample partner entry. This spot is reserved for a verified community organization.',
+    location: 'Edmonton, AB',
+    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800'
+  },
+  // --- ALIGNED PARTNERS (category: partner) ---
+  {
+    id: 'ex_aligned_1', timestamp: new Date().toISOString(), status: PostStatus.APPROVED,
+    type: ResourceType.WEBSITE, category: 'partner', isExample: true,
+    title: 'Example Aligned Organization',
+    url: '#',
+    description: 'Sample entry. Organizations reviewed by Starlings will be listed here. Inclusion does not imply endorsement.',
+    location: 'Alberta',
+    imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800'
+  },
 ];

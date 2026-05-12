@@ -8,6 +8,10 @@ const AddResourceView: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const defaultMode = searchParams.get('mode') === 'apply' ? 'apply' : 'recommend';
+    const requestedType = searchParams.get('type') as ResourceType | null;
+    const defaultType = requestedType && Object.values(ResourceType).includes(requestedType)
+        ? requestedType
+        : ResourceType.WEBSITE;
 
     const [mode, setMode] = useState<'recommend' | 'apply'>(defaultMode);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,7 +20,7 @@ const AddResourceView: React.FC = () => {
     const [formData, setFormData] = useState({
         title: '',
         url: '',
-        type: ResourceType.WEBSITE,
+        type: defaultType,
         description: '',
         alias: '',
         submitterEmail: '',
@@ -49,7 +53,10 @@ const AddResourceView: React.FC = () => {
             url: formData.url,
             type: formData.type,
             description: combinedDesc,
+            alias: mode === 'recommend' ? formData.alias : undefined,
             submitterEmail: mode === 'apply' ? formData.submitterEmail : undefined,
+            qualifications: mode === 'apply' ? formData.qualifications : undefined,
+            category: mode === 'apply' ? 'partner' : 'community',
         });
 
         if (result.success) {

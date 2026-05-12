@@ -307,7 +307,7 @@ const Guidelines: React.FC = () => {
                     If you're in immediate danger, please reach out to professional services right away.
                   </p>
                   <a 
-                    href="https://starlings.ca/crisis" 
+                    href="https://www.starlings.ca/community-crisis-lines"
                     className="relative z-10 inline-flex items-center gap-2 py-2.5 px-4 bg-white/25 hover:bg-white/35 rounded-xl text-xs font-bold transition-all duration-300 w-full justify-center"
                   >
                     Find Crisis Lines {ICONS.ArrowRight}

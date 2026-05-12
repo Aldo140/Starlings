@@ -11,6 +11,8 @@
 //    - Live_Resources
 //    - Pending_QA
 //    - Live_QA
+//    - Pending_Reflections
+//    - Live_Reflections
 //    - Flagged_Words
 // 3. For the Flagged_Words tab, just put words in column A (one per row).
 // 4. In the menu, click Extensions > Apps Script
@@ -105,6 +107,7 @@ function doPost(e) {
         let targetSheetName = "Pending_Stories";
         if (action === "addResource") targetSheetName = "Pending_Resources";
         if (action === "addQA") targetSheetName = "Pending_QA";
+        if (action === "addReflection") targetSheetName = "Pending_Reflections";
 
         const sheet = doc.getSheetByName(targetSheetName);
 
@@ -114,9 +117,15 @@ function doPost(e) {
 
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-        // Very basic hardcoded safety check (Frontend handles primary check via Flagged_Words)
+        // Server-side safety backstop (frontend handles the primary check via Flagged_Words)
         const messageString = JSON.stringify(postData).toLowerCase();
-        let isFlagged = postData.flagged === true || messageString.includes("suicide") || messageString.includes("self harm");
+        let isFlagged = postData.flagged === true ||
+            messageString.includes("suicide") ||
+            messageString.includes("self harm") ||
+            messageString.includes("self-harm") ||
+            messageString.includes("hurt myself") ||
+            messageString.includes("kill myself") ||
+            messageString.includes("overdose");
 
         const nextRow = sheet.getLastRow() + 1;
         const newRow = headers.map(function (header) {

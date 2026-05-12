@@ -1,5 +1,5 @@
 import React from 'react';
-import { Resource, ResourceType, PostStatus } from './types.ts';
+import { Post, Resource, ResourceType, PostStatus } from './types.ts';
 import {
   Heart,
   MapPin,
@@ -51,7 +51,7 @@ export const BANNED_PATTERNS = [
   /https?:\/\/\S+/gi, // URLs
   /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // Emails
   /(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, // Phone numbers (US/CAN)
-  /\b(?:suicide|kill myself|end my life|die|self harm|self-harm|cut myself|overdose|OD)\b/gi // Crisis keywords
+  /\b(?:suicide|kill myself|hurt myself|end my life|die|self harm|self-harm|cut myself|overdose|OD)\b/gi // Crisis keywords
 ];
 
 export const HELP_OPTIONS = [
@@ -65,233 +65,9 @@ export const HELP_OPTIONS = [
   "Other"
 ];
 
-export const MOCK_POSTS = [
-  {
-    id: "1",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Toronto",
-    lat: 43.6532,
-    lng: -79.3832,
-    message: "Building a consistent morning routine really helped my mental health. Remember, you don't have to carry the weight of the world all at once.",
-    what_helped: ["Routine / hobbies", "Peer support"],
-    alias: "Quiet North",
-    flagged: false
-  },
-  {
-    id: "1b",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Toronto",
-    lat: 43.6532,
-    lng: -79.3832,
-    message: "Peer support groups reminded me I wasn't alone. If you can, lean on the people who show up for you.",
-    what_helped: ["Peer support", "Support group"],
-    alias: "Harbor Finch",
-    flagged: false
-  },
-  {
-    id: "1c",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Toronto",
-    lat: 43.6532,
-    lng: -79.3832,
-    message: "A trusted friend helped me keep going on the hard days. You deserve people who listen.",
-    what_helped: ["Trusted friend", "Boundaries"],
-    alias: "River Ember",
-    flagged: false
-  },
-  {
-    id: "2",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Vancouver",
-    lat: 49.2827,
-    lng: -123.1207,
-    message: "Connecting with others who understand exactly what I'm going through changed everything. You are worthy of peace and support.",
-    what_helped: ["Support group", "Trusted friend"],
-    alias: "Rain Glass",
-    flagged: false
-  },
-  {
-    id: "2b",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Vancouver",
-    lat: 49.2827,
-    lng: -123.1207,
-    message: "Therapy and small routines helped me build steadier days. You deserve care that fits you.",
-    what_helped: ["Therapy", "Routine / hobbies"],
-    alias: "Sky Cedar",
-    flagged: false
-  },
-  {
-    id: "2c",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Vancouver",
-    lat: 49.2827,
-    lng: -123.1207,
-    message: "A school counsellor helped me find words for what I was feeling. It's okay to ask for help.",
-    what_helped: ["School counsellor"],
-    alias: "Harbor Mist",
-    flagged: false
-  },
-  {
-    id: "3",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Calgary",
-    lat: 51.0447,
-    lng: -114.0719,
-    message: "Journaling my thoughts helped me process the harder days. It's okay to not be okay, but it's even better to reach out when you're ready.",
-    what_helped: ["Routine / hobbies", "Boundaries"],
-    alias: "Prairie Leaf",
-    flagged: false
-  },
-  {
-    id: "4",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Montreal",
-    lat: 45.5017,
-    lng: -73.5673,
-    message: "Therapy gave me the tools to navigate my family situation. Asking for help is the bravest thing you can do.",
-    what_helped: ["Therapy", "Boundaries"],
-    alias: "Blue Lantern",
-    flagged: false
-  },
-  {
-    id: "4b",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Montreal",
-    lat: 45.5017,
-    lng: -73.5673,
-    message: "A support group gave me a place to be honest. You are not alone in this.",
-    what_helped: ["Support group", "Peer support"],
-    alias: "Stone Maple",
-    flagged: false
-  },
-  {
-    id: "5",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Halifax",
-    lat: 44.6488,
-    lng: -63.5752,
-    message: "Talking to my school counsellor made me realize my voice matters. You are not alone in this journey.",
-    what_helped: ["School counsellor", "Peer support"],
-    alias: "Harbor Pine",
-    flagged: false
-  },
-  {
-    id: "5b",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Halifax",
-    lat: 44.6488,
-    lng: -63.5752,
-    message: "Routine and hobbies gave my days structure again. Little steps still count.",
-    what_helped: ["Routine / hobbies"],
-    alias: "Salt Glow",
-    flagged: false
-  },
-  {
-    id: "6",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Montreal",
-    lat: 45.5017,
-    lng: -73.5673,
-    message: "Setting boundaries with family and leaning on a trusted friend gave me space to breathe.",
-    what_helped: ["Trusted friend", "Boundaries"],
-    alias: "Quiet Bloom",
-    flagged: false
-  },
-  {
-    id: "7",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Calgary",
-    lat: 51.0447,
-    lng: -114.0719,
-    message: "Peer support and therapy helped me rebuild trust in myself. You are stronger than you feel.",
-    what_helped: ["Peer support", "Therapy"],
-    alias: "Prairie Star",
-    flagged: false
-  },
-  {
-    id: "7b",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Calgary",
-    lat: 51.0447,
-    lng: -114.0719,
-    message: "A trusted friend and clear boundaries helped me feel safe again.",
-    what_helped: ["Trusted friend", "Boundaries"],
-    alias: "Amber Ridge",
-    flagged: false
-  },
-  // Map-based Mock Resources (To demonstrate the new feature)
-  {
-    id: "r_map_1",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Toronto",
-    lat: 43.66,
-    lng: -79.4,
-    message: "[RESOURCE - Support Group] Youth Peer Support Meetup | Link: https://example.com/meetup\n\nReally helpful safe space for teens in the GTA dealing with family addiction. We meet every Tuesday.\n\nRecommended by: Harbord Teen",
-    what_helped: [],
-    alias: "System",
-    flagged: false
-  },
-  {
-    id: "r_map_2",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Vancouver",
-    lat: 49.25,
-    lng: -123.1,
-    message: "[RESOURCE - Website] BC Youth Centers Directory | Link: https://example.com/bc-dir\n\nA great list of local places that take youth walk-ins for therapy and peer groups. Saved me a lot of time searching.\n\nRecommended by: West Coast Ally",
-    what_helped: [],
-    alias: "System",
-    flagged: false
-  },
-  {
-    id: "r_map_3",
-    timestamp: new Date().toISOString(),
-    status: "approved",
-    country: "Canada",
-    city: "Halifax",
-    lat: 44.65,
-    lng: -63.6,
-    message: "[RESOURCE - Tool] Atlantic Healing Workbook | Link: https://example.com/ns-workbook\n\nA free printable workbook designed by a local counselor. Really helps with grounding exercises when things get overwhelming at home.\n\nRecommended by: Anonymous",
-    what_helped: [],
-    alias: "System",
-    flagged: false
-  }
-];
+export const SEED_POSTS: Post[] = [];
 
-export const MOCK_RESOURCES: Resource[] = [
-  // GENERAL RESOURCES
+export const SEED_RESOURCES: Resource[] = [
   {
     id: "r1",
     timestamp: new Date().toISOString(),
@@ -300,7 +76,7 @@ export const MOCK_RESOURCES: Resource[] = [
     title: "Starlings Community",
     url: "https://www.starlings.ca/",
     description: "Support for youth impacted by parental substance use through caregiver supports, youth leadership, and peer connection.",
-    category: 'general',
+    category: 'community',
     imageUrl: '/images/starlingsWebsite.png'
   },
   {
@@ -311,10 +87,9 @@ export const MOCK_RESOURCES: Resource[] = [
     title: "Camp Mariposa (Eluna Network)",
     url: "https://elunanetwork.org/camps-programs/camp-mariposa",
     description: "A free, nationwide addiction prevention and mentoring camp program for youth impacted by the substance use disorder of a family member.",
-    category: 'general',
+    category: 'community',
     imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800'
   },
-
   {
     id: "r_adult_1",
     timestamp: new Date().toISOString(),
@@ -323,179 +98,40 @@ export const MOCK_RESOURCES: Resource[] = [
     title: "Adult Children of Alcoholics (ACA)",
     url: "https://adultchildren.org/",
     description: "A global recovery program for adults who grew up in alcoholic or otherwise dysfunctional homes.",
-    category: 'general',
+    category: 'community',
     imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&q=80&w=800'
   },
-
-  // COMMUNITY RESOURCES - BOOKS
   {
-    id: "book_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.BOOK,
-    title: "The Body Keeps the Score",
-    url: "https://example.com/book1",
-    description: "Recommended by 'Bookworm': A transformative book that helped me understand how family trauma physically affected me.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: "book_2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.BOOK,
-    title: "Understanding Co-dependency",
-    url: "https://example.com/book2",
-    description: "Recommended by 'Alex': A great read about breaking codependent habits when you grew up with a parent struggling with addiction.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=800'
-  },
-
-  // COMMUNITY RESOURCES - PODCASTS
-  {
-    id: "pod_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.PODCAST,
-    title: "Adult Child Podcast",
-    url: "https://example.com/pod1",
-    description: "Recommended by 'ListenWell': Deep dives into what it means to be an adult child of alcoholic parents. Hilarious and healing.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1590602847861-f357a80277bd?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: "pod_2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.PODCAST,
-    title: "We Can Do Hard Things",
-    url: "https://example.com/pod2",
-    description: "Recommended by 'Jane': Not just about addiction, but about setting boundaries and dealing with difficult family dynamics.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1478147424044-ee3654e56eb6?auto=format&fit=crop&q=80&w=800'
-  },
-
-  // COMMUNITY RESOURCES - SONGS
-  {
-    id: "song_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.SONG,
-    title: "Matilda - Harry Styles",
-    url: "https://example.com/song1",
-    description: "Recommended by 'MusicHeals': 'You can let it go, you can throw a party full of everyone you know, and not invite your family.' Needs no explanation.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: "song_2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.SONG,
-    title: "Family Line - Conan Gray",
-    url: "https://example.com/song2",
-    description: "Recommended by 'BlueSky': A song about looking at your family trauma and realizing it stops with you.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&q=80&w=800'
-  },
-
-  // COMMUNITY RESOURCES - SOCIAL MEDIA
-  {
-    id: "social_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.SOCIAL_MEDIA,
-    title: "@TheHolisticPsychologist",
-    url: "https://example.com/social1",
-    description: "Recommended by 'Sam': Great instagram account outlining reparenting yourself and navigating tough family situations.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1611162617263-4ec3060a058e?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: "social_2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.SOCIAL_MEDIA,
-    title: "@NedraTawwab",
-    url: "https://example.com/social2",
-    description: "Recommended by 'Boundaries101': The absolute best content on setting practical, guilt-free boundaries with toxic family members.",
-    category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1616469829581-73993eb86b02?auto=format&fit=crop&q=80&w=800'
-  },
-
-  // COMMUNITY RESOURCES - WEBSITES
-  {
-    id: "web_1",
+    id: "web_kickstand_connect",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
     type: ResourceType.WEBSITE,
-    title: "Toronto Youth Support Group",
-    url: "https://example.com/torontoyouth",
-    description: "Recommended by 'CityAlly': A community-run peer support network holding weekly virtual meetings for teens in the GTA.",
+    title: "Kickstand Connect",
+    url: "https://mykickstand.ca/connect/",
+    description: "A youth-focused virtual clinic and support hub connecting young people with mental health, substance use, peer support, and wellness services.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "web_2",
+    id: "web_usay",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
     type: ResourceType.WEBSITE,
-    title: "Finch: Self Care Widget",
-    url: "https://example.com/finch",
-    description: "Recommended by 'Sarah': This site/app turns self care into a fun little game. Really helps me remember to drink water and take deep breaths.",
+    title: "Urban Society for Aboriginal Youth",
+    url: "https://usay.ca/",
+    description: "Calgary-based programs and resources supporting Indigenous youth through culture, connection, learning, and community.",
     category: 'community',
-    imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=800'
-  },
-
-  // COMMUNITY RESOURCES - MEMES & IMAGES
-  {
-    id: "meme_1",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.MEME,
-    title: "'Everything is Fine' Dog",
-    url: "https://example.com/meme1",
-    description: "Recommended by 'HumorHeals': When my parent tells me 'we're a normal family' while the house is metaphorically on fire. Humor is how I cope.",
-    category: 'community',
-    imageUrl: '/images/meme1.gif'
+    imageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800'
   },
   {
-    id: "meme_2",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.MEME,
-    title: "Therapist Nodding Meme",
-    url: "https://example.com/meme2",
-    description: "Recommended by 'Anon': For when you drop the casual lore about your childhood and your therapist just writes aggressively.",
-    category: 'community',
-    imageUrl: '/images/meme2.jpeg'
-  },
-
-  // PARTNER RESOURCES
-  {
-    id: "r7",
+    id: "web_roots_of_hope_laronge",
     timestamp: new Date().toISOString(),
     status: PostStatus.APPROVED,
     type: ResourceType.WEBSITE,
-    title: "Calgary Youth Therapy Center",
-    url: "https://example.com/calgaryclinic",
-    description: "Providing specialized trauma-informed counseling for teens and young adults dealing with family substance use.",
-    category: 'partner',
-    location: 'Calgary, AB',
-    isVerifiedPartner: true,
-    imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=800'
-  },
-  {
-    id: "r8",
-    timestamp: new Date().toISOString(),
-    status: PostStatus.APPROVED,
-    type: ResourceType.WEBSITE,
-    title: "Vancouver Coastal Counseling",
-    url: "https://example.com/vancouverclinic",
-    description: "Professional therapeutic services and outpatient support for youth mental health and addiction recovery.",
-    category: 'partner',
-    location: 'Vancouver, BC',
-    isVerifiedPartner: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=80&w=800'
+    title: "Roots of Hope La Ronge",
+    url: "https://www.rootsofhope.ca/",
+    description: "A community-led suicide prevention and life promotion initiative focused on hope, connection, and locally grounded support.",
+    category: 'community',
+    imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800'
   }
 ];

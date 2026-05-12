@@ -28,7 +28,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-white z-[5000] flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center group">
-            <img src="/logo-star.avif" alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
+            <img src={`${import.meta.env.BASE_URL}logo-star.avif`} alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

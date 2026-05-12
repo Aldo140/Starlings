@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 // set base to '/repo-name/', otherwise use '/' for root domain
 export default defineConfig({
   plugins: [react()],
-  base: './', // Universal relative pathing for Vercel AND GitHub Pages
+  base: process.env.GITHUB_PAGES_BASE || './',
   test: {
     environment: 'jsdom',
     globals: true,

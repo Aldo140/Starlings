@@ -4,7 +4,7 @@ import SupportMap from '../components/Map.tsx';
 import PostCard from '../components/PostCard.tsx';
 import { apiService, calculateDistance } from '../services/api.ts';
 import { Post } from '../types.ts';
-import { ICONS, SEED_POSTS } from '../constants.tsx';
+import { ICONS } from '../constants.tsx';
 import { Drawer } from 'vaul';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,9 +32,7 @@ const MapView: React.FC = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      // Keep generic example posts out of production review; use them only for local development.
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      setPosts(isLocalhost ? SEED_POSTS.map(p => ({ ...p, alias: p.alias || apiService.generateAlias() })) : []);
+      setPosts([]);
       setLoading(false);
 
       // Fetch real data in background

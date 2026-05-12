@@ -1,5 +1,5 @@
 import React from 'react';
-import { Post, Resource, ResourceType, PostStatus } from './types.ts';
+import { Resource, ResourceType, PostStatus } from './types.ts';
 import {
   Heart,
   MapPin,
@@ -65,7 +65,6 @@ export const HELP_OPTIONS = [
   "Other"
 ];
 
-export const SEED_POSTS: Post[] = [];
 
 export const SEED_RESOURCES: Resource[] = [
   {

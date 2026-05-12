@@ -1,5 +1,5 @@
 import { Post, PostStatus, LocationSearchResult, Resource, ResourceType, QAItem } from '../types.ts';
-import { SEED_POSTS, BANNED_PATTERNS, SEED_RESOURCES } from '../constants.tsx';
+import { BANNED_PATTERNS, SEED_RESOURCES } from '../constants.tsx';
 
 /**
  * High-priority Canadian cities for instant, zero-latency suggestions.
@@ -39,14 +39,14 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBU
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
 const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v5';
+const QA_CACHE_KEY = 'starlings_approved_qa_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-let inFlightRequest: Promise<Post[]> | null = null;
+// One-time cleanup of stale cache keys from previous versions
+['starlings_approved_posts_v2', 'starlings_approved_resources_v2', 'starlings_approved_resources_v3', 'starlings_approved_resources_v4'].forEach(k => localStorage.removeItem(k));
 
-const getSeedPostsForEnvironment = (): Post[] => {
-  return isLocalhost ? SEED_POSTS.map(apiService.ensureAlias) as Post[] : [];
-};
+let inFlightRequest: Promise<Post[]> | null = null;
 
 const matchesBannedPattern = (text: string): boolean => {
   return BANNED_PATTERNS.some(pattern => {
@@ -113,13 +113,27 @@ const getCachedResources = (): { data: Resource[], timestamp: number } | null =>
 
 const setCachedResources = (resources: Resource[]): void => {
   try {
-    localStorage.setItem(RESOURCE_CACHE_KEY, JSON.stringify({
-      data: resources,
-      timestamp: Date.now()
-    }));
+    localStorage.setItem(RESOURCE_CACHE_KEY, JSON.stringify({ data: resources, timestamp: Date.now() }));
   } catch (e) {
     console.error('Error writing resource cache:', e);
   }
+};
+
+const getCachedQA = (): { data: QAItem[], timestamp: number } | null => {
+  try {
+    const cached = localStorage.getItem(QA_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    if (Date.now() - parsed.timestamp < CACHE_TTL) return parsed;
+    localStorage.removeItem(QA_CACHE_KEY);
+    return null;
+  } catch (e) { return null; }
+};
+
+const setCachedQA = (items: QAItem[]): void => {
+  try {
+    localStorage.setItem(QA_CACHE_KEY, JSON.stringify({ data: items, timestamp: Date.now() }));
+  } catch (e) { /* storage unavailable */ }
 };
 
 // ----------------------------------------------------
@@ -211,15 +225,12 @@ export const apiService = {
           return result;
         }
 
-        // Keep production true to Sheets; local development can still show examples.
-        const fallback = getSeedPostsForEnvironment();
-        setCachedPosts(fallback);
-        return fallback;
+        setCachedPosts([]);
+        return [];
       } catch (error) {
         console.error("Error fetching approved posts from Google Sheets:", error);
-        const fallback = getSeedPostsForEnvironment();
-        setCachedPosts(fallback);
-        return fallback;
+        setCachedPosts([]);
+        return [];
       } finally {
         inFlightRequest = null;
       }
@@ -292,7 +303,6 @@ export const apiService = {
       let queue: Post[] = JSON.parse(queueStr);
       if (queue.length === 0) return;
 
-      console.log(`Attempting to sync ${queue.length} offline posts...`);
       const remainingQueue: Post[] = [];
 
       for (const post of queue) {
@@ -319,10 +329,8 @@ export const apiService = {
 
       if (remainingQueue.length === 0) {
         localStorage.removeItem('starlings_sync_queue');
-        console.log("All offline posts synced successfully.");
       } else {
         localStorage.setItem('starlings_sync_queue', JSON.stringify(remainingQueue));
-        console.log(`${remainingQueue.length} posts remain in offline queue.`);
       }
     } catch (e) {
       console.error("Error syncing offline posts", e);
@@ -377,25 +385,14 @@ export const apiService = {
     }
 
     try {
-      console.log("Fetching live resources from Google Sheets...");
       const res = await fetch(`${GAS_URL}?action=getResources`);
       const data = await res.json();
-      console.log("RAW GOOGLE SHEETS payload:", data);
 
       if (Array.isArray(data) && data.length > 0) {
-        const mappedData: Resource[] = data.map(normalizeResource);
-
-        // Put Live Google Sheets data in FIRST entirely!
-        const finalArr = [...mappedData];
-
-        // Then append seed resources ONLY if ID doesn't already exist
-        SEED_RESOURCES.forEach(m => {
-          if (!finalArr.find(r => r.id === m.id)) {
-            finalArr.push(m as Resource);
-          }
-        });
-
-        console.log("Mapped Final Resources Array:", finalArr);
+        const unique = new Map<string, Resource>();
+        data.map(normalizeResource).forEach(r => unique.set(r.id, r));
+        SEED_RESOURCES.forEach(m => { if (!unique.has(m.id)) unique.set(m.id, m as Resource); });
+        const finalArr = Array.from(unique.values());
         setCachedResources(finalArr);
         return finalArr;
       }
@@ -452,12 +449,7 @@ export const apiService = {
       return { success: true, flagged: false };
     }
 
-    const qLower = question.toLowerCase();
-    let flagged = matchesBannedPattern(question);
-    const FLAGGED_WORDS = ['spam', 'abuse', 'slur', 'hate', 'suicide', 'self-harm'];
-    if (FLAGGED_WORDS.some(w => qLower.includes(w))) {
-      flagged = true;
-    }
+    const flagged = matchesBannedPattern(question);
 
     const payload = {
       action: "addQA",
@@ -546,14 +538,17 @@ export const apiService = {
   },
 
   async getApprovedQA(): Promise<QAItem[]> {
+    const cached = getCachedQA();
+    if (cached && !isLocalhost) return cached.data;
+
     try {
       const res = await fetch(`${GAS_URL}?action=getQA`);
       const data = await res.json();
       if (!Array.isArray(data)) return [];
 
-      return data
-        .filter(item => item && item.question && item.answer)
-        .map(item => ({
+      const items = data
+        .filter((item: any) => item && item.question && item.answer)
+        .map((item: any) => ({
           id: item.id || Math.random().toString(36).substring(7),
           timestamp: item.timestamp || new Date().toISOString(),
           status: item.status || PostStatus.APPROVED,
@@ -561,6 +556,8 @@ export const apiService = {
           answer: item.answer,
           flagged: item.flagged === true || item.flagged === 'TRUE',
         }));
+      setCachedQA(items);
+      return items;
     } catch (e) {
       console.error("Failed to fetch Live_QA:", e);
       return [];

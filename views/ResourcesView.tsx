@@ -62,13 +62,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const social = resource.type === ResourceType.SOCIAL_MEDIA ? getSocialDetails(resource.url) : null;
 
     return (
-        <div className="relative p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
-            {resource.isExample && (
-                <div className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">Sample Data</span>
-                </div>
-            )}
+        <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
             {resource.type === ResourceType.MEME && resource.imageUrl && (
                 <div className="mb-6 rounded-2xl overflow-hidden shadow-inner border border-gray-100 bg-gray-50 flex items-center justify-center">
                     <img src={resource.imageUrl} alt={resource.title} className="w-full max-h-64 object-contain" />
@@ -235,17 +229,6 @@ const ResourcesView: React.FC = () => {
                     </div>
                 </div>
 
-                {resources.some(r => r.isExample) && (
-                    <div className="mb-8 flex items-start gap-3 px-5 py-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                        <span className="text-amber-500 mt-0.5 flex-shrink-0">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                        </span>
-                        <p className="text-amber-700 text-sm font-semibold leading-relaxed">
-                            <span className="font-black uppercase tracking-wide">Sample data visible.</span> These placeholder entries show how the resources tab will look. Real resources will appear automatically once added and approved through the backend.
-                        </p>
-                    </div>
-                )}
-
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
@@ -327,11 +310,6 @@ const ResourcesView: React.FC = () => {
                                                         <span className={`text-[9px] md:text-[10px] text-white shadow-xl font-black uppercase tracking-widest px-3 md:px-4 py-1.5 md:py-2 rounded-full ${config.color} border border-white/20`}>
                                                             {config.label}
                                                         </span>
-                                                        {resource.isExample && (
-                                                            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-amber-400/90 text-white border border-amber-300/50">
-                                                                Sample
-                                                            </span>
-                                                        )}
                                                         {recommender && (
                                                             <div className="flex items-center gap-1.5 md:gap-2">
                                                                 <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center text-[10px] md:text-xs font-black shadow-lg">
@@ -550,11 +528,6 @@ const ResourcesView: React.FC = () => {
                                                     <div className="bg-white/90 text-[#e57c6e] shadow-sm text-[10px] font-black uppercase tracking-widest px-4 py-2 flex items-center gap-1.5 rounded-full">
                                                         {ICONS.ShieldCheck} Verified
                                                     </div>
-                                                    {resource.isExample && (
-                                                        <div className="bg-amber-400 text-white shadow-sm text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full">
-                                                            Sample
-                                                        </div>
-                                                    )}
                                                 </div>
 
                                                 <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">

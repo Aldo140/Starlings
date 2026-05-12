@@ -212,7 +212,7 @@ const Landing: React.FC = () => {
 
           {/* MIDDLE IMAGE BLOCK: Inline, elegantly constrained to fit the cluster */}
           <div className="w-full flex-grow flex items-center justify-center overflow-hidden max-h-[25vh] md:max-h-[35vh] min-h-[80px] md:min-h-[120px] relative">
-            <img src="/landing-people.jpg" className="w-full h-full object-contain mix-blend-multiply opacity-95" alt="" />
+            <img src={`${import.meta.env.BASE_URL}landing-people.jpg`} className="w-full h-full object-contain mix-blend-multiply opacity-95" alt="" />
           </div>
 
           {/* BOTTOM BUTTONS BLOCK: Guaranteed visible below image */}

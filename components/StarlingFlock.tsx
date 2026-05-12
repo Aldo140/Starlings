@@ -7,7 +7,7 @@ import React, { useEffect, useRef } from 'react';
 
 // Load the bird image once globally
 const birdImg = new Image();
-birdImg.src = '/favicon.png';
+birdImg.src = import.meta.env.BASE_URL + 'favicon.png';
 
 // Boid logic
 class Boid {

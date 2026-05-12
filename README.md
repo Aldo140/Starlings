@@ -52,7 +52,7 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
 ## 📂 Project Structure
 - `App.tsx`: Main entry point configuring HashRouter routes and offline sync listeners.
 - `types.ts`: TypeScript interfaces for Posts and Locations.
-- `constants.tsx`: Global configuration, ICONS, and Mock Data.
+- `constants.tsx`: Global configuration, ICONS, and launch seed resources.
 - `services/api.ts`: All data fetching, offline queuing, and geocoding logic.
 - `services/gas-backend.js`: The Google Apps Script deployed as a Web App to interface between the frontend and Google Sheets.
 - `components/`:
@@ -78,6 +78,20 @@ The app features a persistent **Crisis Banner**. Per the Starlings policy, the `
 - **Leaflet CSS**: The Leaflet CSS is loaded via CDN in `index.html`. If moving to a production build system, ensure the icon assets are handled correctly.
 - **Geocoding Limits**: Nominatim has a strict usage policy. Always keep the debouncing in `ShareView` above 500ms and use the local `CANADIAN_HUBS` index for common queries.
 - **2xl breakpoint (1536px)**: Landing page floating images (the tilted photo cards flanking the hero text) only render at `2xl` to avoid overlapping the core message on smaller desktops.
+
+## ✅ Google Sheets Moderation Workflow
+
+For the soft launch, Google Sheets remains the source of truth. The deployed Apps Script expects these tabs:
+
+- `Pending_Stories` and `Live_Stories`
+- `Pending_Resources` and `Live_Resources`
+- `Pending_QA` and `Live_QA`
+- `Pending_Reflections` and `Live_Reflections`
+- `Flagged_Words`
+
+New submissions land in the matching `Pending_*` tab. A moderator reviews the row, edits content if needed, and changes the `status` cell to `APPROVED`. The Apps Script `onEdit` trigger moves that row into the matching `Live_*` tab, and the frontend reads from the live tabs.
+
+Q&A answers show publicly only when an approved `Live_QA` row has both `question` and `answer` filled in. Resource reactions are stored as `helpful_count`, `supportive_count`, and `exploring_count` columns in `Live_Resources`. Short resource reflections submit to `Pending_Reflections` for moderation.
 
 ---
 

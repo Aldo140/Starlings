@@ -72,3 +72,12 @@ export interface Resource {
   supportive_count?: number;
   exploring_count?: number;
 }
+
+export interface QAItem {
+  id: string;
+  timestamp: string;
+  status: PostStatus | string;
+  question: string;
+  answer?: string;
+  flagged?: boolean;
+}

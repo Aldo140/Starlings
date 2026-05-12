@@ -2,21 +2,42 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
-import { ICONS, MOCK_RESOURCES } from '../constants.tsx';
+import { ICONS, SEED_RESOURCES } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [liked, setLiked] = useState(false);
     const [supportive, setSupportive] = useState(false);
     const [exploring, setExploring] = useState(false);
-    const [showComment, setShowComment] = useState(false);
+    const [showReflection, setShowReflection] = useState(false);
+    const [reflectionText, setReflectionText] = useState('');
+    const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
+    const [reflectionError, setReflectionError] = useState('');
 
     const handleInsightClick = async (type: 'helpful' | 'supportive' | 'exploring') => {
         if (type === 'helpful') { if (liked) return; setLiked(true); }
         if (type === 'supportive') { if (supportive) return; setSupportive(true); }
         if (type === 'exploring') { if (exploring) return; setExploring(true); }
         await apiService.incrementInsight(resource.id, type);
+    };
+
+    const handleReflectionSubmit = async () => {
+        const text = reflectionText.trim();
+        if (!text) return;
+        setReflectionError('');
+        const result = await apiService.submitReflection(resource.id, text);
+        if (result.flagged) {
+            setReflectionError('Please revise this reflection to remove crisis details, links, contact information, or identifying details.');
+            return;
+        }
+        if (result.success) {
+            setReflectionSubmitted(true);
+            setShowReflection(false);
+            setReflectionText('');
+        } else {
+            setReflectionError('Something went wrong. Please try again.');
+        }
     };
 
     let recommender = null;
@@ -33,7 +54,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
         if (u.includes('instagram.com')) return { name: 'Instagram', icon: <ImageIcon className="w-3.5 h-3.5" /> };
         if (u.includes('tiktok.com')) return { name: 'TikTok', icon: <Music className="w-3.5 h-3.5" /> };
         if (u.includes('facebook.com')) return { name: 'Facebook', icon: <Globe className="w-3.5 h-3.5" /> };
-        if (u.includes('twitter.com') || u.includes('x.com')) return { name: 'X (Twitter)', icon: <MessageCircle className="w-3.5 h-3.5" /> };
+        if (u.includes('twitter.com') || u.includes('x.com')) return { name: 'X (Twitter)', icon: <Share2 className="w-3.5 h-3.5" /> };
         if (u.includes('youtube.com')) return { name: 'YouTube', icon: <Globe className="w-3.5 h-3.5" /> };
         return { name: 'Social Profile', icon: <Share2 className="w-3.5 h-3.5" /> };
     };
@@ -75,25 +96,45 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
                         🌱 Worth exploring {((resource.exploring_count || 0) + (exploring ? 1 : 0)) > 0 ? `(${((resource.exploring_count || 0) + (exploring ? 1 : 0))})` : ''}
                     </button>
                 </div>
-                {!showComment ? (
-                    <button onClick={() => setShowComment(true)} className="text-xs text-gray-400 font-bold hover:text-[#448a7d] flex items-center gap-1.5 uppercase tracking-widest transition-colors"><MessageCircle className="w-4 h-4" /> Add reflection</button>
+                {reflectionSubmitted ? (
+                    <p className="text-xs text-[#448a7d] font-black uppercase tracking-widest">Reflection received</p>
+                ) : showReflection ? (
+                    <div className="space-y-3">
+                        <textarea
+                            value={reflectionText}
+                            onChange={(e) => setReflectionText(e.target.value)}
+                            maxLength={280}
+                            placeholder="Optional short reflection..."
+                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner min-h-24 resize-none"
+                        />
+                        {reflectionError && <p className="text-xs text-red-600 font-bold">{reflectionError}</p>}
+                        <div className="flex gap-2">
+                            <button onClick={handleReflectionSubmit} className="px-4 py-2 rounded-full bg-[#1e3a34] text-white text-xs font-black uppercase tracking-widest hover:bg-[#2d5a52] transition-colors">
+                                Submit
+                            </button>
+                            <button onClick={() => { setShowReflection(false); setReflectionError(''); }} className="px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 ) : (
-                    <input
-                        type="text"
-                        placeholder="Share your experience with this..."
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                alert("Reflections are currently saved locally. To sync globally, add a 'reflections' column to Live_Resources.");
-                                setShowComment(false);
-                            }
-                        }}
-                        className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner"
-                    />
+                    <button onClick={() => setShowReflection(true)} className="text-xs text-gray-400 font-bold hover:text-[#448a7d] flex items-center gap-1.5 uppercase tracking-widest transition-colors">
+                        <MessageCircle className="w-4 h-4" /> Add reflection
+                    </button>
                 )}
             </div>
         </div>
     );
-}, (prevProps, nextProps) => prevProps.resource.id === nextProps.resource.id);
+}, (prevProps, nextProps) => {
+    const prev = prevProps.resource;
+    const next = nextProps.resource;
+    return prev.id === next.id &&
+        prev.title === next.title &&
+        prev.description === next.description &&
+        prev.helpful_count === next.helpful_count &&
+        prev.supportive_count === next.supportive_count &&
+        prev.exploring_count === next.exploring_count;
+});
 
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);
@@ -104,9 +145,9 @@ const ResourcesView: React.FC = () => {
 
     useEffect(() => {
         const fetchResources = async () => {
-            // Force instant render using local Mock UI data
-            const mappedMocks = MOCK_RESOURCES.map(r => ({ ...r, alias: r.alias || apiService.generateAlias() })) as Resource[];
-            setResources(mappedMocks);
+            // Show real seed resources immediately while Google Sheets loads.
+            const seedResources = SEED_RESOURCES.map(r => ({ ...r, alias: r.alias || apiService.generateAlias() })) as Resource[];
+            setResources(seedResources);
             setLoading(false);
 
             // Silently fetch and hot-swap global Google Sheets data in the background
@@ -147,6 +188,14 @@ const ResourcesView: React.FC = () => {
                 .sort((a, b) => a.title.localeCompare(b.title));
         });
         return result;
+    }, [resources]);
+
+    const communityPartners = useMemo(() => {
+        return resources.filter(r => r.category === 'general');
+    }, [resources]);
+
+    const alignedPartners = useMemo(() => {
+        return resources.filter(r => r.category === 'partner');
     }, [resources]);
 
     return (
@@ -194,7 +243,8 @@ const ResourcesView: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-20">
-                        {/* GENERAL RESOURCES SECTION */}
+                        {/* COMMUNITY PARTNERS SECTION */}
+                        {communityPartners.length > 0 && (
                         <section>
                             <div className="mb-12 md:mb-16 lg:mb-20">
                                 {/* Accent bar */}
@@ -220,7 +270,7 @@ const ResourcesView: React.FC = () => {
                             </div>
                             {/* ACCORDION GALLERY CONTAINER for Community Partners */}
                             <div className="flex flex-col md:flex-row w-full h-[600px] gap-2 md:gap-4 mt-8">
-                                {resources.filter(r => r.category === 'general').map((resource, index) => {
+                                {communityPartners.map((resource, index) => {
                                     const config = typeConfig[resource.type] || typeConfig.website;
                                     const isActive = activeGeneralIndex === index;
 
@@ -303,6 +353,7 @@ const ResourcesView: React.FC = () => {
                                 })}
                             </div>
                         </section>
+                        )}
 
                         {/* COMMUNITY RESOURCES SECTION (BUCKETS) */}
                         <section className="relative w-full pb-16">
@@ -438,7 +489,7 @@ const ResourcesView: React.FC = () => {
                         </section>
 
                         {/* PARTNERS SECTION */}
-                        {resources.filter(r => r.category === 'partner').length > 0 && (
+                        {alignedPartners.length > 0 && (
                             <section>
                                 <div className="mb-12 md:mb-16 lg:mb-20">
                                     {/* Accent bar */}
@@ -463,7 +514,7 @@ const ResourcesView: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    {resources.filter(r => r.category === 'partner').map((resource) => {
+                                    {alignedPartners.map((resource) => {
                                         const config = typeConfig[resource.type] || typeConfig.website;
                                         return (
                                             <a

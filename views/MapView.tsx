@@ -4,7 +4,7 @@ import SupportMap from '../components/Map.tsx';
 import PostCard from '../components/PostCard.tsx';
 import { apiService, calculateDistance } from '../services/api.ts';
 import { Post } from '../types.ts';
-import { ICONS, MOCK_POSTS } from '../constants.tsx';
+import { ICONS, SEED_POSTS } from '../constants.tsx';
 import { Drawer } from 'vaul';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,8 +32,9 @@ const MapView: React.FC = () => {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      // Show mock data instantly - ZERO loading wait on first visit
-      setPosts(MOCK_POSTS.map(p => ({ ...p, alias: p.alias || apiService.generateAlias() })));
+      // Keep generic example posts out of production review; use them only for local development.
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      setPosts(isLocalhost ? SEED_POSTS.map(p => ({ ...p, alias: p.alias || apiService.generateAlias() })) : []);
       setLoading(false);
 
       // Fetch real data in background
@@ -74,7 +75,7 @@ const MapView: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const freshData = await apiService.getApprovedPosts();
+      const freshData = await apiService.getApprovedPosts(true);
       setPosts(freshData);
     } catch (error) {
       console.error('Refresh failed:', error);
@@ -164,8 +165,8 @@ const MapView: React.FC = () => {
 
   const selectedGroup = useMemo(() => {
     if (!selectedGroupId) return null;
-    return groupedPosts.find(group => group.id === selectedGroupId) || null;
-  }, [groupedPosts, selectedGroupId]);
+    return filteredGroups.find(group => group.id === selectedGroupId) || null;
+  }, [filteredGroups, selectedGroupId]);
 
   const mapFocus = selectedGroup
     ? { lat: selectedGroup.lat, lng: selectedGroup.lng }

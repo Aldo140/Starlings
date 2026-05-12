@@ -1,5 +1,5 @@
-import { Post, PostStatus, LocationSearchResult, Resource, ResourceType } from '../types.ts';
-import { MOCK_POSTS, BANNED_PATTERNS, MOCK_RESOURCES } from '../constants.tsx';
+import { Post, PostStatus, LocationSearchResult, Resource, ResourceType, QAItem } from '../types.ts';
+import { SEED_POSTS, BANNED_PATTERNS, SEED_RESOURCES } from '../constants.tsx';
 
 /**
  * High-priority Canadian cities for instant, zero-latency suggestions.
@@ -37,11 +37,34 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
 
 // Cache management
-const CACHE_KEY = 'starlings_approved_posts_v2';
+const CACHE_KEY = 'starlings_approved_posts_v3';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v3';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 let inFlightRequest: Promise<Post[]> | null = null;
+
+const getSeedPostsForEnvironment = (): Post[] => {
+  return isLocalhost ? SEED_POSTS.map(apiService.ensureAlias) as Post[] : [];
+};
+
+const matchesBannedPattern = (text: string): boolean => {
+  return BANNED_PATTERNS.some(pattern => {
+    pattern.lastIndex = 0;
+    return pattern.test(text);
+  });
+};
+
+const normalizeResource = (resource: any): Resource => ({
+  ...resource,
+  type: resource.resource_type || resource.type || ResourceType.WEBSITE,
+  imageUrl: resource.image_url || resource.imageUrl,
+  submitterEmail: resource.submitter_email || resource.submitterEmail,
+  category: resource.category || 'community',
+  helpful_count: Number(resource.helpful_count || 0),
+  supportive_count: Number(resource.supportive_count || 0),
+  exploring_count: Number(resource.exploring_count || 0),
+});
 
 const getCachedPosts = (): { data: Post[], timestamp: number } | null => {
   try {
@@ -72,12 +95,12 @@ const setCachedPosts = (posts: Post[]): void => {
 
 const getCachedResources = (): { data: Resource[], timestamp: number } | null => {
   try {
-    const cached = localStorage.getItem('starlings_approved_resources_v2');
+    const cached = localStorage.getItem(RESOURCE_CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
     const age = Date.now() - parsed.timestamp;
     if (age < CACHE_TTL) return parsed;
-    localStorage.removeItem('starlings_approved_resources_v2');
+    localStorage.removeItem(RESOURCE_CACHE_KEY);
     return null;
   } catch (e) {
     return null;
@@ -86,7 +109,7 @@ const getCachedResources = (): { data: Resource[], timestamp: number } | null =>
 
 const setCachedResources = (resources: Resource[]): void => {
   try {
-    localStorage.setItem('starlings_approved_resources_v2', JSON.stringify({
+    localStorage.setItem(RESOURCE_CACHE_KEY, JSON.stringify({
       data: resources,
       timestamp: Date.now()
     }));
@@ -178,27 +201,19 @@ export const apiService = {
           const uniquePostsMap = new Map<string, Post>();
           normalizedApproved.forEach(post => uniquePostsMap.set(post.id, post));
 
-          // Inject MOCK_POSTS for demonstration purposes so the Map always has rich examples
-          const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
-          fallback.forEach(mock => {
-            if (!uniquePostsMap.has(mock.id)) {
-              uniquePostsMap.set(mock.id, mock);
-            }
-          });
-
           const uniquePosts = Array.from(uniquePostsMap.values());
           const result = uniquePosts.map(apiService.ensureAlias) as Post[];
           setCachedPosts(result);
           return result;
         }
 
-        // Fallback to mock posts
-        const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
+        // Keep production true to Sheets; local development can still show examples.
+        const fallback = getSeedPostsForEnvironment();
         setCachedPosts(fallback);
         return fallback;
       } catch (error) {
         console.error("Error fetching approved posts from Google Sheets:", error);
-        const fallback = MOCK_POSTS.map(apiService.ensureAlias) as Post[];
+        const fallback = getSeedPostsForEnvironment();
         setCachedPosts(fallback);
         return fallback;
       } finally {
@@ -215,14 +230,8 @@ export const apiService = {
       return { success: true, flagged: false }; // Silently drop, UI acts like success
     }
 
-    let flagged = false;
     const combinedText = postData.message || '';
-    for (const pattern of BANNED_PATTERNS) {
-      if (pattern.test(combinedText)) {
-        flagged = true;
-        break;
-      }
-    }
+    const flagged = matchesBannedPattern(combinedText);
 
     const newPost: Post = {
       id: Math.random().toString(36).substring(7),
@@ -349,17 +358,11 @@ export const apiService = {
           const res = await fetch(`${GAS_URL}?action=getResources`);
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            const mappedData: Resource[] = data.map(r => ({
-              ...r,
-              type: r.resource_type || r.type,
-              imageUrl: r.image_url || r.imageUrl,
-              submitterEmail: r.submitter_email || r.submitterEmail,
-              category: 'community', // FORCE to community accordion
-            }));
+            const mappedData: Resource[] = data.map(normalizeResource);
             const unique = new Map<string, Resource>();
-            // Put mappedData in FIRST, then inject mocks if they don't overwrite
+            // Put mappedData in FIRST, then inject launch seed resources if they don't overwrite
             mappedData.forEach(r => unique.set(r.id, r));
-            MOCK_RESOURCES.forEach(m => {
+            SEED_RESOURCES.forEach(m => {
               if (!unique.has(m.id)) unique.set(m.id, m as Resource);
             });
             setCachedResources(Array.from(unique.values()));
@@ -376,19 +379,13 @@ export const apiService = {
       console.log("RAW GOOGLE SHEETS payload:", data);
 
       if (Array.isArray(data) && data.length > 0) {
-        const mappedData: Resource[] = data.map(r => ({
-          ...r,
-          type: r.resource_type || r.type,
-          imageUrl: r.image_url || r.imageUrl,
-          submitterEmail: r.submitter_email || r.submitterEmail,
-          category: 'community', // FORCE to community accordion
-        }));
+        const mappedData: Resource[] = data.map(normalizeResource);
 
         // Put Live Google Sheets data in FIRST entirely!
         const finalArr = [...mappedData];
 
-        // Then append mock data ONLY if ID doesn't already exist
-        MOCK_RESOURCES.forEach(m => {
+        // Then append seed resources ONLY if ID doesn't already exist
+        SEED_RESOURCES.forEach(m => {
           if (!finalArr.find(r => r.id === m.id)) {
             finalArr.push(m as Resource);
           }
@@ -398,11 +395,11 @@ export const apiService = {
         setCachedResources(finalArr);
         return finalArr;
       }
-      setCachedResources(MOCK_RESOURCES as Resource[]);
-      return MOCK_RESOURCES as Resource[];
+      setCachedResources(SEED_RESOURCES as Resource[]);
+      return SEED_RESOURCES as Resource[];
     } catch (err) {
       console.error("Failed to fetch Live_Resources:", err);
-      return MOCK_RESOURCES as Resource[];
+      return SEED_RESOURCES as Resource[];
     }
   },
 
@@ -424,6 +421,9 @@ export const apiService = {
       alias: resourceData.alias || '',
       submitterEmail: resourceData.submitterEmail || '',
       qualifications: resourceData.qualifications || '',
+      category: resourceData.category || 'community',
+      location: resourceData.location || '',
+      image_url: resourceData.imageUrl || '',
       city: 'Unknown'
     };
 
@@ -448,14 +448,8 @@ export const apiService = {
       return { success: true, flagged: false };
     }
 
-    let flagged = false;
     const qLower = question.toLowerCase();
-    for (const pattern of BANNED_PATTERNS) {
-      if (pattern.test(question)) {
-        flagged = true;
-        break;
-      }
-    }
+    let flagged = matchesBannedPattern(question);
     const FLAGGED_WORDS = ['spam', 'abuse', 'slur', 'hate', 'suicide', 'self-harm'];
     if (FLAGGED_WORDS.some(w => qLower.includes(w))) {
       flagged = true;
@@ -503,6 +497,69 @@ export const apiService = {
     } catch (e) {
       console.error("Failed to increment insight", e);
       return { success: false };
+    }
+  },
+
+  async submitReflection(resourceId: string, reflection: string): Promise<{ success: boolean; flagged: boolean }> {
+    if (!checkRateLimit()) {
+      console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
+      return { success: true, flagged: false };
+    }
+
+    const cleanReflection = reflection.trim();
+    const flagged = matchesBannedPattern(cleanReflection);
+
+    if (flagged) {
+      return { success: false, flagged: true };
+    }
+
+    try {
+      const payload = {
+        action: "addReflection",
+        id: Math.random().toString(36).substring(7),
+        timestamp: new Date().toISOString(),
+        status: PostStatus.PENDING,
+        resourceId,
+        reflection: cleanReflection,
+        flagged
+      };
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
+    } catch (e) {
+      console.error("Failed to submit reflection", e);
+      return { success: false, flagged };
+    }
+  },
+
+  hasBannedContent(text: string): boolean {
+    return matchesBannedPattern(text);
+  },
+
+  async getApprovedQA(): Promise<QAItem[]> {
+    try {
+      const res = await fetch(`${GAS_URL}?action=getQA`);
+      const data = await res.json();
+      if (!Array.isArray(data)) return [];
+
+      return data
+        .filter(item => item && item.question && item.answer)
+        .map(item => ({
+          id: item.id || Math.random().toString(36).substring(7),
+          timestamp: item.timestamp || new Date().toISOString(),
+          status: item.status || PostStatus.APPROVED,
+          question: item.question,
+          answer: item.answer,
+          flagged: item.flagged === true || item.flagged === 'TRUE',
+        }));
+    } catch (e) {
+      console.error("Failed to fetch Live_QA:", e);
+      return [];
     }
   }
 };

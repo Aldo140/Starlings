@@ -51,6 +51,7 @@ describe('Content Moderation BANNED_PATTERNS', () => {
     describe('Crisis Keywords', () => {
         it('should flag critical crisis keywords', () => {
             expect(checkMessage('I want to kill myself')).toBe(true);
+            expect(checkMessage('I might hurt myself')).toBe(true);
             expect(checkMessage('Thinking about suicide')).toBe(true);
             expect(checkMessage('I am going to overdose tonight')).toBe(true);
             expect(checkMessage('self harm is my only escape')).toBe(true);

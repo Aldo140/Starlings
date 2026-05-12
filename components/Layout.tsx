@@ -21,7 +21,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="bg-[#fbd6d1] border-b border-[#e57c6e]/20 py-3 px-4 flex-shrink-0 text-center z-50">
         <p className="text-xs md:text-sm font-semibold text-[#1e3a34]">
           Starlings is not crisis support. If you need support right now, you can find care options
-          <a href="https://starlings.ca/crisis" className="ml-1 underline hover:text-[#e57c6e] transition-colors">here</a>.
+          <a href="https://www.starlings.ca/community-crisis-lines" className="ml-1 underline hover:text-[#e57c6e] transition-colors">here</a>.
         </p>
       </div>
 
@@ -110,7 +110,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-teal-100/40 border-t border-white/5 pt-12 text-center md:text-left">
               <p>&copy; {new Date().getFullYear()} Starlings Community.</p>
-              <p>Starlings is not crisis support. If you need support right now, you can find care options <a href="https://starlings.ca/crisis" className="underline hover:text-[#e57c6e] transition-colors">here</a>.</p>
+              <p>Starlings is not crisis support. If you need support right now, you can find care options <a href="https://www.starlings.ca/community-crisis-lines" className="underline hover:text-[#e57c6e] transition-colors">here</a>.</p>
             </div>
           </div>
         </footer>

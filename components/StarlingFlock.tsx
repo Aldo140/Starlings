@@ -214,7 +214,7 @@ export const StarlingFlock: React.FC = () => {
                 boid.vy += sepVY * 0.05;
                 boid.vz += sepVZ * 0.05;
 
-                // Independent gentle wander (Perlin-ish fake noise) so they casually swoop and curve
+                // Independent gentle wander (procedural noise) so they casually swoop and curve
                 boid.vx += (Math.random() - 0.5) * 0.15;
                 boid.vy += (Math.random() - 0.5) * 0.15;
                 boid.vz += (Math.random() - 0.5) * 0.15;

@@ -64,8 +64,7 @@ const ShareView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  const FLAGGED_WORDS = ['spam', 'abuse', 'slur', 'hate', 'suicide', 'self-harm']; // Placeholder flagged words
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
 
   useEffect(() => {
     const query = formData.citySearch;
@@ -138,8 +137,8 @@ const ShareView: React.FC = () => {
       ? `${formData.promptA} ${formData.promptB} ${formData.promptC}`.toLowerCase()
       : `${formData.resourceTitle} ${formData.resourceDescription} ${formData.resourceAuthor}`.toLowerCase();
 
-    if (FLAGGED_WORDS.some(word => fullText.includes(word))) {
-      setErrorMessage("Your submission contains flagged words and cannot be submitted. Please revise your content.");
+    if (apiService.hasBannedContent(fullText)) {
+      setShowSafetyModal(true);
       return;
     }
 
@@ -188,7 +187,9 @@ const ShareView: React.FC = () => {
           title: formData.resourceTitle,
           url: formData.resourceUrl,
           type: formData.resourceType,
-          description: combinedDesc
+          description: combinedDesc,
+          alias: formData.resourceAlias || 'Anonymous',
+          category: 'community'
         });
       }
     }
@@ -222,6 +223,46 @@ const ShareView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 md:py-24 xl:py-32 max-[400px]:px-4 max-[400px]:py-8 animate-reveal">
+      {showSafetyModal && (
+        <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-[#1e3a34]/70 backdrop-blur-sm px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="safety-modal-title"
+            className="w-full max-w-lg bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl border border-white"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-[#fbd6d1] text-[#e57c6e] flex items-center justify-center mb-6">
+              {ICONS.Heart}
+            </div>
+            <h2 id="safety-modal-title" className="text-2xl md:text-3xl font-black text-[#1e3a34] italic tracking-tight mb-4">
+              You deserve support right now.
+            </h2>
+            <p className="text-gray-600 font-medium leading-relaxed mb-4">
+              Thank you for trusting this space. What you wrote sounds like it may need more immediate support than this map can offer.
+            </p>
+            <p className="text-gray-600 font-medium leading-relaxed mb-8">
+              Starlings is not crisis support, but care is available. Please connect with a crisis or mental health support service, or revise your note so it does not include crisis details, contact information, or identifying details.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="https://www.starlings.ca/community-crisis-lines"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-6 py-4 rounded-2xl bg-[#1e3a34] text-white text-center font-black uppercase tracking-widest text-xs hover:bg-[#2d5a52] transition-colors"
+              >
+                Find Care Options
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowSafetyModal(false)}
+                className="flex-1 px-6 py-4 rounded-2xl bg-gray-100 text-[#1e3a34] font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-colors"
+              >
+                Revise Submission
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-12 md:mb-16 text-center space-y-2">
         <h1 className="text-4xl md:text-6xl max-[400px]:text-3xl font-black text-[#1e3a34] italic tracking-tight">Share your light.</h1>
         <p className="text-gray-500 font-medium md:text-lg">Your note or resource could be the very thing someone needs today.</p>
@@ -486,8 +527,8 @@ const ShareView: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isSubmitting || !isFormValid}
-            className={`w-full py-6 md:py-8 rounded-[2rem] font-black text-xl md:text-2xl transition-all shadow-xl active:scale-[0.98] ${!isFormValid ? 'bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52] hover:shadow-2xl hover:-translate-y-1'
+            disabled={isSubmitting || !isFormValid()}
+            className={`w-full py-6 md:py-8 rounded-[2rem] font-black text-xl md:text-2xl transition-all shadow-xl active:scale-[0.98] ${!isFormValid() ? 'bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52] hover:shadow-2xl hover:-translate-y-1'
               }`}
           >
             {isSubmitting ? 'Submitting...' : `Share your ${shareType === 'note' ? 'Note' : 'Resource'}`}

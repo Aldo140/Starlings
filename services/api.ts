@@ -38,7 +38,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBU
 
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
-const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v3';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v4';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
@@ -55,16 +55,20 @@ const matchesBannedPattern = (text: string): boolean => {
   });
 };
 
-const normalizeResource = (resource: any): Resource => ({
-  ...resource,
-  type: resource.resource_type || resource.type || ResourceType.WEBSITE,
-  imageUrl: resource.image_url || resource.imageUrl,
-  submitterEmail: resource.submitter_email || resource.submitterEmail,
-  category: resource.category || 'community',
-  helpful_count: Number(resource.helpful_count || 0),
-  supportive_count: Number(resource.supportive_count || 0),
-  exploring_count: Number(resource.exploring_count || 0),
-});
+const normalizeResource = (resource: any): Resource => {
+  const rawCategory = (resource.category || '').toLowerCase().trim();
+  const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
+  return {
+    ...resource,
+    type: resource.resource_type || resource.type || ResourceType.WEBSITE,
+    imageUrl: resource.image_url || resource.imageUrl,
+    submitterEmail: resource.submitter_email || resource.submitterEmail,
+    category,
+    helpful_count: Number(resource.helpful_count || 0),
+    supportive_count: Number(resource.supportive_count || 0),
+    exploring_count: Number(resource.exploring_count || 0),
+  };
+};
 
 const getCachedPosts = (): { data: Post[], timestamp: number } | null => {
   try {

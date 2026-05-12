@@ -224,12 +224,13 @@ const Landing: React.FC = () => {
               Explore the Map
               <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>
             </Link>
-            <a
-              href="#ask-question"
+            <button
+              type="button"
+              onClick={() => document.getElementById('ask-question')?.scrollIntoView({ behavior: 'smooth' })}
               className="w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-[#e57c6e] text-white rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:bg-[#d46a5c] transition-all flex items-center justify-center gap-2 md:gap-3 active:scale-95"
             >
               Ask a Question {ICONS.MessageCircle}
-            </a>
+            </button>
             <Link
               to="/share"
               className="w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-white text-[#1e3a34] border-2 border-[#1e3a34]/10 rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:border-[#1e3a34]/40 transition-all flex items-center justify-center gap-2 md:gap-3 hover:bg-gray-50 active:scale-95"

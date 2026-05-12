@@ -71,6 +71,7 @@ export interface Resource {
   helpful_count?: number;
   supportive_count?: number;
   exploring_count?: number;
+  isExample?: boolean;
 }
 
 export interface QAItem {

@@ -38,7 +38,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBU
 
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
-const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v4';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v5';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 

@@ -533,13 +533,13 @@ const ResourcesView: React.FC = () => {
                                             onClick={() => setActiveGeneralIndex(isActive ? -1 : index)}
                                         >
                                             {/* Background image */}
-                                            <div className="absolute inset-0">
+                                            <div className="absolute inset-0 bg-[#0d1a17]">
                                                 {resource.imageUrl ? (
                                                     <motion.img
                                                         src={resource.imageUrl}
                                                         alt={resource.title}
-                                                        className="w-full h-full object-cover"
-                                                        animate={{ scale: isActive ? 1.04 : 1.1 }}
+                                                        className="w-full h-full object-contain object-top"
+                                                        animate={{ scale: isActive ? 1.0 : 1.0 }}
                                                         transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1] }}
                                                     />
                                                 ) : (
@@ -675,9 +675,9 @@ const ResourcesView: React.FC = () => {
                                             onClick={() => setActiveGeneralIndex(index)}
                                             className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] transition-all duration-[800ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end ${isActive ? 'flex-[10] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)] border-2 border-indigo-100' : 'flex-[1] shadow-sm border border-gray-100/50 hover:flex-[1.5]'}`}
                                         >
-                                            <div className="absolute inset-0">
+                                            <div className="absolute inset-0 bg-[#0d1a17]">
                                                 {resource.imageUrl ? (
-                                                    <img src={resource.imageUrl} alt={resource.title} className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`} />
+                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top transition-transform duration-[1.5s] ease-out" />
                                                 ) : (
                                                     <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center text-indigo-500/20">
                                                         <div className="scale-[3]">{ICONS.Heart}</div>
@@ -1203,9 +1203,9 @@ const ResourcesView: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-[#f0f7f5] flex-shrink-0 relative overflow-hidden">
                                                     {resource.imageUrl ? (
-                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
                                                             <div className="scale-150">{ICONS.Heart}</div>

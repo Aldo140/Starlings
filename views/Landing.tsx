@@ -250,13 +250,10 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
           {MURMURATION_BIRDS.map(([cx, cy, rotate], i) => (
             <path
               key={`b${i}`}
-              d="M-7,0 Q-3.5,-5 0,-1.5 Q3.5,-5 7,0"
-              stroke="#448a7d"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              fill="none"
-              opacity={0.45 + (i % 4) * 0.14}
-              transform={`translate(${cx},${cy}) rotate(${rotate})`}
+              d="M7,0 C4,-1 0,-4 -4,-5 C-7,-3 -7,0 -5,0 C-7,0 -7,3 -4,5 C0,4 4,1 7,0 Z"
+              fill="#448a7d"
+              opacity={0.3 + (i % 4) * 0.12}
+              transform={`translate(${cx},${cy}) rotate(${rotate}) scale(${0.7 + (i % 3) * 0.2})`}
             />
           ))}
         </svg>

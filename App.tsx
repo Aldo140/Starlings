@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout.tsx';
 import Landing from './views/Landing.tsx';
-import MapView from './views/MapView.tsx';
-import ShareView from './views/ShareView.tsx';
-import Guidelines from './views/Guidelines.tsx';
-import ResourcesView from './views/ResourcesView.tsx';
-import AddResourceView from './views/AddResourceView.tsx';
 import { apiService } from './services/api.ts';
+
+// Non-landing routes lazy-loaded so framer-motion, leaflet, etc.
+// are not bundled into the initial JS payload.
+const MapView = React.lazy(() => import('./views/MapView.tsx'));
+const ShareView = React.lazy(() => import('./views/ShareView.tsx'));
+const Guidelines = React.lazy(() => import('./views/Guidelines.tsx'));
+const ResourcesView = React.lazy(() => import('./views/ResourcesView.tsx'));
+const AddResourceView = React.lazy(() => import('./views/AddResourceView.tsx'));
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -16,7 +19,6 @@ const App: React.FC = () => {
 
     // Listen for browser gaining network connection
     const handleOnline = () => {
-      console.log('Network connected. Triggering offline sync...');
       apiService.syncOfflinePosts();
     };
 
@@ -32,14 +34,16 @@ const App: React.FC = () => {
       }}
     >
       <Layout>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/map" element={<MapView />} />
-          <Route path="/resources" element={<ResourcesView />} />
-          <Route path="/add-resource" element={<AddResourceView />} />
-          <Route path="/share" element={<ShareView />} />
-          <Route path="/guidelines" element={<Guidelines />} />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/map" element={<MapView />} />
+            <Route path="/resources" element={<ResourcesView />} />
+            <Route path="/add-resource" element={<AddResourceView />} />
+            <Route path="/share" element={<ShareView />} />
+            <Route path="/guidelines" element={<Guidelines />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </Router>
   );

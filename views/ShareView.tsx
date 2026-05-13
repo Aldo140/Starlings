@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { LocationSearchResult, ResourceType } from '../types.ts';
 import { HELP_OPTIONS, ICONS } from '../constants.tsx';
+import LoadingBar from '../components/LoadingBar.tsx';
 
 // A beautifully styled custom checkbox component
 const CustomCheckbox = ({ checked, onChange, label, subtext, id }: { checked: boolean, onChange: (e: any) => void, label: string, subtext: string, id: string }) => (
@@ -223,6 +224,8 @@ const ShareView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12 md:py-24 xl:py-32 max-[400px]:px-4 max-[400px]:py-8 animate-reveal">
+      {/* Loading bar — shows during form submission */}
+      <LoadingBar isLoading={isSubmitting} className="fixed top-0 left-0 right-0 z-[5001]" />
       {showSafetyModal && (
         <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-[#1e3a34]/70 backdrop-blur-sm px-4">
           <div
@@ -528,10 +531,17 @@ const ShareView: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting || !isFormValid()}
-            className={`w-full py-6 md:py-8 rounded-[2rem] font-black text-xl md:text-2xl transition-all shadow-xl active:scale-[0.98] ${!isFormValid() ? 'bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52] hover:shadow-2xl hover:-translate-y-1'
+            className={`w-full py-6 md:py-8 rounded-[2rem] font-black text-xl md:text-2xl transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3 ${!isFormValid() ? 'bg-gray-100 text-gray-300 shadow-none' : 'bg-[#1e3a34] text-white hover:bg-[#2d5a52] hover:shadow-2xl hover:-translate-y-1'
               }`}
           >
-            {isSubmitting ? 'Submitting...' : `Share your ${shareType === 'note' ? 'Note' : 'Resource'}`}
+            {isSubmitting ? (
+              <>
+                <span className="w-5 h-5 rounded-full border-[2.5px] border-white/30 border-t-white animate-spin flex-shrink-0" />
+                Sending...
+              </>
+            ) : (
+              `Share your ${shareType === 'note' ? 'Note' : 'Resource'}`
+            )}
           </button>
         </form>
       </div>

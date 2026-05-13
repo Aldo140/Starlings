@@ -573,7 +573,13 @@ export const apiService = {
           Array.isArray(parsed.data) &&
           parsed.data.length > 0
         ) {
-          dynamicFlaggedWords = parsed.data;
+          // Re-apply header filter in case an older cache was written before this fix
+          const HEADER_VALUES = new Set(['term', 'word', 'phrase', 'flagged_word']);
+          dynamicFlaggedWords = parsed.data.filter(
+            (w: unknown) =>
+              typeof w === 'string' &&
+              !HEADER_VALUES.has((w as string).trim().toLowerCase())
+          );
           return dynamicFlaggedWords;
         }
         localStorage.removeItem(FLAGGED_WORDS_CACHE_KEY);
@@ -585,8 +591,15 @@ export const apiService = {
       const res = await fetch(`${GAS_URL}?action=getFlaggedWords`);
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
+        // The Flagged_Words sheet has a "Term" header in row 1 that the backend
+        // returns as the first entry. Strip it (and any other header-like value)
+        // so it doesn't generate false positives on the word "term".
+        const HEADER_VALUES = new Set(['term', 'word', 'phrase', 'flagged_word']);
         dynamicFlaggedWords = data.filter(
-          (w: unknown) => typeof w === 'string' && w.trim().length > 0
+          (w: unknown) =>
+            typeof w === 'string' &&
+            w.trim().length > 0 &&
+            !HEADER_VALUES.has(w.trim().toLowerCase())
         );
         try {
           localStorage.setItem(

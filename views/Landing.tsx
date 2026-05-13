@@ -198,74 +198,43 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
 
       {variant === 'hands' && (
         <svg {...svgBase}>
-          {/* Floating form */}
-          <rect x="82" y="22" width="56" height="38" rx="4"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.08)"/>
-          <line x1="92" y1="33" x2="128" y2="33" stroke="#448a7d" strokeWidth="1" opacity="0.45"/>
-          <line x1="92" y1="41" x2="124" y2="41" stroke="#448a7d" strokeWidth="1" opacity="0.35"/>
-          <line x1="92" y1="49" x2="118" y2="49" stroke="#448a7d" strokeWidth="1" opacity="0.25"/>
-          {/* Float glow */}
-          <ellipse cx="110" cy="66" rx="30" ry="4.5"
-            stroke="#448a7d" strokeWidth="1" opacity="0.16" fill="none"/>
-          {/* Left fingers */}
-          <path d="M66 118 C64 106 65 96 70 90"  stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          <path d="M80 114 C78 103 80 93 86 88"  stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          <path d="M94 111 C93 101 96 92 102 87" stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          {/* Right fingers */}
-          <path d="M154 118 C156 106 155 96 150 90"  stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          <path d="M140 114 C142 103 140 93 134 88"  stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          <path d="M126 111 C127 101 124 92 118 87"  stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-          {/* Arms */}
-          <path d="M24 188 C24 160 38 136 66 118"   stroke="#1e3a34" strokeWidth="2" strokeLinecap="round" fill="none"/>
-          <path d="M196 188 C196 160 182 136 154 118" stroke="#1e3a34" strokeWidth="2" strokeLinecap="round" fill="none"/>
-          {/* Palm bowl */}
-          <path d="M24 188 C46 202 80 208 110 208 C140 208 174 202 196 188"
-            stroke="#1e3a34" strokeWidth="2" strokeLinecap="round" fill="rgba(30,58,52,0.04)"/>
-          {/* Left wrist sprig */}
-          <path d="M34 174 C24 162 22 148 28 138" stroke="#448a7d" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-          <path d="M26 154 C18 146 21 136 28 132" stroke="#448a7d" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.7"/>
-          <path d="M22 150 C16 144 19 136 26 133 C24 140 20 146 22 150Z"
-            stroke="#448a7d" strokeWidth="1.2" fill="rgba(68,138,125,0.10)"/>
-          {/* Right wrist sprig */}
-          <path d="M186 174 C196 162 198 148 192 138" stroke="#448a7d" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-          <path d="M194 154 C202 146 199 136 192 132" stroke="#448a7d" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity="0.7"/>
-          <path d="M198 150 C204 144 201 136 194 133 C196 140 200 146 198 150Z"
-            stroke="#448a7d" strokeWidth="1.2" fill="rgba(68,138,125,0.10)"/>
+          {/* Lens circle */}
+          <circle cx="96" cy="96" r="58" stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.06)"/>
+          {/* Inner lens ring */}
+          <circle cx="96" cy="96" r="51" stroke="#448a7d" strokeWidth="0.7" opacity="0.3"/>
+          {/* Handle */}
+          <line x1="140" y1="140" x2="178" y2="178" stroke="#1e3a34" strokeWidth="4" strokeLinecap="round"/>
+          <line x1="140" y1="140" x2="178" y2="178" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round" opacity="0.4"/>
+          {/* Stem inside lens */}
+          <line x1="96" y1="146" x2="96" y2="56" stroke="#1e3a34" strokeWidth="1.4"/>
+          {/* Lower leaf pair */}
+          <path d="M96 120 C86 108 83 94 90 83 C93 95 96 108 96 120Z"
+            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.14)"/>
+          <path d="M96 120 C106 108 109 94 102 83 C99 95 96 108 96 120Z"
+            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.14)"/>
+          {/* Upper leaf pair */}
+          <path d="M96 90 C89 81 88 70 94 63 C95 71 96 81 96 90Z"
+            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
+          <path d="M96 90 C103 81 104 70 98 63 C97 71 96 81 96 90Z"
+            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
         </svg>
       )}
 
       {variant === 'pin' && (
         <svg {...svgBase}>
-          {/* Birds (v-shapes) in sky */}
-          <path d="M42 38 C47 32 53 38 58 32"   stroke="#1e3a34" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
-          <path d="M162 25 C167 19 173 25 178 19" stroke="#1e3a34" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
-          <path d="M174 48 C178 42 183 48 187 42" stroke="#1e3a34" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7"/>
-          <path d="M32 55 C36 49 41 55 45 49"    stroke="#1e3a34" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.65"/>
-          {/* Flower cluster at top */}
-          <path d="M110 50 C106 40 107 30 110 24 C113 30 114 40 110 50Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.16)"/>
-          <path d="M106 42 C97 38 93 30 99 24 C103 32 105 38 106 42Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
-          <path d="M114 42 C123 38 127 30 121 24 C117 32 115 38 114 42Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
-          {/* Full stem: flower base → pin top */}
-          <line x1="110" y1="50" x2="110" y2="136" stroke="#1e3a34" strokeWidth="1.5"/>
-          {/* Upper leaf pair */}
-          <path d="M110 72 C102 63 100 52 106 44 C109 53 110 63 110 72Z"
-            stroke="#448a7d" strokeWidth="1.4" fill="rgba(68,138,125,0.10)"/>
-          <path d="M110 72 C118 63 120 52 114 44 C111 53 110 63 110 72Z"
-            stroke="#448a7d" strokeWidth="1.4" fill="rgba(68,138,125,0.10)"/>
-          {/* Lower leaf pair */}
-          <path d="M110 114 C101 105 97 93 103 84 C108 94 110 105 110 114Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.12)"/>
-          <path d="M110 114 C119 105 123 93 117 84 C112 94 110 105 110 114Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.12)"/>
-          {/* Pin bubble */}
-          <circle cx="110" cy="162" r="26" stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.08)"/>
-          {/* Pin inner hole */}
-          <circle cx="110" cy="162" r="9"  stroke="#1e3a34" strokeWidth="1.5" fill="rgba(30,58,52,0.10)"/>
-          {/* Pin point */}
-          <path d="M84 188 L110 210 L136 188" stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.08)"/>
+          {/* Pin body — large teardrop */}
+          <path d="M56 92 C56 44 164 44 164 92 C164 126 136 154 110 184 C84 154 56 126 56 92 Z"
+            stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.08)"/>
+          {/* Inner marker circle */}
+          <circle cx="110" cy="90" r="22" stroke="#1e3a34" strokeWidth="1.5" fill="rgba(30,58,52,0.10)"/>
+          {/* Inner marker dot */}
+          <circle cx="110" cy="90" r="7" stroke="#448a7d" strokeWidth="1" fill="rgba(68,138,125,0.20)"/>
+          {/* Small sprout at pin crown */}
+          <line x1="110" y1="44" x2="110" y2="22" stroke="#1e3a34" strokeWidth="1.3"/>
+          <path d="M110 36 C103 28 103 18 110 14 C110 22 110 30 110 36Z"
+            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.14)"/>
+          <path d="M110 36 C117 28 117 18 110 14 C110 22 110 30 110 36Z"
+            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.14)"/>
         </svg>
       )}
 
@@ -275,15 +244,15 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
             <circle key={`s${i}`} cx={cx} cy={cy} r={1.8} fill="#448a7d" opacity={0.35}/>
           ))}
           {MURMURATION_BIRDS.map(([cx, cy, rotate], i) => (
-            <ellipse
+            <path
               key={`b${i}`}
-              cx={cx}
-              cy={cy}
-              rx={7}
-              ry={2.5}
-              fill="#448a7d"
-              opacity={0.5 + (i % 4) * 0.1}
-              transform={`rotate(${rotate}, ${cx}, ${cy})`}
+              d="M-7,0 Q-3.5,-5 0,-1.5 Q3.5,-5 7,0"
+              stroke="#448a7d"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              fill="none"
+              opacity={0.45 + (i % 4) * 0.14}
+              transform={`translate(${cx},${cy}) rotate(${rotate})`}
             />
           ))}
         </svg>
@@ -379,7 +348,9 @@ const Landing: React.FC = () => {
   };
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] py-20 md:py-32 overflow-hidden">
+    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] pt-0 pb-20 md:pb-32 overflow-hidden">
+      {/* Gradient bridge from warm cream care loop section */}
+      <div className="h-24 md:h-36 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
@@ -463,7 +434,7 @@ const Landing: React.FC = () => {
             </motion.div>
 
             {/* Heading — blur-to-focus reveal */}
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white tracking-tight italic leading-tight drop-shadow-sm">
+            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black font-cabinet text-white tracking-tight italic leading-tight drop-shadow-sm">
               <motion.span
                 className="inline-block"
                 initial={{ filter: 'blur(18px)', opacity: 0.2, scale: 1.08 }}
@@ -858,7 +829,43 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {questionSection}
+      {/* Visual Support Gallery */}
+      <section className="relative z-10 bg-white/40 backdrop-blur-lg border-t border-white/50 py-16 md:py-32 max-[400px]:py-12">
+        <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
+            <div className="space-y-6 md:space-y-8 md:pr-12">
+              <h2 className="text-3xl md:text-5xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
+                A canvas for collective healing.<br className="hidden md:block" /> A space to navigate our experiences together.
+              </h2>
+              <p className="text-base md:text-xl text-gray-500 font-light leading-relaxed">
+                Starlings is more than a map. It's a testament to the fact that you aren't alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us move forward with hope, together.
+              </p>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
+                  <p className="text-2xl md:text-3xl font-black text-[#448a7d] mb-1">100%</p>
+                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Anonymous Space</p>
+                </div>
+                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
+                  <p className="text-2xl md:text-3xl font-black text-[#e57c6e] mb-1">Peer</p>
+                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Led By Experience</p>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div className="space-y-3 md:space-y-4 pt-6 md:pt-10">
+                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
+                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
+                </div>
+                <div className="space-y-3 md:space-y-4">
+                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
+                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Horizontal Promise Journey */}
       <section
@@ -1030,43 +1037,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Visual Support Gallery */}
-      <section className="relative z-10 bg-white/40 backdrop-blur-lg border-t border-white/50 py-16 md:py-32 max-[400px]:py-12">
-        <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
-            <div className="space-y-6 md:space-y-8 md:pr-12">
-              <h2 className="text-3xl md:text-5xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
-                A canvas for collective healing.<br className="hidden md:block" /> A space to navigate our experiences together.
-              </h2>
-              <p className="text-base md:text-xl text-gray-500 font-light leading-relaxed">
-                Starlings is more than a map. It's a testament to the fact that you aren't alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us move forward with hope, together.
-              </p>
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#448a7d] mb-1">100%</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Anonymous Space</p>
-                </div>
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#e57c6e] mb-1">Peer</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Led By Experience</p>
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-3 md:space-y-4 pt-6 md:pt-10">
-                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
-                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
-                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {questionSection}
 
       {/* Final CTA */}
       <section className="bg-[#1e3a34] py-16 md:py-40 max-[400px]:py-12 text-center text-white relative overflow-hidden">

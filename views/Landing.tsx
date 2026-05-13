@@ -356,6 +356,24 @@ const Landing: React.FC = () => {
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          className="absolute rounded-full bg-white blur-3xl"
+          style={{ width: '45vw', height: '70px', top: '22%', left: '8%', rotate: '-14deg' }}
+          animate={{ x: [0, 60, 0], y: [0, -18, 0], opacity: [0.035, 0.07, 0.035] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute rounded-full bg-white blur-2xl"
+          style={{ width: '28vw', height: '50px', top: '52%', left: '52%', rotate: '-6deg' }}
+          animate={{ x: [0, -35, 0], y: [0, 22, 0], opacity: [0.025, 0.055, 0.025] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+        />
+        <motion.div
+          className="absolute rounded-full bg-white blur-3xl"
+          style={{ width: '32vw', height: '55px', top: '68%', left: '25%', rotate: '8deg' }}
+          animate={{ x: [0, 40, 0], y: [0, -12, 0], opacity: [0.02, 0.045, 0.02] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+        />
         {/* Animated orbs */}
         <motion.div
           className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] bg-[#2d5a52] rounded-full blur-3xl opacity-40"
@@ -807,8 +825,9 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Visual Support Gallery */}
-      <section className="relative z-10 bg-white py-16 md:py-32 max-[400px]:py-12">
-        <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
+      <section className="relative z-10 py-16 md:py-32 max-[400px]:py-12">
+        <div className="absolute inset-0 bg-white/82 backdrop-blur-[3px] pointer-events-none" />
+        <div className="relative z-10 container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
             <div className="space-y-6 md:space-y-8 md:pr-12">
               <h2 className="text-3xl md:text-5xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
@@ -848,14 +867,12 @@ const Landing: React.FC = () => {
       {/* Horizontal Promise Journey */}
       <section
         ref={promiseRef}
-        className="relative z-10 bg-[#f3f1e8] text-[#1e3a34]"
+        className="relative z-10 text-[#1e3a34]"
         style={{ position: 'relative', height: promiseTravel ? `calc(100vh + ${promiseTravel}px)` : '100vh' }}
       >
         <div ref={promiseViewportRef} className="sticky top-0 h-screen overflow-hidden">
+          <div className="absolute inset-0 bg-[#f3f1e8]/82 backdrop-blur-[3px] pointer-events-none" />
           <div className="absolute inset-0 pointer-events-none">
-            <motion.div
-              className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#1e3a34] via-[#2d5a52]/[0.24] to-transparent"
-            />
             <motion.div
               className="absolute left-[12vw] top-[-8vh] h-[112vh] w-[34vw] -skew-x-12 bg-[#f5ead4]/[0.46]"
               style={{ opacity: promiseGlow, x: promiseDrift }}

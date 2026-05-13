@@ -892,7 +892,6 @@ const Landing: React.FC = () => {
               className="absolute bottom-12 left-[8vw] right-[8vw] h-[3px] origin-left rounded-full bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"
               style={{ scaleX: promiseLineScale }}
             />
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#1e3a34]/30 pointer-events-none" />
           </div>
 
           <div ref={gridRef} className="relative z-10 flex h-full flex-col pt-14 pb-3 md:pt-28 md:pb-7">
@@ -1033,7 +1032,6 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
-      <div className="h-36 md:h-56 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
 
       {questionSection}
 

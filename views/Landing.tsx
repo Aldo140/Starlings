@@ -868,7 +868,7 @@ const Landing: React.FC = () => {
       <section
         ref={promiseRef}
         className="relative z-10 text-[#1e3a34]"
-        style={{ position: 'relative', height: promiseTravel ? `calc(100vh + ${promiseTravel}px)` : '100vh' }}
+        style={{ position: 'relative', height: promiseTravel ? `calc(100vh + ${promiseTravel}px)` : '100vh', backgroundImage: 'linear-gradient(to bottom, transparent 100vh, #f3f1e8 100vh)' }}
       >
         <div ref={promiseViewportRef} className="sticky top-0 h-screen overflow-hidden">
           <div className="absolute inset-0 bg-[#f3f1e8]/82 backdrop-blur-[3px] pointer-events-none" />
@@ -892,6 +892,7 @@ const Landing: React.FC = () => {
               className="absolute bottom-12 left-[8vw] right-[8vw] h-[3px] origin-left rounded-full bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"
               style={{ scaleX: promiseLineScale }}
             />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-[#1e3a34]/30 pointer-events-none" />
           </div>
 
           <div ref={gridRef} className="relative z-10 flex h-full flex-col pt-14 pb-3 md:pt-28 md:pb-7">
@@ -1032,7 +1033,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
-      <div className="h-24 md:h-36 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
+      <div className="h-36 md:h-56 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
 
       {questionSection}
 
@@ -1041,6 +1042,7 @@ const Landing: React.FC = () => {
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover mix-blend-overlay" alt="Nature" />
         </div>
+        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#1e3a34] to-transparent pointer-events-none z-[1]" />
         <div className="max-w-4xl mx-auto px-6 max-[400px]:px-4 relative z-10 space-y-6 md:space-y-10">
           <div className="text-[#e57c6e] inline-block scale-[1.5] md:scale-[2.5] animate-pulse">{ICONS.Heart}</div>
           <h2 className="text-3xl md:text-7xl font-black tracking-tight leading-[1]">

@@ -462,109 +462,48 @@ const Landing: React.FC = () => {
   };
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] py-20 md:py-32 overflow-hidden">
+    <section ref={qaRef} id="ask-question" className="relative bg-[#f8faf9] py-20 md:py-32 overflow-hidden">
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
-        <motion.div
-          className="absolute rounded-full bg-white blur-3xl"
-          style={{ width: '45vw', height: '70px', top: '22%', left: '8%', rotate: '-14deg' }}
-          animate={{ x: [0, 60, 0], y: [0, -18, 0], opacity: [0.035, 0.07, 0.035] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute rounded-full bg-white blur-2xl"
-          style={{ width: '28vw', height: '50px', top: '52%', left: '52%', rotate: '-6deg' }}
-          animate={{ x: [0, -35, 0], y: [0, 22, 0], opacity: [0.025, 0.055, 0.025] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
-        />
-        <motion.div
-          className="absolute rounded-full bg-white blur-3xl"
-          style={{ width: '32vw', height: '55px', top: '68%', left: '25%', rotate: '8deg' }}
-          animate={{ x: [0, 40, 0], y: [0, -12, 0], opacity: [0.02, 0.045, 0.02] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
-        />
-        {/* Animated orbs */}
-        <motion.div
-          className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] bg-[#2d5a52] rounded-full blur-3xl opacity-40"
-          animate={{ scale: [1, 1.14, 0.94, 1], x: [0, 28, -12, 0], y: [0, -18, 12, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] max-w-[700px] bg-[#448a7d] rounded-full blur-2xl opacity-20"
-          animate={{ scale: [1, 0.91, 1.09, 1], x: [0, -22, 14, 0], y: [0, 22, -12, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-        />
-
-        {/* Dot-matrix grid overlay — fades in on scroll */}
+        {/* Soft mint blobs */}
+        <div className="absolute bottom-[-10%] left-[-8%] w-[40vw] h-[40vw] max-w-[480px] bg-[#e8f3f1] rounded-full blur-3xl opacity-50" />
+        <div className="absolute top-[-8%] right-[-5%] w-[30vw] h-[30vw] max-w-[360px] bg-[#e8f3f1] rounded-full blur-3xl opacity-35" />
+        {/* Dot-matrix grid — fades in on scroll */}
         <motion.div
           className="absolute inset-0"
           initial={{ opacity: 0 }}
           animate={qaInView ? { opacity: 1 } : {}}
           transition={{ duration: 2, ease }}
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.018) 1px, transparent 1px)',
             backgroundSize: '30px 30px',
           }}
-        />
-
-        {/* Aurora shimmer sweep */}
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(108deg, transparent 35%, rgba(68,138,125,0.055) 50%, transparent 65%)',
-            width: '200%',
-            left: '-100%',
-          }}
-          animate={{ x: ['0%', '100%'] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'linear', repeatDelay: 6 }}
-        />
-
-        {/* Floating particles */}
-        {[
-          { left: '12%', top: '28%', dur: 7, delay: 0 },
-          { left: '55%', top: '15%', dur: 9, delay: 1.5 },
-          { left: '78%', top: '60%', dur: 6, delay: 0.8 },
-          { left: '30%', top: '70%', dur: 11, delay: 2.2 },
-          { left: '88%', top: '35%', dur: 8, delay: 3.1 },
-        ].map((p, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-white/[0.12]"
-            style={{ left: p.left, top: p.top }}
-            animate={{ y: [0, -18, 0], opacity: [0.12, 0.32, 0.12] }}
-            transition={{ duration: p.dur, repeat: Infinity, ease: 'easeInOut', delay: p.delay }}
-          />
-        ))}
-
-        {/* Noise grain */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }}
         />
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────── */}
       <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl relative z-10">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
-          {/* Left — heading + description */}
-          <div className="lg:col-span-6 space-y-7 md:pr-10">
+          {/* Left — heading + steps + form */}
+          <div className="lg:col-span-7 space-y-7">
 
-            {/* Badge */}
+            {/* Eyebrow */}
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full backdrop-blur-md shadow-lg"
-              initial={{ x: -32, opacity: 0 }}
+              initial={{ x: -24, opacity: 0 }}
               animate={qaInView ? { x: 0, opacity: 1 } : {}}
-              transition={{ duration: 0.6, ease }}
+              transition={{ duration: 0.55, ease }}
             >
-              <span className="text-[#e57c6e] flex items-center">{ICONS.MessageCircle}</span>
-              <span className="text-white font-bold text-xs uppercase tracking-widest">Community Q&A</span>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-[#448a7d]">
+                <span className="w-1 h-1 rounded-full bg-[#448a7d]" />
+                Community Q&A
+              </span>
             </motion.div>
 
-            {/* Heading — blur-to-focus reveal */}
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black font-cabinet text-white tracking-tight italic leading-tight drop-shadow-sm">
+            {/* Heading */}
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-black font-cabinet text-[#1e3a34] tracking-tight leading-tight">
               <motion.span
                 className="inline-block"
                 initial={{ filter: 'blur(18px)', opacity: 0.2, scale: 1.08 }}
@@ -575,7 +514,7 @@ const Landing: React.FC = () => {
               </motion.span>
               <br />
               <motion.span
-                className="text-[#e57c6e] inline-block"
+                className="text-[#e57c6e] italic inline-block"
                 initial={{ y: 70, opacity: 0 }}
                 animate={qaInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ duration: 0.75, delay: 0.22, type: 'spring', stiffness: 200, damping: 22 }}
@@ -586,16 +525,17 @@ const Landing: React.FC = () => {
 
             {/* Description */}
             <motion.p
-              className="text-lg md:text-xl text-teal-50/[0.85] font-light leading-relaxed max-w-lg"
-              initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+              className="text-lg md:text-xl text-[#1e3a34]/60 font-light leading-relaxed max-w-lg"
+              initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
               animate={qaInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
               transition={{ duration: 0.7, delay: 0.4, ease }}
             >
               Some questions need a place to land before they become words. Write anonymously, and open answered community questions only when you want to see them.
             </motion.p>
 
+            {/* Steps — horizontal 01 → 02 → 03 */}
             <motion.div
-              className="space-y-2"
+              className="flex items-start gap-1.5 flex-wrap"
               initial={{ opacity: 0, y: 16 }}
               animate={qaInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.52, ease }}
@@ -605,43 +545,31 @@ const Landing: React.FC = () => {
                 { num: '02', label: 'We review it', desc: "Safe before it's seen" },
                 { num: '03', label: 'Community answers', desc: 'Real perspectives shared' },
               ].map((step, idx) => (
-                <motion.div
-                  key={step.num}
-                  className="flex items-center gap-4"
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={qaInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
-                >
-                  <span className="text-[11px] font-black text-[#448a7d] tabular-nums w-6 shrink-0">{step.num}</span>
-                  <span className="text-sm font-bold text-white/80">{step.label}</span>
-                  <span className="text-xs text-white/30 font-medium">{step.desc}</span>
-                </motion.div>
+                <React.Fragment key={step.num}>
+                  <motion.div
+                    className="flex flex-col items-center text-center flex-1 min-w-[70px]"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={qaInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
+                  >
+                    <span className="text-[11px] font-black text-[#448a7d] tabular-nums mb-0.5">{step.num}</span>
+                    <span className="text-[11px] font-black text-[#1e3a34] uppercase tracking-[0.18em] leading-tight">{step.label}</span>
+                    <span className="text-[9px] font-medium text-[#1e3a34]/35 mt-0.5">{step.desc}</span>
+                  </motion.div>
+                  {idx < 2 && (
+                    <div className="flex items-center mt-[10px] mx-1 flex-shrink-0">
+                      <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden="true">
+                        <path d="M1 4h10M8 1l3 3-3 3" stroke="rgba(68,138,125,0.45)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </motion.div>
 
-            <AnimatePresence mode="wait">
-              {showAnsweredQA && !isLoadingQA && approvedQA.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="w-8 h-px bg-white/20" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/35">
-                    {approvedQA.length} answered by the community
-                  </span>
-                  <div className="w-8 h-px bg-white/20" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Right — form with 3D hover */}
-          <div className="lg:col-span-6">
+            {/* Form card */}
             <motion.div
-              initial={{ y: 72, opacity: 0 }}
+              initial={{ y: 56, opacity: 0 }}
               animate={qaInView ? { y: 0, opacity: 1 } : {}}
               transition={{ duration: 0.85, delay: 0.28, type: 'spring', stiffness: 140, damping: 20 }}
             >
@@ -650,10 +578,10 @@ const Landing: React.FC = () => {
                   whileHover={{ rotateY: 1.5, rotateX: -1, scale: 1.01 }}
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   style={{ transformStyle: 'preserve-3d' }}
-                  className="bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.4)] relative overflow-hidden"
+                  className="bg-white rounded-[2rem] p-7 md:p-9 shadow-[0_22px_55px_-34px_rgba(30,58,52,0.12)] border border-[#e8f3f1] relative overflow-hidden"
                 >
-                  {/* Corner decoration — refined teal wash with speech bubble SVG */}
-                  <div className="absolute top-0 right-0 w-44 h-44 pointer-events-none overflow-hidden rounded-[3rem]">
+                  {/* Corner decoration */}
+                  <div className="absolute top-0 right-0 w-44 h-44 pointer-events-none overflow-hidden rounded-[2rem]">
                     <div className="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-[#e8f3f1]/60 via-[#d4eae6]/30 to-transparent rounded-bl-[110%]" />
                     <svg
                       className="absolute top-4 right-4 opacity-[0.22]"
@@ -685,7 +613,7 @@ const Landing: React.FC = () => {
                           value={question}
                           onChange={e => setQuestion(e.target.value)}
                           placeholder="Share your question anonymously..."
-                          className="w-full p-6 md:p-8 bg-[#f8faf9] border border-[#e8f3f1] focus:border-[#448a7d]/40 rounded-[1.5rem] min-h-[160px] md:min-h-[200px] text-lg md:text-xl font-medium text-[#1e3a34] transition-all shadow-[inset_0_2px_8px_rgba(30,58,52,0.04)] focus:outline-none focus:bg-white focus:shadow-[inset_0_2px_8px_rgba(30,58,52,0.03),0_0_0_3px_rgba(68,138,125,0.10)] placeholder-gray-400/70 resize-none selection:bg-[#448a7d] selection:text-white"
+                          className="w-full p-6 md:p-8 bg-[#f8faf9] border border-[#e8f3f1] focus:border-[#448a7d]/40 rounded-[1.5rem] min-h-[140px] md:min-h-[180px] text-lg md:text-xl font-medium text-[#1e3a34] transition-all shadow-[inset_0_2px_8px_rgba(30,58,52,0.04)] focus:outline-none focus:bg-white focus:shadow-[inset_0_2px_8px_rgba(30,58,52,0.03),0_0_0_3px_rgba(68,138,125,0.10)] placeholder-gray-400/70 resize-none selection:bg-[#448a7d] selection:text-white"
                         />
                       </div>
                       {qError && (
@@ -700,7 +628,6 @@ const Landing: React.FC = () => {
                           className="w-full relative group overflow-hidden px-8 py-5 bg-[#e57c6e] text-white rounded-[2rem] font-black text-lg md:text-xl uppercase tracking-widest shadow-[0_15px_30px_-10px_rgba(229,124,110,0.4)] hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
                           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)', backgroundSize: '200% 100%', animation: 'none' }} />
                           <span className="relative flex items-center justify-center gap-3">
                             {isSubmittingQ ? 'Submitting...' : 'Send Question'}
                             {!isSubmittingQ && <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>}
@@ -721,49 +648,89 @@ const Landing: React.FC = () => {
                 </motion.div>
               </div>
             </motion.div>
+
+          </div>
+
+          {/* Right — illustration + answered card */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+
+            {/* Illustration */}
+            <motion.div
+              className="relative w-full max-w-[460px] mx-auto lg:mx-0"
+              aria-hidden="true"
+              initial={{ y: 40, opacity: 0 }}
+              animate={qaInView ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.85, delay: 0.35, type: 'spring', stiffness: 140, damping: 20 }}
+            >
+              <motion.img
+                src="/images/asset-qna.png"
+                alt=""
+                className="w-full h-auto"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </motion.div>
+
+            {/* Answered by community card */}
+            <motion.div
+              className="bg-white rounded-[1.75rem] p-5 border border-[#e8f3f1] shadow-[0_8px_24px_-8px_rgba(30,58,52,0.10)] w-full max-w-[460px] mx-auto lg:mx-0"
+              initial={{ opacity: 0, y: 16 }}
+              animate={qaInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.55, delay: 0.5, ease }}
+            >
+              <div className="flex items-center justify-between gap-4">
+                {/* Left: avatar + text */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-[#e8f3f1] flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <circle cx="9" cy="6" r="3" stroke="#448a7d" strokeWidth="1.5"/>
+                      <path d="M3 15c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-sm text-[#1e3a34] leading-tight">
+                      Answered by the community
+                      {showAnsweredQA && approvedQA.length > 0 && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[#448a7d]/10 text-[#448a7d] text-[9px] font-black">
+                          {approvedQA.length}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[11px] font-medium text-[#1e3a34]/50 mt-0.5 leading-tight">Questions answered by peers who've been there</p>
+                  </div>
+                </div>
+                {/* Right: toggle button */}
+                <motion.button
+                  type="button"
+                  onClick={showAnsweredQA ? () => setShowAnsweredQA(false) : openAnsweredQA}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#f0f7f5] border border-[#d4eae6] text-[#1e3a34] font-black text-xs uppercase tracking-widest hover:bg-[#e8f3f1] transition-colors shrink-0"
+                >
+                  {showAnsweredQA ? 'Hide' : 'Read answers'}
+                  <motion.svg
+                    width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+                    animate={{ rotate: showAnsweredQA ? 180 : 0 }}
+                    transition={{ duration: 0.35, ease }}
+                  >
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </motion.svg>
+                </motion.button>
+              </div>
+            </motion.div>
+
           </div>
         </div>
 
-        {/* Answered questions toggle + reveal */}
+        {/* ── Answers Grid — full width below ──────────────────────── */}
         <div id="answered-questions" className="mt-10 md:mt-14">
-
-          {/* Toggle button — always visible */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={qaInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.5, ease }}
-            className="flex items-center justify-between mb-6 pb-5 border-b border-white/[0.08]"
-          >
-            <div>
-              <p className="text-white font-black text-lg md:text-xl">Answered by the community</p>
-              <p className="text-white/40 text-sm font-medium mt-0.5">Questions answered by peers who've been there</p>
-            </div>
-            <motion.button
-              type="button"
-              onClick={showAnsweredQA ? () => setShowAnsweredQA(false) : openAnsweredQA}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white font-black text-xs uppercase tracking-widest transition-colors shrink-0 ml-4"
-            >
-              {showAnsweredQA ? 'Hide' : 'Read answers'}
-              <motion.svg
-                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-                animate={{ rotate: showAnsweredQA ? 180 : 0 }}
-                transition={{ duration: 0.35, ease }}
-              >
-                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </motion.svg>
-            </motion.button>
-          </motion.div>
-
-          {/* Expandable content */}
           <AnimatePresence mode="wait">
             {showAnsweredQA && (
               <motion.div
                 key="qa-content"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.45, ease }}
               >
                 {isLoadingQA ? (
@@ -777,14 +744,15 @@ const Landing: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[2rem] border border-white/[0.08] bg-white/[0.04] p-10 text-center">
-                    <p className="text-white/50 font-medium">No answered questions yet — yours could be the first.</p>
+                  <div className="rounded-[2rem] border border-[#e8f3f1] bg-[#f8faf9] p-10 text-center">
+                    <p className="text-[#1e3a34]/50 font-medium">No answered questions yet — yours could be the first.</p>
                   </div>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
       </div>
     </section>
   );
@@ -1118,8 +1086,10 @@ const Landing: React.FC = () => {
             <div className="flex-1 relative overflow-hidden">
               {/* Top vignette */}
               <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#f8f6f1]/90 to-transparent z-20 pointer-events-none" />
-              {/* Bottom vignette */}
-              <div className="absolute bottom-0 inset-x-0 h-64 bg-gradient-to-t from-[#f8f6f1] via-[#f8f6f1]/80 to-transparent z-20 pointer-events-none" />
+              {/* Bottom vignette — multi-stop for smooth editorial blur-out */}
+              <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none"
+                style={{ height: 'min(75%, 360px)', background: 'linear-gradient(to top, #f8f6f1 0%, #f8f6f1 28%, rgba(248,246,241,0.88) 48%, rgba(248,246,241,0.52) 68%, transparent 100%)' }}
+              />
 
               {/* Single full-width filmstrip — much cleaner on mobile */}
               <div className="absolute inset-0 px-2">
@@ -1138,8 +1108,10 @@ const Landing: React.FC = () => {
                 </motion.div>
               </div>
 
-              {/* Mobile text overlay — bottom of viewport */}
-              <div className="absolute bottom-0 inset-x-0 z-30 px-5 pb-6 pt-2">
+              {/* Mobile text overlay — editorial panel over the vignette */}
+              <div className="absolute bottom-0 inset-x-0 z-30 px-5 pb-7">
+
+                {/* Eyebrow */}
                 <motion.div className="flex items-center gap-2 mb-3"
                   initial={{ opacity: 0, x: -12 }}
                   animate={galleryInView ? { opacity: 1, x: 0 } : {}}
@@ -1149,37 +1121,85 @@ const Landing: React.FC = () => {
                   <span className="w-1 h-1 rounded-full bg-[#448a7d]" />
                   <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
                 </motion.div>
-                <h2 className="font-cabinet text-3xl font-black text-[#1e3a34] tracking-tight leading-[0.97] mb-2">
+
+                {/* Heading — stagger reveal */}
+                <h2 className="font-cabinet text-[2.75rem] font-black text-[#1e3a34] tracking-tight leading-[0.93] mb-3">
                   {[
                     { text: 'A canvas for', italic: false, delay: 0.1 },
-                    { text: 'collective healing.', italic: true, delay: 0.2 },
+                    { text: 'collective healing.', italic: true, delay: 0.22 },
                   ].map((line) => (
-                    <span key={line.text} className="block overflow-hidden leading-[1.1]">
+                    <span key={line.text} className="block overflow-hidden leading-[1.08]">
                       <motion.span className={`block ${line.italic ? 'italic' : ''}`}
                         initial={{ y: '110%' }}
                         animate={galleryInView ? { y: '0%' } : {}}
-                        transition={{ duration: 0.65, delay: line.delay, ease }}
+                        transition={{ duration: 0.68, delay: line.delay, ease }}
                       >{line.text}</motion.span>
                     </span>
                   ))}
                 </h2>
 
-                <motion.div className="flex items-center gap-1.5"
+                {/* Tagline */}
+                <motion.p
+                  className="text-[11px] font-medium text-[#1e3a34]/65 leading-relaxed mb-3.5 max-w-[290px]"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={galleryInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.55, delay: 0.38, ease }}
+                >
+                  A peer-supported space for youth navigating family substance use — built by the community, for the community.
+                </motion.p>
+
+                {/* Feature chips */}
+                <motion.div
+                  className="flex items-center gap-2 flex-wrap mb-4"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={galleryInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.5, delay: 0.48, ease }}
+                >
+                  {[
+                    { label: 'Anonymous', dot: '#448a7d' },
+                    { label: 'Peer-Led', dot: '#e57c6e' },
+                    { label: 'Community-Built', dot: '#448a7d' },
+                  ].map((chip) => (
+                    <span key={chip.label}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                      style={{ background: 'rgba(232,243,241,0.85)', borderColor: 'rgba(68,138,125,0.2)', backdropFilter: 'blur(4px)' }}
+                    >
+                      <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: chip.dot }} />
+                      <span className="text-[8.5px] font-black uppercase tracking-[0.16em] text-[#1e3a34]/75">{chip.label}</span>
+                    </span>
+                  ))}
+                </motion.div>
+
+                {/* Scroll hint — enhanced */}
+                <motion.div className="flex items-center gap-2.5"
                   initial={{ opacity: 0 }}
                   animate={galleryInView ? { opacity: 1 } : {}}
-                  transition={{ duration: 0.5, delay: 0.5 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
                 >
+                  {/* Animated mouse */}
                   <motion.div
-                    className="w-3 h-5 rounded-full border border-[#448a7d]/50 flex items-start justify-center pt-0.5"
+                    className="w-[13px] h-[19px] rounded-full border-[1.5px] border-[#448a7d]/50 flex items-start justify-center pt-[3px] flex-shrink-0"
                     animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                   >
-                    <motion.div className="w-0.5 h-1 rounded-full bg-[#448a7d]"
-                      animate={{ y: [0, 6, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    <motion.div className="w-[2px] h-[4px] rounded-full bg-[#448a7d]"
+                      animate={{ y: [0, 5, 0] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   </motion.div>
-                  <span className="text-[8px] font-black uppercase tracking-[0.22em] text-[#448a7d]/60">Scroll to explore</span>
+                  <div className="flex flex-col gap-px">
+                    <span className="text-[8px] font-black uppercase tracking-[0.22em] text-[#448a7d]/60">Scroll to explore</span>
+                    <div className="flex items-center gap-1">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <motion.div key={i}
+                          className="h-px rounded-full bg-[#448a7d]/30"
+                          style={{ width: i === 0 ? 12 : 4 }}
+                          animate={{ opacity: [0.3, 0.8, 0.3], scaleX: [1, 1.2, 1] }}
+                          transition={{ duration: 1.6, delay: i * 0.15, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -1198,8 +1218,13 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ── MOBILE ONLY: community illustration reveal after gallery unlocks ── */}
-      <div className="lg:hidden bg-[#f8f6f1] px-6 pt-10 pb-12 flex flex-col items-center text-center">
+      {/* ── MOBILE ONLY: community section after gallery unlocks ── */}
+      <div className="lg:hidden bg-[#f8f6f1] px-5 pt-10 pb-14 overflow-hidden">
+
+        {/* Top hairline divider */}
+        <div className="w-full h-px mb-8" style={{ background: 'linear-gradient(to right, transparent, rgba(68,138,125,0.22), transparent)' }} />
+
+        {/* Eyebrow */}
         <motion.div
           className="flex items-center gap-2 mb-4"
           initial={{ opacity: 0, x: -12 }}
@@ -1212,33 +1237,117 @@ const Landing: React.FC = () => {
           <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">Our Community</span>
         </motion.div>
 
-        <motion.div
-          className="relative w-full max-w-xs pointer-events-none"
-          style={{ height: '240px' }}
-          initial={{ opacity: 0, y: 24 }}
+        {/* Statement heading */}
+        <motion.h3
+          className="font-cabinet text-[2.15rem] font-black text-[#1e3a34] tracking-tight leading-[0.95] mb-6"
+          initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.85, delay: 0.1, ease }}
+          transition={{ duration: 0.7, delay: 0.08, ease }}
         >
+          A diverse community<br /><span className="italic">of people supporting<br />each other.</span>
+        </motion.h3>
+
+        {/* Illustration — centred, generous height */}
+        <motion.div
+          className="relative w-full max-w-[320px] mx-auto pointer-events-none mb-7"
+          style={{ height: '272px' }}
+          initial={{ opacity: 0, y: 22, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.9, delay: 0.15, ease }}
+        >
+          {/* Subtle glow bloom behind illustration */}
+          <div className="absolute inset-x-12 bottom-0 top-8 rounded-full opacity-30 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse at center, rgba(68,138,125,0.28) 0%, transparent 70%)', filter: 'blur(24px)' }}
+          />
           <motion.img
             src="/images/community-illustration.png"
             alt="A diverse community of people supporting each other"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain relative z-10"
             style={{ objectPosition: 'center center' }}
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
           />
         </motion.div>
 
+        {/* Feature rows */}
+        <div className="space-y-2.5 mb-6">
+          {[
+            {
+              icon: ICONS.ShieldCheck,
+              label: '100% Anonymous',
+              desc: 'No sign-in, no tracking, no judgement — ever.',
+              color: '#448a7d',
+              bg: '#e8f3f1',
+              delay: 0.18,
+            },
+            {
+              icon: ICONS.Users,
+              label: 'Peer-Led by Experience',
+              desc: 'Created by youth who have navigated family substance use firsthand.',
+              color: '#e57c6e',
+              bg: '#fbd6d1',
+              delay: 0.26,
+            },
+            {
+              icon: ICONS.MessageCircle,
+              label: 'Community Notes & Resources',
+              desc: 'Real stories, local resources, and reflections from people like you.',
+              color: '#448a7d',
+              bg: '#e8f3f1',
+              delay: 0.34,
+            },
+          ].map((item) => (
+            <motion.div
+              key={item.label}
+              className="flex items-start gap-3 p-3.5 rounded-[1.35rem] border"
+              style={{ background: 'rgba(255,255,255,0.72)', borderColor: 'rgba(200,220,216,0.55)', backdropFilter: 'blur(8px)' }}
+              initial={{ opacity: 0, x: -14 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.55, delay: item.delay, ease }}
+            >
+              {/* Icon chip */}
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: item.bg }}>
+                <span className="scale-[0.9]" style={{ color: item.color }}>{item.icon}</span>
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10.5px] font-black text-[#1e3a34] uppercase tracking-[0.12em] mb-0.5 leading-tight">{item.label}</div>
+                <div className="text-[10px] font-medium text-gray-500 leading-relaxed">{item.desc}</div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Closing tagline */}
         <motion.p
-          className="text-[11px] font-medium text-gray-500 leading-relaxed max-w-[260px] mt-2"
+          className="text-[11px] font-medium text-[#1e3a34]/55 leading-relaxed max-w-[300px] mb-5"
           initial={{ opacity: 0, y: 8 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.55, delay: 0.25, ease }}
+          viewport={{ once: true, margin: '-30px' }}
+          transition={{ duration: 0.55, delay: 0.42, ease }}
         >
           A peer-led space for youth navigating family substance use — anonymous, safe, and built by people who get it.
         </motion.p>
+
+        {/* CTA pill */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-30px' }}
+          transition={{ duration: 0.5, delay: 0.5, ease }}
+        >
+          <Link
+            to="/map"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] text-white transition-all duration-300"
+            style={{ background: '#1e3a34', boxShadow: '0 12px 28px -10px rgba(30,58,52,0.42)' }}
+          >
+            Explore the Map
+            <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>
+          </Link>
+        </motion.div>
       </div>
 
       <div className="h-16 md:h-24 bg-gradient-to-b from-[#f8f6f1] to-[#f3f1e8] pointer-events-none" />

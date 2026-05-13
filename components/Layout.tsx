@@ -9,10 +9,26 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
 
   const navLinks = [
-    { name: 'Explore Map', path: '/map' },
-    { name: 'Resources', path: '/resources' },
-    { name: 'Share Note', path: '/share' },
-    { name: 'Guidelines', path: '/guidelines' },
+    {
+      name: 'Explore Map', path: '/map',
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>,
+      desc: 'See anonymous stories near you',
+    },
+    {
+      name: 'Resources', path: '/resources',
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+      desc: 'Peer & community resources',
+    },
+    {
+      name: 'Share a Note', path: '/share',
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+      desc: 'Add your voice anonymously',
+    },
+    {
+      name: 'Guidelines', path: '/guidelines',
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+      desc: 'Safe sharing standards',
+    },
   ];
 
   return (
@@ -61,27 +77,67 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </button>
         </div>
 
-        {isMenuOpen && (
-          <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-border p-6 shadow-2xl z-50 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className="text-xl font-bold text-[#1e3a34] py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.name}
-              </Link>
-            ))}
-            <Link
-              to="/share"
-              className="bg-[#1e3a34] text-white py-4 rounded-2xl text-center font-bold text-lg"
-              onClick={() => setIsMenuOpen(false)}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              key="mobile-menu"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-[0_24px_48px_-12px_rgba(30,58,52,0.18)] z-50 overflow-hidden"
             >
-              Share What Helped
-            </Link>
-          </div>
-        )}
+              <div className="px-4 pt-3 pb-5">
+                {navLinks.map((link, i) => {
+                  const isActive = location.pathname === link.path;
+                  return (
+                    <motion.div
+                      key={link.path}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 }}
+                    >
+                      <Link
+                        to={link.path}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center gap-4 px-3 py-3.5 rounded-2xl transition-colors ${isActive ? 'bg-[#e8f3f1]' : 'hover:bg-gray-50'}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isActive ? 'bg-[#1e3a34] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                          {link.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`font-black text-sm leading-tight ${isActive ? 'text-[#1e3a34]' : 'text-gray-800'}`}>{link.name}</p>
+                          <p className="text-xs text-gray-400 font-medium mt-0.5">{link.desc}</p>
+                        </div>
+                        {isActive && (
+                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#448a7d] shrink-0" />
+                        )}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1], delay: navLinks.length * 0.06 }}
+                  className="mt-3 pt-3 border-t border-gray-100"
+                >
+                  <Link
+                    to="/share"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-center gap-2.5 w-full bg-[#1e3a34] hover:bg-[#2d5a52] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-colors active:scale-95"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Share What Helped
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className={`flex-grow relative flex flex-col ${location.pathname === '/map' ? 'overflow-hidden' : ''}`}>

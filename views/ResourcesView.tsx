@@ -526,23 +526,26 @@ const ResourcesView: React.FC = () => {
                                     return (
                                         <div
                                             key={resource.id}
-                                            className="rounded-[1.5rem] overflow-hidden cursor-pointer border border-white/[0.07] bg-[#0f172a] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.4)]"
+                                            className="rounded-[1.5rem] overflow-hidden cursor-pointer bg-white border border-[#e8f3f1] shadow-[0_2px_12px_-4px_rgba(30,58,52,0.08)] hover:shadow-[0_6px_22px_-6px_rgba(30,58,52,0.14)] hover:border-[#c8e0da] transition-shadow duration-300"
                                             onClick={() => setActiveGeneralIndex(isActive ? -1 : index)}
                                         >
+                                            {/* Teal accent bar — top of card */}
+                                            <div className="h-[3px] bg-gradient-to-r from-[#448a7d]/70 via-[#448a7d]/20 to-transparent" />
+
                                             {/* ── Collapsed header row — always visible ── */}
-                                            <div className="flex items-center justify-between gap-2 px-4 py-3.5 bg-[#0f172a]">
+                                            <div className="flex items-center justify-between gap-2 px-4 py-3.5 bg-white">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0 ${config.color} border border-white/20 shadow`}>
+                                                    <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0 ${config.color} shadow-sm`}>
                                                         {config.label}
                                                     </span>
-                                                    <span className="text-white font-black text-sm truncate">{resource.title}</span>
+                                                    <span className="text-[#1e3a34] font-black text-sm truncate">{resource.title}</span>
                                                 </div>
                                                 <motion.div
                                                     animate={{ rotate: isActive ? 180 : 0 }}
                                                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                                                     className="flex-shrink-0"
                                                 >
-                                                    <svg className="w-4 h-4 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg className="w-4 h-4 text-[#1e3a34]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                                                     </svg>
                                                 </motion.div>
@@ -566,8 +569,8 @@ const ResourcesView: React.FC = () => {
                                                                 className="w-full h-full object-contain object-top"
                                                             />
                                                         ) : (
-                                                            <div className="w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/40 flex items-center justify-center">
-                                                                <div className="text-indigo-400/30 scale-[3]">{ICONS.Heart}</div>
+                                                            <div className="w-full h-full bg-gradient-to-br from-[#0f2e28] to-[#0d1a17] flex items-center justify-center">
+                                                                <div className="text-[#448a7d]/30 scale-[3]">{ICONS.Heart}</div>
                                                             </div>
                                                         )}
 
@@ -606,15 +609,15 @@ const ResourcesView: React.FC = () => {
                                                                 animate={{ opacity: 1 }}
                                                                 exit={{ opacity: 0 }}
                                                                 transition={{ delay: 0.15, duration: 0.22 }}
-                                                                className="px-4 pt-3 pb-4 bg-[#0f172a] border-t border-white/[0.06]"
+                                                                className="px-4 pt-3 pb-4 bg-white border-t border-[#e8f3f1]"
                                                             >
-                                                                <p className="text-white/60 text-xs font-medium leading-relaxed mb-3 line-clamp-2">{cleanDescription}</p>
+                                                                <p className="text-[#1e3a34]/65 text-xs font-medium leading-relaxed mb-3 line-clamp-2">{cleanDescription}</p>
                                                                 <a
                                                                     href={resource.url}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     onClick={(e) => e.stopPropagation()}
-                                                                    className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400/50 shadow-[0_8px_20px_-8px_rgba(99,102,241,0.8)] active:scale-95 transition-all"
+                                                                    className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-[#448a7d] hover:bg-[#2d5a52] border border-[#448a7d]/50 shadow-[0_8px_20px_-8px_rgba(68,138,125,0.4)] active:scale-95 transition-all"
                                                                 >
                                                                     Explore Resource
                                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -650,22 +653,27 @@ const ResourcesView: React.FC = () => {
                                             key={resource.id}
                                             onMouseEnter={() => setActiveGeneralIndex(index)}
                                             onClick={() => setActiveGeneralIndex(index)}
-                                            className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] transition-all duration-[800ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end ${isActive ? 'flex-[10] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)] border-2 border-indigo-100' : 'flex-[1] shadow-sm border border-gray-100/50 hover:flex-[1.5]'}`}
+                                            className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] transition-all duration-[700ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end
+                                                ${isActive
+                                                    ? 'flex-[10] shadow-[0_24px_64px_-16px_rgba(30,58,52,0.45)] bg-[#0f172a] border-2 border-[#448a7d]/25'
+                                                    : 'flex-[1] bg-white border border-[#e8f3f1] shadow-[0_2px_12px_-4px_rgba(30,58,52,0.08)] hover:flex-[1.6] hover:shadow-[0_8px_28px_-8px_rgba(30,58,52,0.14)] hover:border-[#c8e0da]'
+                                                }`}
                                         >
-                                            <div className="absolute inset-0 bg-[#0d1a17]">
+                                            {/* Screenshot — fades in only when active */}
+                                            <div className={`absolute inset-0 bg-[#0d1a17] transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
                                                 {resource.imageUrl ? (
-                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top transition-transform duration-[1.5s] ease-out" />
+                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top" />
                                                 ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center text-indigo-500/20">
+                                                    <div className="w-full h-full bg-gradient-to-br from-[#e8f3f1] to-[#d4eae6] flex items-center justify-center text-[#448a7d]/20">
                                                         <div className="scale-[3]">{ICONS.Heart}</div>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Gradient Overlay */}
-                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-40 group-hover:opacity-60'}`}></div>
+                                            {/* Dark gradient overlay — active only */}
+                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/50 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-0'}`} />
 
-                                            {/* Browser Chrome Tab Bar — desktop */}
+                                            {/* Browser Chrome — active only */}
                                             <AnimatePresence>
                                                 {isActive && (
                                                     <motion.div
@@ -676,22 +684,20 @@ const ResourcesView: React.FC = () => {
                                                         transition={{ delay: 0.18, duration: 0.22 }}
                                                         className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-5 md:px-6 py-2.5 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
                                                     >
-                                                        {/* Traffic lights — LEFT (macOS convention) */}
                                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Close">
                                                                 <svg className="w-1.5 h-1.5 text-[#820000]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Minimize">
-                                                                <span className="text-[#7d5800]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[7px] font-black leading-none">−</span>
+                                                            <button onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-90 transition-all">
+                                                                <span className="sr-only">Minimize</span>
                                                             </button>
                                                             <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Open">
                                                                 <svg className="w-2 h-2 text-[#006500]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                                                             </a>
                                                         </div>
-                                                        {/* Address bar pill — RIGHT */}
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="bg-white/[0.08] rounded-md px-3 py-1 flex items-center gap-2 max-w-xs mx-auto">
-                                                                <svg className="w-2.5 h-2.5 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                            <div className="bg-white/[0.09] rounded-md px-3 py-1 flex items-center gap-2 max-w-xs mx-auto">
+                                                                <svg className="w-2.5 h-2.5 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                                                 <span className="text-[10px] font-medium text-white/50 truncate">{deskDomain}</span>
                                                             </div>
                                                         </div>
@@ -699,51 +705,47 @@ const ResourcesView: React.FC = () => {
                                                 )}
                                             </AnimatePresence>
 
-                                            {/* Content Wrapper */}
-                                            <div className="relative z-10 p-5 md:p-8 lg:p-10 w-full flex-shrink-0 transition-opacity duration-500 pointer-events-none">
-                                                {/* ACTIVE CONTENT */}
-                                                <div className={`flex flex-col transform transition-all duration-[800ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-100' : 'translate-y-16 opacity-0 absolute bottom-0'}`}>
-                                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4 w-full">
-                                                        <span className={`text-[9px] md:text-[10px] text-white shadow-xl font-black uppercase tracking-widest px-3 md:px-4 py-1.5 md:py-2 rounded-full ${config.color} border border-white/20`}>
+                                            {/* Active content — slides up from bottom */}
+                                            <div className="relative z-10 p-6 md:p-8 lg:p-10 w-full flex-shrink-0 pointer-events-none">
+                                                <div className={`flex flex-col transition-all duration-[600ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-[120ms]' : 'translate-y-12 opacity-0'}`}>
+                                                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                                                        <span className="text-[9px] text-white font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-[#448a7d] border border-[#448a7d]/40 shadow-sm">
                                                             {config.label}
                                                         </span>
                                                         {recommender && (
-                                                            <div className="flex items-center gap-1.5 md:gap-2">
-                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center text-[10px] md:text-xs font-black shadow-lg">
-                                                                    {recommender.charAt(0).toUpperCase()}
-                                                                </div>
-                                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#e8f3f1]">Found by {recommender}</span>
-                                                            </div>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#e8f3f1]/70">Found by {recommender}</span>
                                                         )}
                                                     </div>
-
-                                                    <h3 className="text-white font-black text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight tracking-tight mb-2 md:mb-4 drop-shadow-md">
+                                                    <h3 className="text-white font-black text-2xl md:text-3xl lg:text-4xl leading-tight tracking-tight mb-2 md:mb-3">
                                                         {resource.title}
                                                     </h3>
-
-                                                    <p className="text-indigo-100 font-medium text-xs md:text-sm lg:text-base max-w-2xl leading-relaxed mb-4 md:mb-6 lg:mb-8 pointer-events-auto line-clamp-2 md:line-clamp-none">
+                                                    <p className="text-[#c8e0da] font-medium text-xs md:text-sm max-w-2xl leading-relaxed mb-4 md:mb-6 pointer-events-auto line-clamp-2 md:line-clamp-3">
                                                         {cleanDescription}
                                                     </p>
-
                                                     {isActive && (
                                                         <a
                                                             href={resource.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="pointer-events-auto inline-flex items-center justify-center md:justify-start gap-2 md:gap-3 text-white font-black text-[10px] md:text-xs uppercase tracking-[0.2em] w-full md:w-fit px-6 md:px-8 py-3 md:py-4 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] transition-all active:scale-95 group/btn"
+                                                            className="pointer-events-auto inline-flex items-center gap-2 md:gap-3 text-white font-black text-[10px] uppercase tracking-[0.2em] w-fit px-6 md:px-8 py-2.5 md:py-3.5 rounded-full bg-[#448a7d] hover:bg-[#2d5a52] border border-[#5a9e91] shadow-[0_8px_24px_-8px_rgba(68,138,125,0.6)] transition-all active:scale-95 group/btn"
                                                         >
-                                                            Explore Resource <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                            Explore Resource
+                                                            <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                                         </a>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            {/* INACTIVE / VERTICAL BADGE */}
-                                            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-100 flex-col justify-end pb-4 md:pb-12'}`}>
-                                                <div className="transform md:-rotate-90 origin-center text-white/90 font-black md:uppercase tracking-[0.1em] md:tracking-[0.4em] text-xs md:text-xs whitespace-nowrap drop-shadow-xl flex items-center gap-2 md:gap-4">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                                    {config.label}
+                                            {/* Inactive state — white card with vertical label */}
+                                            <div className={`absolute inset-0 flex flex-col items-center justify-between py-6 pointer-events-none transition-opacity duration-300 ${isActive ? 'opacity-0' : 'opacity-100'}`}>
+                                                {/* Teal top accent bar */}
+                                                <div className="w-full h-[3px] bg-gradient-to-r from-[#448a7d]/70 via-[#448a7d]/20 to-transparent flex-shrink-0" />
+                                                {/* Vertical title */}
+                                                <div className="-rotate-90 whitespace-nowrap text-[#1e3a34]/50 font-black uppercase tracking-[0.35em] text-[9px] flex-1 flex items-center">
+                                                    {resource.title}
                                                 </div>
+                                                {/* Dot accent */}
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#448a7d]/30 flex-shrink-0" />
                                             </div>
                                         </div>
                                     );

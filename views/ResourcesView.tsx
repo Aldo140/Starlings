@@ -206,27 +206,27 @@ const ResourcesView: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
 
                 {/* STUNNING HERO SECTION */}
-                <div className="relative overflow-hidden rounded-[3rem] bg-[#1e3a34] text-white p-10 md:p-16 mb-16 shadow-2xl">
+                <div className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-[#1e3a34] text-white p-7 md:p-16 mb-8 md:mb-16 shadow-2xl">
                     <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center"></div>
                     <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a34] via-[#1e3a34]/80 to-transparent"></div>
 
                     <div className="relative z-10 max-w-3xl">
-                        <h1 className="text-5xl md:text-7xl font-black italic tracking-tight mb-6">Light the way.</h1>
-                        <p className="text-gray-300 font-medium md:text-xl max-w-2xl mb-10 leading-relaxed">
+                        <h1 className="text-3xl md:text-7xl font-black italic tracking-tight mb-3 md:mb-6">Light the way.</h1>
+                        <p className="text-gray-300 font-medium text-sm md:text-xl max-w-2xl mb-6 md:mb-10 leading-relaxed">
                             Resources suggested by Peers and Community Partners
                         </p>
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
                             <Link
                                 to="/add-resource?mode=recommend"
-                                className="w-full sm:w-auto bg-[#e57c6e] text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-[#d46a5c] shadow-[0_10px_30px_-10px_rgba(229,124,110,0.5)] hover:-translate-y-1 transition-all active:scale-95"
+                                className="w-full sm:w-auto bg-[#e57c6e] text-white px-6 md:px-8 py-3.5 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 md:gap-3 hover:bg-[#d46a5c] shadow-[0_10px_30px_-10px_rgba(229,124,110,0.5)] hover:-translate-y-1 transition-all active:scale-95"
                             >
                                 {ICONS.Plus} Recommend
                             </Link>
                             <Link
                                 to="/add-resource?mode=apply"
-                                className="w-full sm:w-auto bg-white/20 text-white px-8 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 hover:bg-white/30 border border-white/30 shadow-md hover:-translate-y-1 transition-all active:scale-95"
+                                className="w-full sm:w-auto bg-white/20 text-white px-6 md:px-8 py-3.5 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 md:gap-3 hover:bg-white/30 border border-white/30 shadow-md hover:-translate-y-1 transition-all active:scale-95"
                             >
-                                {ICONS.Users} Become a Community Partner
+                                {ICONS.Users} Become a Partner
                             </Link>
                         </div>
                     </div>
@@ -245,34 +245,61 @@ const ResourcesView: React.FC = () => {
                         </Link>
                     </div>
                 ) : (
-                    <div className="space-y-20">
+                    <div className="space-y-10 md:space-y-20">
                         {/* COMMUNITY PARTNERS SECTION */}
                         {communityPartners.length > 0 && (
                         <section>
-                            <div className="mb-12 md:mb-16 lg:mb-20">
-                                {/* Accent bar */}
-                                <div className="h-1.5 md:h-2 w-20 md:w-32 bg-gradient-to-r from-[#448a7d] to-[#2d5a52] rounded-full mb-6 md:mb-8" />
-                                
-                                <div className="space-y-4 md:space-y-6">
-                                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl">
+                            <div className="mb-6 md:mb-16 lg:mb-20">
+                                <div className="h-1 md:h-1.5 w-12 md:w-32 bg-gradient-to-r from-[#448a7d] to-[#2d5a52] rounded-full mb-4 md:mb-8" />
+                                <div className="space-y-2 md:space-y-6">
+                                    <h2 className="text-2xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl">
                                         Community Partners
                                     </h2>
-                                    
-                                    <div className="space-y-3 md:space-y-4 max-w-3xl">
-                                        <p className="text-lg md:text-xl text-gray-700 font-semibold leading-relaxed">
+                                    <div className="space-y-2 md:space-y-4 max-w-3xl">
+                                        <p className="text-sm md:text-xl text-gray-700 font-semibold leading-relaxed">
                                             Starlings-trained organizations offering <span className="text-[#448a7d] font-black">specialized, verified care</span> for youth and adults who have grown up with parental substance use.
                                         </p>
-                                        <p className="text-base md:text-lg text-gray-600 font-medium leading-relaxed">
+                                        <p className="hidden md:block text-base md:text-lg text-gray-600 font-medium leading-relaxed">
                                             Listed by location. Each partner is independent and responsible for their care.
                                         </p>
-                                        <div className="flex items-center gap-2 pt-2">
-                                            <span className="inline-block text-xs md:text-sm font-black uppercase tracking-widest px-4 md:px-5 py-2 md:py-2.5 bg-[#448a7d] text-white rounded-full shadow-md">✓ Verified</span>
+                                        <div className="flex items-center gap-2 pt-1 md:pt-2">
+                                            <span className="inline-block text-[10px] md:text-sm font-black uppercase tracking-widest px-3 md:px-5 py-1.5 md:py-2.5 bg-[#448a7d] text-white rounded-full shadow-md">✓ Verified</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {/* ACCORDION GALLERY CONTAINER for Community Partners */}
-                            <div className="flex flex-col md:flex-row w-full h-[600px] gap-2 md:gap-4 mt-8">
+
+                            {/* MOBILE Community Partners — Compact stacked cards */}
+                            <div className="flex flex-col gap-3 md:hidden">
+                                {communityPartners.map((resource) => (
+                                    <a
+                                        key={resource.id}
+                                        href={resource.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex gap-3.5 bg-white rounded-[1.25rem] border border-gray-100 p-4 shadow-sm active:scale-[0.98] transition-transform"
+                                    >
+                                        {resource.imageUrl ? (
+                                            <div className="w-[72px] h-[72px] rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                                                <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-[72px] h-[72px] rounded-xl flex-shrink-0 bg-gradient-to-br from-[#e8f3f1] to-[#d0e8e4] flex items-center justify-center text-[#448a7d]/40">
+                                                <div className="scale-150">{ICONS.Heart}</div>
+                                            </div>
+                                        )}
+                                        <div className="flex-grow min-w-0">
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#448a7d] bg-[#e8f3f1] px-2 py-0.5 rounded-full inline-block mb-1.5">✓ Verified</span>
+                                            <h3 className="font-black text-[#1e3a34] text-sm leading-tight mb-1">{resource.title}</h3>
+                                            <p className="text-[11px] text-gray-500 font-medium leading-snug line-clamp-2 mb-2">{resource.description}</p>
+                                            <span className="text-[10px] font-black text-[#448a7d] uppercase tracking-widest">Visit →</span>
+                                        </div>
+                                    </a>
+                                ))}
+                            </div>
+
+                            {/* DESKTOP/TABLET Accordion Gallery */}
+                            <div className="hidden md:flex w-full h-[600px] gap-4 mt-8">
                                 {communityPartners.map((resource, index) => {
                                     const config = typeConfig[resource.type] || typeConfig.website;
                                     const isActive = activeGeneralIndex === index;
@@ -360,13 +387,13 @@ const ResourcesView: React.FC = () => {
 
                         {/* COMMUNITY RESOURCES SECTION (BUCKETS) */}
                         <section className="relative w-full pb-16">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
-                                    <div className="scale-125">{ICONS.Users}</div>
+                            <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-8">
+                                <div className="w-10 h-10 md:w-16 md:h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1rem] md:rounded-[1.5rem] flex items-center justify-center shadow-md flex-shrink-0">
+                                    {ICONS.Users}
                                 </div>
                                 <div>
-                                    <h2 className="text-4xl font-black text-[#1e3a34] italic tracking-tight">Community Suggested Resources</h2>
-                                    <p className="text-gray-500 font-medium text-lg mt-1">Peer-recommended videos, tools, and local support networks.</p>
+                                    <h2 className="text-xl md:text-4xl font-black text-[#1e3a34] italic tracking-tight leading-tight">Community Suggested Resources</h2>
+                                    <p className="text-gray-500 font-medium text-xs md:text-lg mt-0.5 md:mt-1">Peer-recommended by the community.</p>
                                 </div>
                             </div>
 
@@ -402,62 +429,137 @@ const ResourcesView: React.FC = () => {
 
 
                             </div>
-                            <div className="grid md:hidden grid-cols-1 gap-6 mt-8">
-                                {COMMUNITY_BUCKETS.map((bucket, i) => {
-                                    const bucketResources = communityBucketResources[bucket.id];
-                                    const isActive = activeCommunityIndex === bucket.id;
+                            {/* MOBILE: Horizontal Pill Rail + Content Panel */}
+                            <div className="md:hidden mt-6">
 
-                                    return (
-                                        <div key={bucket.id} className="flex flex-col opacity-100">
-                                            <button onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)} className={`group relative overflow-hidden flex flex-col items-start justify-between p-6 xl:p-8 rounded-[2rem] xl:rounded-[2.5rem] transition-shadow duration-200 h-48 xl:h-64 ${bucket.bg} ${isActive ? 'ring-2 ring-indigo-400 shadow-lg' : 'shadow-md hover:shadow-lg'}`}>
-                                                <div className="pointer-events-none opacity-30">{bucket.bgIcon}</div>
-                                                <div className="absolute inset-0 bg-black opacity-0 pointer-events-none"></div>
-
-                                                <div className="relative z-10 flex w-full justify-between items-start">
-                                                    <div className={`p-3 xl:p-4 rounded-xl xl:rounded-2xl bg-white ${bucket.color} shadow-inner`}>
-                                                        {bucket.icon}
+                                {/* Scrollable pill strip */}
+                                <div className="overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                    <div className="flex gap-2 w-max">
+                                        {COMMUNITY_BUCKETS.map((bucket) => {
+                                            const count = communityBucketResources[bucket.id].length;
+                                            const isActive = activeCommunityIndex === bucket.id;
+                                            return (
+                                                <motion.button
+                                                    key={bucket.id}
+                                                    onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
+                                                    animate={{ scale: isActive ? 1.04 : 1 }}
+                                                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl flex-shrink-0 border transition-colors duration-200 ${
+                                                        isActive
+                                                            ? `${bucket.bg} border-transparent shadow-lg`
+                                                            : 'bg-white border-gray-200'
+                                                    }`}
+                                                >
+                                                    <div className={isActive ? 'text-white' : bucket.color}>
+                                                        {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
                                                     </div>
-                                                    <span className="text-[10px] xl:text-xs font-black text-white bg-black/40 px-3 xl:px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">{bucketResources.length} Items</span>
-                                                </div>
+                                                    <span className={`text-xs font-black whitespace-nowrap ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                                                        {bucket.label}
+                                                    </span>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
+                                                        isActive ? 'bg-black/20 text-white' : count > 0 ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-300'
+                                                    }`}>
+                                                        {count}
+                                                    </span>
+                                                </motion.button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
 
-                                                <div className="relative z-10 w-full text-left mt-auto">
-                                                    <h3 className="font-black text-white text-2xl xl:text-4xl tracking-tight leading-none drop-shadow-md mb-1 xl:mb-2">{bucket.label}</h3>
-                                                    <div className="flex items-center gap-2 mt-2 xl:mt-3 text-white/90 text-xs xl:text-sm font-bold opacity-100">
-                                                        <span>{isActive ? 'Close Collection' : 'Explore Collection'}</span>
-                                                        <svg className={`w-3 h-3 xl:w-4 xl:h-4 transform transition-transform ${isActive ? 'rotate-180' : 'group-hover:translate-x-1'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d={isActive ? "M5 15l7-7 7 7" : "M14 5l7 7m0 0l-7 7m7-7H3"} /></svg>
+                                {/* Content panel */}
+                                <div className="mt-5">
+                                    <AnimatePresence mode="wait" initial={false}>
+                                        {!activeBucket ? (
+                                            <motion.div
+                                                key="mob-empty"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.18 }}
+                                                className="flex flex-col items-center justify-center py-12 text-center bg-white/70 rounded-[1.5rem] border border-dashed border-gray-200"
+                                            >
+                                                <div className="flex gap-2 mb-4">
+                                                    {COMMUNITY_BUCKETS.slice(0, 4).map((bucket) => (
+                                                        <div key={bucket.id} className={`w-8 h-8 rounded-xl flex items-center justify-center ${bucket.bg} opacity-50`}>
+                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-3.5 h-3.5 text-white' })}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-sm font-black text-[#1e3a34]/30 italic">Tap a category above</p>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div
+                                                key={`mob-${activeBucket.id}`}
+                                                initial={{ opacity: 0, y: 12 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.28, ease: [0.25, 1, 0.5, 1] }}
+                                            >
+                                                {/* Compact header */}
+                                                <div className="flex items-center justify-between mb-4 px-1">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow ${activeBucket.bg}`}>
+                                                            {React.cloneElement(activeBucket.icon as React.ReactElement, { className: 'w-5 h-5 text-white' })}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-lg font-black text-[#1e3a34] italic leading-none">{activeBucket.label}</h3>
+                                                            <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                                                                {activeResources.length === 0 ? 'No resources yet' : `${activeResources.length} resource${activeResources.length !== 1 ? 's' : ''}`}
+                                                            </p>
+                                                        </div>
                                                     </div>
+                                                    <button
+                                                        onClick={() => setActiveCommunityIndex(null)}
+                                                        className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 active:scale-95 transition-colors shadow-sm"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
-                                            </button>
 
-                                            {/* INLINE MOBILE EXPANSION */}
-                                            {isActive && (
-                                            <div className="overflow-hidden mt-4">
-                                                <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
-                                                    {bucketResources.length === 0 ? (
-                                                        <div className="text-center py-8">
-                                                            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">{ICONS.Heart}</div>
-                                                            <p className="text-gray-400 font-medium mb-3">No resources yet.</p>
-                                                            <Link to={`/add-resource?mode=recommend&type=${bucket.id}`} className="inline-block px-6 py-2 rounded-full bg-indigo-50 text-indigo-600 font-bold uppercase tracking-wide text-xs hover:bg-indigo-100 transition-colors">Recommend</Link>
+                                                {/* Resource list */}
+                                                {activeResources.length === 0 ? (
+                                                    <div className="text-center py-14 bg-white rounded-[1.5rem] border border-dashed border-gray-200">
+                                                        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-200 shadow-inner">
+                                                            <div className="scale-150">{ICONS.Heart}</div>
                                                         </div>
-                                                    ) : (
-                                                        <div className="space-y-4">
-                                                            {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                        <p className="text-gray-400 font-bold text-base mb-3">No {activeBucket.label.toLowerCase()} yet.</p>
+                                                        <Link
+                                                            to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`}
+                                                            className="inline-flex px-6 py-2.5 rounded-full bg-[#e8f3f1] text-[#448a7d] font-black uppercase tracking-widest text-[10px] hover:bg-[#d5e8e4] transition-colors"
+                                                        >
+                                                            Recommend One
+                                                        </Link>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {activeResources.map((res, i) => (
+                                                            <motion.div
+                                                                key={res.id}
+                                                                initial={{ opacity: 0, y: 16 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: i * 0.06, duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
+                                                            >
+                                                                <ResourceCard resource={res} />
+                                                            </motion.div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
                             </div>
 
                             {/* DESKTOP XL: Elegant Side-by-Side Rail Layout */}
-                            <div className="hidden xl:flex gap-10 mt-10 items-start">
+                            <div className="hidden xl:flex gap-10 mt-10 items-start h-[640px]">
 
                                 {/* LEFT RAIL — Category Selector */}
-                                <div className="w-[230px] flex-shrink-0">
-                                    <div className="sticky top-24">
+                                <div className="w-[230px] flex-shrink-0 h-full">
+                                    <div className="h-full flex flex-col">
                                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 px-1 mb-3">Browse by type</p>
                                         <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
                                             <div className="py-2">
@@ -506,7 +608,7 @@ const ResourcesView: React.FC = () => {
                                 </div>
 
                                 {/* RIGHT PANEL — Content Area */}
-                                <div className="flex-grow min-h-[580px]">
+                                <div className="flex-grow h-full overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#e8f3f1 transparent' }}>
                                     <AnimatePresence mode="wait" initial={false}>
                                         {!activeBucket ? (
                                             <motion.div

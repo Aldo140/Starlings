@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
-import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO } from '../constants.tsx';
+import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { useRef } from 'react';
@@ -524,136 +524,113 @@ const ResourcesView: React.FC = () => {
                                     try { mobDomain = resource.url ? new URL(resource.url).hostname.replace('www.', '') : ''; } catch { mobDomain = ''; }
 
                                     return (
-                                        <motion.div
+                                        <div
                                             key={resource.id}
-                                            animate={{ height: isActive ? 268 : 62 }}
-                                            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-                                            className="relative overflow-hidden rounded-[1.5rem] cursor-pointer flex flex-col justify-end"
-                                            style={{ height: 62 }}
+                                            className="rounded-[1.5rem] overflow-hidden cursor-pointer border border-white/[0.07] bg-[#0f172a] shadow-[0_4px_20px_-8px_rgba(0,0,0,0.4)]"
                                             onClick={() => setActiveGeneralIndex(isActive ? -1 : index)}
                                         >
-                                            {/* Background image */}
-                                            <div className="absolute inset-0 bg-[#0d1a17]">
-                                                {resource.imageUrl ? (
-                                                    <motion.img
-                                                        src={resource.imageUrl}
-                                                        alt={resource.title}
-                                                        className="w-full h-full object-contain object-top"
-                                                        animate={{ scale: isActive ? 1.0 : 1.0 }}
-                                                        transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1] }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center">
-                                                        <div className="text-indigo-200 scale-[4]">{ICONS.Heart}</div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Gradient overlay */}
-                                            <motion.div
-                                                animate={{ opacity: isActive ? 0.88 : 0.55 }}
-                                                transition={{ duration: 0.45 }}
-                                                className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent"
-                                            />
-
-                                            {/* Browser Chrome Tab Bar — mobile */}
-                                            <AnimatePresence>
-                                                {isActive && (
-                                                    <motion.div
-                                                        key={`chrome-mob-${resource.id}`}
-                                                        initial={{ opacity: 0, y: -8 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: -8 }}
-                                                        transition={{ delay: 0.12, duration: 0.2 }}
-                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center gap-2.5 px-3.5 py-2 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
-                                                    >
-                                                        {/* Traffic lights — left (macOS style) */}
-                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                            <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] flex items-center justify-center group/dot" title="Close">
-                                                                <svg className="w-1 h-1 text-[#820000]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                            </button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#febc2e] flex items-center justify-center group/dot">
-                                                                <span className="text-[#7d5800]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[6px] font-black leading-none">−</span>
-                                                            </button>
-                                                            <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#28c840] flex items-center justify-center group/dot" title="Open">
-                                                                <svg className="w-1.5 h-1.5 text-[#006500]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                                                            </a>
-                                                        </div>
-                                                        {/* Address bar pill */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="bg-white/[0.08] rounded-md px-2 py-1 flex items-center gap-1.5">
-                                                                <svg className="w-2 h-2 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                                                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                                                </svg>
-                                                                <span className="text-[9px] font-medium text-white/50 truncate">{mobDomain}</span>
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            {/* Content pinned to bottom */}
-                                            <div className="relative z-10 px-4 pb-4 pt-3 w-full">
-                                                {/* Row always visible: badge + title (collapsed) + chevron */}
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-2 min-w-0">
-                                                        <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2 py-1 rounded-full flex-shrink-0 ${config.color} border border-white/20 shadow`}>
-                                                            {config.label}
-                                                        </span>
-                                                        {!isActive && (
-                                                            <span className="text-white font-black text-sm truncate drop-shadow">{resource.title}</span>
-                                                        )}
-                                                    </div>
-                                                    <motion.div
-                                                        animate={{ rotate: isActive ? 180 : 0 }}
-                                                        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                                                        className="flex-shrink-0"
-                                                    >
-                                                        <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </motion.div>
+                                            {/* ── Collapsed header row — always visible ── */}
+                                            <div className="flex items-center justify-between gap-2 px-4 py-3.5 bg-[#0f172a]">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0 ${config.color} border border-white/20 shadow`}>
+                                                        {config.label}
+                                                    </span>
+                                                    <span className="text-white font-black text-sm truncate">{resource.title}</span>
                                                 </div>
-
-                                                {/* Expanded content */}
-                                                <AnimatePresence>
-                                                    {isActive && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0 }}
-                                                            transition={{ delay: 0.1, duration: 0.22 }}
-                                                            className="mt-2.5"
-                                                        >
-                                                            <h3 className="text-white font-black text-2xl leading-tight tracking-tight mb-1.5 drop-shadow-md">
-                                                                {resource.title}
-                                                            </h3>
-                                                            <p className="text-white/70 text-xs font-medium leading-relaxed mb-4 line-clamp-2">
-                                                                {cleanDescription}
-                                                            </p>
-                                                            <a
-                                                                href={resource.url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400/50 shadow-[0_8px_20px_-8px_rgba(99,102,241,0.8)] active:scale-95 transition-all"
-                                                            >
-                                                                Explore Resource
-                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                                                </svg>
-                                                            </a>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
+                                                <motion.div
+                                                    animate={{ rotate: isActive ? 180 : 0 }}
+                                                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                                                    className="flex-shrink-0"
+                                                >
+                                                    <svg className="w-4 h-4 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </motion.div>
                                             </div>
-                                        </motion.div>
+
+                                            {/* ── Expandable body: landscape screenshot + content ── */}
+                                            <div
+                                                className="grid overflow-hidden transition-[grid-template-rows] duration-500"
+                                                style={{
+                                                    gridTemplateRows: isActive ? '1fr' : '0fr',
+                                                    transitionTimingFunction: EASE_OUT_EXPO_CSS,
+                                                }}
+                                            >
+                                                <div className="min-h-0">
+                                                    {/* Screenshot — natural 16/9 landscape shape */}
+                                                    <div className="w-full aspect-[16/9] relative overflow-hidden bg-[#0d1a17]">
+                                                        {resource.imageUrl ? (
+                                                            <img
+                                                                src={resource.imageUrl}
+                                                                alt={resource.title}
+                                                                className="w-full h-full object-contain object-top"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/40 flex items-center justify-center">
+                                                                <div className="text-indigo-400/30 scale-[3]">{ICONS.Heart}</div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Browser chrome bar */}
+                                                        <AnimatePresence>
+                                                            {isActive && (
+                                                                <motion.div
+                                                                    key={`chrome-mob-${resource.id}`}
+                                                                    initial={{ opacity: 0, y: -8 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, y: -8 }}
+                                                                    transition={{ delay: 0.18, duration: 0.2 }}
+                                                                    className="absolute top-0 left-0 right-0 z-30 flex items-center gap-2.5 px-3.5 py-2 bg-black/75 backdrop-blur-xl border-b border-white/[0.07]"
+                                                                >
+                                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                                        <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                                                                        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                                                                        <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#28c840] block" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="bg-white/[0.08] rounded-md px-2 py-0.5 flex items-center gap-1.5">
+                                                                            <svg className="w-2 h-2 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                                            <span className="text-[9px] font-medium text-white/50 truncate">{mobDomain}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+
+                                                    {/* Content strip below screenshot */}
+                                                    <AnimatePresence>
+                                                        {isActive && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                exit={{ opacity: 0 }}
+                                                                transition={{ delay: 0.15, duration: 0.22 }}
+                                                                className="px-4 pt-3 pb-4 bg-[#0f172a] border-t border-white/[0.06]"
+                                                            >
+                                                                <p className="text-white/60 text-xs font-medium leading-relaxed mb-3 line-clamp-2">{cleanDescription}</p>
+                                                                <a
+                                                                    href={resource.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400/50 shadow-[0_8px_20px_-8px_rgba(99,102,241,0.8)] active:scale-95 transition-all"
+                                                                >
+                                                                    Explore Resource
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                                </a>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>
 
                             {/* DESKTOP/TABLET Accordion Gallery */}
-                            <div className="hidden md:flex w-full h-[600px] gap-4 mt-8">
+                            <div className="hidden md:flex w-full h-[340px] lg:h-[400px] gap-4 mt-8">
                                 {communityPartners.map((resource, index) => {
                                     const config = typeConfig[resource.type] || typeConfig.website;
                                     const isActive = activeGeneralIndex === index;

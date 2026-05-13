@@ -269,33 +269,106 @@ const ResourcesView: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* MOBILE Community Partners — Compact stacked cards */}
-                            <div className="flex flex-col gap-3 md:hidden">
-                                {communityPartners.map((resource) => (
-                                    <a
-                                        key={resource.id}
-                                        href={resource.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex gap-3.5 bg-white rounded-[1.25rem] border border-gray-100 p-4 shadow-sm active:scale-[0.98] transition-transform"
-                                    >
-                                        {resource.imageUrl ? (
-                                            <div className="w-[72px] h-[72px] rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                                <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover" />
+                            {/* MOBILE Community Partners — Vertical Accordion (same visual DNA as desktop) */}
+                            <div className="flex flex-col gap-2 md:hidden mt-2">
+                                {communityPartners.map((resource, index) => {
+                                    const config = typeConfig[resource.type] || typeConfig.website;
+                                    const isActive = activeGeneralIndex === index;
+                                    let cleanDescription = resource.description || '';
+                                    const recMatch = cleanDescription.match(/^Recommended by '([^']+)':\s*(.*)/);
+                                    if (recMatch) cleanDescription = recMatch[2];
+
+                                    return (
+                                        <motion.div
+                                            key={resource.id}
+                                            animate={{ height: isActive ? 268 : 62 }}
+                                            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+                                            className="relative overflow-hidden rounded-[1.5rem] cursor-pointer flex flex-col justify-end"
+                                            style={{ height: 62 }}
+                                            onClick={() => setActiveGeneralIndex(isActive ? 0 : index)}
+                                        >
+                                            {/* Background image */}
+                                            <div className="absolute inset-0">
+                                                {resource.imageUrl ? (
+                                                    <motion.img
+                                                        src={resource.imageUrl}
+                                                        alt={resource.title}
+                                                        className="w-full h-full object-cover"
+                                                        animate={{ scale: isActive ? 1.04 : 1.1 }}
+                                                        transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1] }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center">
+                                                        <div className="text-indigo-200 scale-[4]">{ICONS.Heart}</div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="w-[72px] h-[72px] rounded-xl flex-shrink-0 bg-gradient-to-br from-[#e8f3f1] to-[#d0e8e4] flex items-center justify-center text-[#448a7d]/40">
-                                                <div className="scale-150">{ICONS.Heart}</div>
+
+                                            {/* Gradient overlay */}
+                                            <motion.div
+                                                animate={{ opacity: isActive ? 0.88 : 0.55 }}
+                                                transition={{ duration: 0.45 }}
+                                                className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent"
+                                            />
+
+                                            {/* Content pinned to bottom */}
+                                            <div className="relative z-10 px-4 pb-4 pt-3 w-full">
+                                                {/* Row always visible: badge + title (collapsed) + chevron */}
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2 py-1 rounded-full flex-shrink-0 ${config.color} border border-white/20 shadow`}>
+                                                            {config.label}
+                                                        </span>
+                                                        {!isActive && (
+                                                            <span className="text-white font-black text-sm truncate drop-shadow">{resource.title}</span>
+                                                        )}
+                                                    </div>
+                                                    <motion.div
+                                                        animate={{ rotate: isActive ? 180 : 0 }}
+                                                        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                                                        className="flex-shrink-0"
+                                                    >
+                                                        <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </motion.div>
+                                                </div>
+
+                                                {/* Expanded content */}
+                                                <AnimatePresence>
+                                                    {isActive && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0 }}
+                                                            transition={{ delay: 0.1, duration: 0.22 }}
+                                                            className="mt-2.5"
+                                                        >
+                                                            <h3 className="text-white font-black text-2xl leading-tight tracking-tight mb-1.5 drop-shadow-md">
+                                                                {resource.title}
+                                                            </h3>
+                                                            <p className="text-white/70 text-xs font-medium leading-relaxed mb-4 line-clamp-2">
+                                                                {cleanDescription}
+                                                            </p>
+                                                            <a
+                                                                href={resource.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400/50 shadow-[0_8px_20px_-8px_rgba(99,102,241,0.8)] active:scale-95 transition-all"
+                                                            >
+                                                                Explore Resource
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                                </svg>
+                                                            </a>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </div>
-                                        )}
-                                        <div className="flex-grow min-w-0">
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#448a7d] bg-[#e8f3f1] px-2 py-0.5 rounded-full inline-block mb-1.5">✓ Verified</span>
-                                            <h3 className="font-black text-[#1e3a34] text-sm leading-tight mb-1">{resource.title}</h3>
-                                            <p className="text-[11px] text-gray-500 font-medium leading-snug line-clamp-2 mb-2">{resource.description}</p>
-                                            <span className="text-[10px] font-black text-[#448a7d] uppercase tracking-widest">Visit →</span>
-                                        </div>
-                                    </a>
-                                ))}
+                                        </motion.div>
+                                    );
+                                })}
                             </div>
 
                             {/* DESKTOP/TABLET Accordion Gallery */}
@@ -432,39 +505,37 @@ const ResourcesView: React.FC = () => {
                             {/* MOBILE: Horizontal Pill Rail + Content Panel */}
                             <div className="md:hidden mt-6">
 
-                                {/* Scrollable pill strip */}
-                                <div className="overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                    <div className="flex gap-2 w-max">
-                                        {COMMUNITY_BUCKETS.map((bucket) => {
-                                            const count = communityBucketResources[bucket.id].length;
-                                            const isActive = activeCommunityIndex === bucket.id;
-                                            return (
-                                                <motion.button
-                                                    key={bucket.id}
-                                                    onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
-                                                    animate={{ scale: isActive ? 1.04 : 1 }}
-                                                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl flex-shrink-0 border transition-colors duration-200 ${
-                                                        isActive
-                                                            ? `${bucket.bg} border-transparent shadow-lg`
-                                                            : 'bg-white border-gray-200'
-                                                    }`}
-                                                >
-                                                    <div className={isActive ? 'text-white' : bucket.color}>
-                                                        {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
-                                                    </div>
-                                                    <span className={`text-xs font-black whitespace-nowrap ${isActive ? 'text-white' : 'text-gray-600'}`}>
-                                                        {bucket.label}
-                                                    </span>
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
-                                                        isActive ? 'bg-black/20 text-white' : count > 0 ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-300'
-                                                    }`}>
-                                                        {count}
-                                                    </span>
-                                                </motion.button>
-                                            );
-                                        })}
-                                    </div>
+                                {/* 3×2 chip grid — all 6 categories visible, no scroll */}
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    {COMMUNITY_BUCKETS.map((bucket) => {
+                                        const count = communityBucketResources[bucket.id].length;
+                                        const isActive = activeCommunityIndex === bucket.id;
+                                        return (
+                                            <motion.button
+                                                key={bucket.id}
+                                                onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
+                                                animate={{ scale: isActive ? 1.04 : 1 }}
+                                                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                                                className={`relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border transition-colors duration-200 ${
+                                                    isActive
+                                                        ? `${bucket.bg} border-transparent shadow-md`
+                                                        : 'bg-white border-gray-100 shadow-sm'
+                                                }`}
+                                            >
+                                                {count > 0 && (
+                                                    <span className={`absolute top-1.5 right-1.5 text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none ${
+                                                        isActive ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-500'
+                                                    }`}>{count}</span>
+                                                )}
+                                                <div className={isActive ? 'text-white' : bucket.color}>
+                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-5 h-5' })}
+                                                </div>
+                                                <span className={`text-[10px] font-black leading-tight text-center px-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                                                    {bucket.label}
+                                                </span>
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Content panel */}
@@ -477,7 +548,7 @@ const ResourcesView: React.FC = () => {
                                                 animate={{ opacity: 1 }}
                                                 exit={{ opacity: 0 }}
                                                 transition={{ duration: 0.18 }}
-                                                className="flex flex-col items-center justify-center py-12 text-center bg-white/70 rounded-[1.5rem] border border-dashed border-gray-200"
+                                                className="flex flex-col items-center justify-center py-8 text-center bg-white/70 rounded-[1.5rem] border border-dashed border-gray-200"
                                             >
                                                 <div className="flex gap-2 mb-4">
                                                     {COMMUNITY_BUCKETS.slice(0, 4).map((bucket) => (

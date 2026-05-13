@@ -66,17 +66,21 @@ const QAThreadCard: React.FC<{ item: QAItem; index: number }> = ({ item, index }
         {/* Question row */}
         <div className="flex gap-3 items-start">
           <motion.div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#448a7d]/50 to-[#2d5a52]/70 flex-shrink-0 mt-0.5"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#448a7d]/50 to-[#2d5a52]/70 flex-shrink-0 mt-0.5 flex items-center justify-center"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: cardDelay + 0.1, type: 'spring', stiffness: 400, damping: 22 }}
-          />
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="7" fontWeight="900" fontFamily="Inter, sans-serif" fill="rgba(255,255,255,0.75)">Q</text>
+            </svg>
+          </motion.div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
               <p className="text-[9px] font-black uppercase tracking-widest text-[#448a7d]/70">Anonymous</p>
               {item.timestamp && (
                 <motion.span
-                  className="text-[8px] font-medium text-white/20 tracking-wide flex-shrink-0"
+                  className="text-[8px] font-medium text-white/35 tracking-wide flex-shrink-0"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: cardDelay + 0.45, duration: 0.5 }}
@@ -348,9 +352,7 @@ const Landing: React.FC = () => {
   };
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] pt-0 pb-20 md:pb-32 overflow-hidden">
-      {/* Gradient bridge from warm cream care loop section */}
-      <div className="h-24 md:h-36 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
+    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] py-20 md:py-32 overflow-hidden">
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none">
@@ -465,20 +467,35 @@ const Landing: React.FC = () => {
             </motion.p>
 
             <motion.div
-              className="grid grid-cols-3 gap-2 max-w-sm"
+              className="flex items-start gap-0 max-w-xs"
               initial={{ opacity: 0, y: 16 }}
               animate={qaInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.52, ease }}
             >
-              {['Ask', 'Review', 'Answer'].map((label, idx) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.055] px-3 py-3 text-center">
-                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-white/35">{label}</p>
+              {[
+                { num: '01', label: 'Ask', desc: 'Write anonymously' },
+                { num: '02', label: 'Review', desc: 'Moderated by us' },
+                { num: '03', label: 'Answer', desc: 'Community responds' },
+              ].map((step, idx) => (
+                <React.Fragment key={step.num}>
                   <motion.div
-                    className="mx-auto mt-2 h-1.5 w-1.5 rounded-full bg-[#e57c6e]"
-                    animate={{ scale: [1, 1.8, 1], opacity: [0.45, 1, 0.45] }}
-                    transition={{ duration: 2.6, repeat: Infinity, delay: idx * 0.35, ease: 'easeInOut' }}
-                  />
-                </div>
+                    className="flex flex-col items-center text-center flex-1"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={qaInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
+                  >
+                    <span className="text-[11px] font-black text-[#448a7d] tabular-nums tracking-tight leading-none mb-1.5">{step.num}</span>
+                    <span className="text-[11px] font-black text-white uppercase tracking-[0.18em] leading-none mb-1">{step.label}</span>
+                    <span className="text-[9px] font-medium text-white/35 leading-tight">{step.desc}</span>
+                  </motion.div>
+                  {idx < 2 && (
+                    <div className="flex items-center justify-center mt-[10px] mx-1 flex-shrink-0">
+                      <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden="true">
+                        <path d="M0.5 4H12.5M12.5 4L9.5 1M12.5 4L9.5 7" stroke="rgba(68,138,125,0.45)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </motion.div>
 
@@ -515,7 +532,19 @@ const Landing: React.FC = () => {
                   style={{ transformStyle: 'preserve-3d' }}
                   className="bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.4)] relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-[#fbd6d1] to-[#e8f3f1] opacity-50 rounded-bl-[100%] pointer-events-none" />
+                  {/* Corner decoration — refined teal wash with speech bubble SVG */}
+                  <div className="absolute top-0 right-0 w-44 h-44 pointer-events-none overflow-hidden rounded-[3rem]">
+                    <div className="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-[#e8f3f1]/60 via-[#d4eae6]/30 to-transparent rounded-bl-[110%]" />
+                    <svg
+                      className="absolute top-4 right-4 opacity-[0.22]"
+                      width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true"
+                    >
+                      <rect x="2" y="2" width="40" height="32" rx="10" stroke="#448a7d" strokeWidth="2"/>
+                      <path d="M10 42 L16 34 H28" stroke="#448a7d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <line x1="11" y1="14" x2="31" y2="14" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
+                      <line x1="11" y1="22" x2="25" y2="22" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
 
                   {qSuccess ? (
                     <div className="text-center py-12 animate-reveal">
@@ -536,7 +565,7 @@ const Landing: React.FC = () => {
                           value={question}
                           onChange={e => setQuestion(e.target.value)}
                           placeholder="Share your question anonymously..."
-                          className="w-full p-6 md:p-8 bg-gray-50 border-2 border-gray-100 focus:border-[#448a7d]/50 rounded-[2rem] min-h-[160px] md:min-h-[200px] text-lg md:text-xl font-medium text-[#1e3a34] transition-all shadow-inner focus:outline-none focus:bg-white placeholder-gray-400 resize-none selection:bg-[#448a7d] selection:text-white"
+                          className="w-full p-6 md:p-8 bg-[#f8faf9] border border-[#e8f3f1] focus:border-[#448a7d]/40 rounded-[1.5rem] min-h-[160px] md:min-h-[200px] text-lg md:text-xl font-medium text-[#1e3a34] transition-all shadow-[inset_0_2px_8px_rgba(30,58,52,0.04)] focus:outline-none focus:bg-white focus:shadow-[inset_0_2px_8px_rgba(30,58,52,0.03),0_0_0_3px_rgba(68,138,125,0.10)] placeholder-gray-400/70 resize-none selection:bg-[#448a7d] selection:text-white"
                         />
                       </div>
                       {qError && (
@@ -550,16 +579,23 @@ const Landing: React.FC = () => {
                           disabled={isSubmittingQ || !question.trim()}
                           className="w-full relative group overflow-hidden px-8 py-5 bg-[#e57c6e] text-white rounded-[2rem] font-black text-lg md:text-xl uppercase tracking-widest shadow-[0_15px_30px_-10px_rgba(229,124,110,0.4)] hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
-                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)', backgroundSize: '200% 100%', animation: 'none' }} />
                           <span className="relative flex items-center justify-center gap-3">
                             {isSubmittingQ ? 'Submitting...' : 'Send Question'}
                             {!isSubmittingQ && <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>}
                           </span>
                         </button>
                       </div>
-                      <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest mt-6 pt-4 border-t border-gray-100">
-                        Anonymous and reviewed before use
-                      </p>
+                      <div className="flex justify-center mt-6 pt-4 border-t border-gray-100">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f0f7f5] border border-[#d4eae6]">
+                          <svg width="10" height="12" viewBox="0 0 10 12" fill="none" aria-hidden="true">
+                            <rect x="1" y="5" width="8" height="7" rx="2" stroke="#448a7d" strokeWidth="1.4"/>
+                            <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="#448a7d" strokeWidth="1.4" strokeLinecap="round"/>
+                          </svg>
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#448a7d]/70">Anonymous and reviewed before use</span>
+                        </span>
+                      </div>
                     </form>
                   )}
                 </motion.div>
@@ -623,17 +659,34 @@ const Landing: React.FC = () => {
                         key={signal.title}
                         type="button"
                         onClick={openAnsweredQA}
-                        className="group relative min-h-[150px] rounded-[1.5rem] border border-white/10 bg-[#e8f3f1]/[0.07] p-5 text-left overflow-hidden active:scale-[0.98] transition-transform"
+                        className="group relative min-h-[180px] rounded-[1.5rem] border border-white/10 bg-[#e8f3f1]/[0.07] p-5 text-left overflow-hidden active:scale-[0.98] transition-transform"
                         whileHover={{ y: -6, rotate: idx === 1 ? 0 : idx === 0 ? -1.5 : 1.5 }}
                         transition={{ type: 'spring', stiffness: 320, damping: 26 }}
                         aria-expanded={showAnsweredQA}
                         aria-controls="answered-questions"
                       >
+                        {/* Animated ✦ symbol in corner */}
                         <motion.span
-                          className="absolute right-4 top-4 h-8 w-8 rounded-full border border-white/15 bg-white/[0.06]"
-                          animate={{ scale: [1, 1.12, 1], opacity: [0.65, 1, 0.65] }}
-                          transition={{ duration: 3.2, repeat: Infinity, delay: idx * 0.35, ease: 'easeInOut' }}
-                        />
+                          className="absolute right-4 top-4 text-[#448a7d]/50 text-base leading-none select-none"
+                          animate={{ rotate: [0, 90, 180, 270, 360], opacity: [0.5, 0.85, 0.5] }}
+                          transition={{ duration: 6, repeat: Infinity, delay: idx * 0.7, ease: 'linear' }}
+                          aria-hidden="true"
+                        >
+                          ✦
+                        </motion.span>
+
+                        {/* Lock icon — appears on hover */}
+                        <motion.span
+                          className="absolute right-3.5 top-3.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          aria-hidden="true"
+                        >
+                          <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
+                            <rect x="1" y="7" width="12" height="9" rx="2.5" stroke="rgba(229,124,110,0.7)" strokeWidth="1.3"/>
+                            <path d="M4 7V4.5a3 3 0 0 1 6 0V7" stroke="rgba(229,124,110,0.7)" strokeWidth="1.3" strokeLinecap="round"/>
+                            <circle cx="7" cy="11.5" r="1.2" fill="rgba(229,124,110,0.7)"/>
+                          </svg>
+                        </motion.span>
+
                         <span className="relative block text-[9px] font-black uppercase tracking-[0.28em] text-[#e57c6e] mb-6">Thread {idx + 1}</span>
                         <span className="relative block text-lg md:text-xl font-black text-white leading-tight mb-3">{signal.title}</span>
                         <span className="relative block text-xs font-bold text-white/40">{signal.meta}</span>
@@ -830,7 +883,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Visual Support Gallery */}
-      <section className="relative z-10 bg-white/40 backdrop-blur-lg border-t border-white/50 py-16 md:py-32 max-[400px]:py-12">
+      <section className="relative z-10 bg-white py-16 md:py-32 max-[400px]:py-12">
         <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
             <div className="space-y-6 md:space-y-8 md:pr-12">
@@ -866,6 +919,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
+      <div className="h-16 md:h-24 bg-gradient-to-b from-white to-[#f3f1e8] pointer-events-none" />
 
       {/* Horizontal Promise Journey */}
       <section
@@ -1036,6 +1090,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
+      <div className="h-24 md:h-36 bg-gradient-to-b from-[#f3f1e8] to-[#1e3a34] pointer-events-none" />
 
       {questionSection}
 

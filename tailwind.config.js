@@ -8,6 +8,9 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        cabinet: ['"Cabinet Grotesk"', 'system-ui', 'sans-serif'],
+      },
       keyframes: {
         zoom: {
           '0%, 100%': { transform: 'scale(1)' },

@@ -4,7 +4,9 @@ import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
 import { ICONS, SEED_RESOURCES } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+import { useRef } from 'react';
+
 
 const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [liked, setLiked] = useState(false);
@@ -136,6 +138,126 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
         prev.exploring_count === next.exploring_count;
 });
 
+const ResourcesHero: React.FC = () => {
+    const heroRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+
+    const photoY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+    const contentY = useTransform(scrollYProgress, [0, 0.6], ['0%', '-12%']);
+    const contentOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
+
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
+    const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [4, -4]), { stiffness: 120, damping: 20 });
+    const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-6, 6]), { stiffness: 120, damping: 20 });
+    const orbX = useTransform(mouseX, [-0.5, 0.5], [12, -12]);
+    const orbY = useTransform(mouseY, [-0.5, 0.5], [8, -8]);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+        mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+    };
+    const handleMouseLeave = () => { mouseX.set(0); mouseY.set(0); };
+
+    const headlineLines = ['From our', 'community,', 'for you.'];
+
+    return (
+        <div ref={heroRef} className="mb-8 md:mb-16" style={{ perspective: '1200px' }}>
+            <motion.div
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+                className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] min-h-[70vw] md:min-h-[60vh] lg:min-h-[65vh] flex flex-col shadow-[0_40px_100px_-20px_rgba(15,38,32,0.45)] will-change-transform"
+            >
+                {/* Parallax photo */}
+                <motion.div style={{ y: photoY }} className="absolute inset-[-10%] will-change-transform" aria-hidden="true">
+                    <img
+                        src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000"
+                        alt=""
+                        className="w-full h-full object-cover"
+                    />
+                </motion.div>
+
+                {/* Gradients */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2620] via-[#0f2620]/25 to-transparent" aria-hidden="true" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0f2620]/55 to-transparent" aria-hidden="true" />
+
+                {/* Floating orb — moves opposite to tilt */}
+                <motion.div
+                    style={{ x: orbX, y: orbY, background: 'radial-gradient(ellipse at center, #448a7d 0%, transparent 70%)', filter: 'blur(32px)' }}
+                    className="absolute top-6 right-8 w-48 h-48 md:w-72 md:h-72 rounded-full opacity-20 pointer-events-none will-change-transform"
+                    aria-hidden="true"
+                />
+
+                {/* Content — scrolls + fades out */}
+                <motion.div style={{ y: contentY, opacity: contentOpacity }} className="relative z-10 mt-auto p-7 md:p-12 lg:p-16 will-change-transform">
+                    {/* Eyebrow */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-center gap-3 mb-5 md:mb-6"
+                    >
+                        <motion.span
+                            initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                            style={{ originX: 0 }}
+                            className="block w-6 h-px bg-[#448a7d]"
+                        />
+                        <span className="text-[#7ec8ba] text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">
+                            Peer &amp; Community Resources
+                        </span>
+                    </motion.div>
+
+                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-12">
+                        {/* Staggered headline */}
+                        <h1 className="font-black italic text-white leading-[0.9] tracking-tight text-[2.8rem] md:text-[5rem] lg:text-[6.5rem] max-w-3xl">
+                            {headlineLines.map((line, i) => (
+                                <motion.span
+                                    key={line}
+                                    initial={{ opacity: 0, y: 40, rotateX: -20 }}
+                                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 + i * 0.1 }}
+                                    style={{ display: 'block', transformOrigin: 'bottom' }}
+                                >
+                                    {line}
+                                </motion.span>
+                            ))}
+                        </h1>
+
+                        {/* Subtext + buttons */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.45 }}
+                            className="space-y-4 md:space-y-5 shrink-0 md:w-64 lg:w-72 md:pb-1"
+                        >
+                            <p className="text-white/55 text-sm leading-relaxed font-light">
+                                Resources suggested by Peers and Community Partners
+                            </p>
+                            <div className="flex flex-col gap-2.5">
+                                <Link
+                                    to="/add-resource?mode=recommend"
+                                    className="w-full bg-[#e57c6e] hover:bg-[#cf6a5e] text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 shadow-[0_8px_24px_-6px_rgba(229,124,110,0.5)] hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+                                >
+                                    {ICONS.Plus} Recommend
+                                </Link>
+                                <Link
+                                    to="/add-resource?mode=apply"
+                                    className="w-full bg-white/10 hover:bg-white/20 text-white px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 border border-white/20 hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+                                >
+                                    {ICONS.Users} Become a Partner
+                                </Link>
+                            </div>
+                        </motion.div>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </div>
+    );
+};
+
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
@@ -205,32 +327,7 @@ const ResourcesView: React.FC = () => {
         <>
             <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
 
-                {/* STUNNING HERO SECTION */}
-                <div className="relative overflow-hidden rounded-[2rem] md:rounded-[3rem] bg-[#1e3a34] text-white p-7 md:p-16 mb-8 md:mb-16 shadow-2xl">
-                    <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#1e3a34] via-[#1e3a34]/80 to-transparent"></div>
-
-                    <div className="relative z-10 max-w-3xl">
-                        <h1 className="text-3xl md:text-7xl font-black italic tracking-tight mb-3 md:mb-6">Light the way.</h1>
-                        <p className="text-gray-300 font-medium text-sm md:text-xl max-w-2xl mb-6 md:mb-10 leading-relaxed">
-                            Resources suggested by Peers and Community Partners
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4">
-                            <Link
-                                to="/add-resource?mode=recommend"
-                                className="w-full sm:w-auto bg-[#e57c6e] text-white px-6 md:px-8 py-3.5 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 md:gap-3 hover:bg-[#d46a5c] shadow-[0_10px_30px_-10px_rgba(229,124,110,0.5)] hover:-translate-y-1 transition-all active:scale-95"
-                            >
-                                {ICONS.Plus} Recommend
-                            </Link>
-                            <Link
-                                to="/add-resource?mode=apply"
-                                className="w-full sm:w-auto bg-white/20 text-white px-6 md:px-8 py-3.5 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest text-xs md:text-sm flex items-center justify-center gap-2 md:gap-3 hover:bg-white/30 border border-white/30 shadow-md hover:-translate-y-1 transition-all active:scale-95"
-                            >
-                                {ICONS.Users} Become a Partner
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                <ResourcesHero />
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-64">
@@ -322,24 +419,28 @@ const ResourcesView: React.FC = () => {
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: -8 }}
                                                         transition={{ delay: 0.12, duration: 0.2 }}
-                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3.5 py-2 bg-black/55 backdrop-blur-md border-b border-white/10 pointer-events-auto"
+                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center gap-2.5 px-3.5 py-2 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
                                                     >
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            <div className="w-3 h-3 rounded-sm bg-white/15 flex items-center justify-center flex-shrink-0">
-                                                                <Globe className="w-1.5 h-1.5 text-white/50" />
-                                                            </div>
-                                                            <span className="text-[9px] font-bold text-white/50 truncate max-w-[160px]">{mobDomain}</span>
-                                                        </div>
+                                                        {/* Traffic lights — left (macOS style) */}
                                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] flex items-center justify-center group/dot" title="Close">
-                                                                <svg className="w-1 h-1 text-[#820000]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                                <svg className="w-1 h-1 text-[#820000]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#febc2e] flex items-center justify-center group/dot" title="Minimize">
-                                                                <span className="text-[#7d5800]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[6px] font-black leading-none">−</span>
+                                                            <button onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#febc2e] flex items-center justify-center group/dot">
+                                                                <span className="text-[#7d5800]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[6px] font-black leading-none">−</span>
                                                             </button>
                                                             <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#28c840] flex items-center justify-center group/dot" title="Open">
-                                                                <svg className="w-1.5 h-1.5 text-[#006500]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                                                                <svg className="w-1.5 h-1.5 text-[#006500]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                                                             </a>
+                                                        </div>
+                                                        {/* Address bar pill */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="bg-white/[0.08] rounded-md px-2 py-1 flex items-center gap-1.5">
+                                                                <svg className="w-2 h-2 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                                                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                                                </svg>
+                                                                <span className="text-[9px] font-medium text-white/50 truncate">{mobDomain}</span>
+                                                            </div>
                                                         </div>
                                                     </motion.div>
                                                 )}
@@ -450,15 +551,10 @@ const ResourcesView: React.FC = () => {
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: -10 }}
                                                         transition={{ delay: 0.18, duration: 0.22 }}
-                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 md:px-6 py-3 bg-black/55 backdrop-blur-md border-b border-white/10 pointer-events-auto"
+                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-5 md:px-6 py-2.5 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
                                                     >
-                                                        <div className="flex items-center gap-2 min-w-0">
-                                                            <div className="w-3.5 h-3.5 rounded-sm bg-white/15 flex items-center justify-center flex-shrink-0">
-                                                                <Globe className="w-2 h-2 text-white/50" />
-                                                            </div>
-                                                            <span className="text-[10px] font-bold text-white/50 truncate max-w-[160px]">{deskDomain}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                        {/* Traffic lights — LEFT (macOS convention) */}
+                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Close">
                                                                 <svg className="w-1.5 h-1.5 text-[#820000]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>
@@ -468,6 +564,13 @@ const ResourcesView: React.FC = () => {
                                                             <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Open">
                                                                 <svg className="w-2 h-2 text-[#006500]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                                                             </a>
+                                                        </div>
+                                                        {/* Address bar pill — RIGHT */}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="bg-white/[0.08] rounded-md px-3 py-1 flex items-center gap-2 max-w-xs mx-auto">
+                                                                <svg className="w-2.5 h-2.5 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                                <span className="text-[10px] font-medium text-white/50 truncate">{deskDomain}</span>
+                                                            </div>
                                                         </div>
                                                     </motion.div>
                                                 )}
@@ -595,9 +698,13 @@ const ResourcesView: React.FC = () => {
                                                         isActive ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-500'
                                                     }`}>{count}</span>
                                                 )}
-                                                <div className={isActive ? 'text-white' : bucket.color}>
+                                                <motion.div
+                                                    className={isActive ? 'text-white' : bucket.color}
+                                                    animate={{ y: [0, -8, 0], scale: [1, 1.15, 1] }}
+                                                    transition={{ duration: 1.8, repeat: Infinity, ease: [0.45, 0, 0.55, 1], delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.22, repeatDelay: 0.6 }}
+                                                >
                                                     {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-5 h-5' })}
-                                                </div>
+                                                </motion.div>
                                                 <span className={`text-[10px] font-black leading-tight text-center px-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>
                                                     {bucket.label}
                                                 </span>
@@ -719,7 +826,12 @@ const ResourcesView: React.FC = () => {
                                                                 />
                                                             )}
                                                             <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center transition-all duration-150 ${isActive ? `bg-white shadow-sm border border-gray-100 ${bucket.color}` : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>
-                                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                                <motion.div
+                                                                    animate={{ y: [0, -7, 0], scale: [1, 1.18, 1] }}
+                                                                    transition={{ duration: 1.8, repeat: Infinity, ease: [0.45, 0, 0.55, 1], delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.22, repeatDelay: 0.6 }}
+                                                                >
+                                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                                </motion.div>
                                                             </div>
                                                             <div className="flex-grow min-w-0">
                                                                 <span className={`text-sm font-black block leading-tight transition-colors ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>{bucket.label}</span>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useScroll, useTransform, useSpring, useVelocity, useMotionValue } from 'framer-motion';
 import { apiService } from '../services/api.ts';
 import { ICONS } from '../constants.tsx';
 import { QAItem } from '../types.ts';
@@ -18,26 +18,26 @@ const formatDate = (timestamp: string): string => {
 /* ── Q&A Thread Components ─────────────────────────────────────────────── */
 
 const QASkeleton: React.FC = () => (
-  <div className="bg-white/[0.04] border border-white/[0.05] rounded-[1.75rem] p-5 md:p-7 animate-pulse">
+  <div className="bg-white border border-[#e8f3f1] rounded-[1.75rem] p-5 md:p-7 animate-pulse">
     <div className="flex gap-3 items-start">
-      <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0" />
+      <div className="w-8 h-8 rounded-full bg-[#e8f3f1] flex-shrink-0" />
       <div className="flex-1 space-y-2 pt-1">
         <div className="flex items-center justify-between">
-          <div className="h-2 bg-white/10 rounded-full w-16" />
-          <div className="h-2 bg-white/[0.06] rounded-full w-20" />
+          <div className="h-2 bg-[#e8f3f1] rounded-full w-16" />
+          <div className="h-2 bg-[#e8f3f1]/60 rounded-full w-20" />
         </div>
-        <div className="h-3 bg-white/10 rounded-full w-4/5" />
-        <div className="h-3 bg-white/10 rounded-full w-3/5" />
+        <div className="h-3 bg-[#e8f3f1] rounded-full w-4/5" />
+        <div className="h-3 bg-[#e8f3f1] rounded-full w-3/5" />
       </div>
     </div>
-    <div className="ml-4 mt-3 mb-3 w-px h-4 bg-white/[0.06]" />
+    <div className="ml-4 mt-3 mb-3 w-px h-4 bg-[#e8f3f1]/60" />
     <div className="flex gap-3 items-start">
-      <div className="w-8 h-8 rounded-full bg-white/[0.07] flex-shrink-0" />
+      <div className="w-8 h-8 rounded-full bg-[#e8f3f1]/70 flex-shrink-0" />
       <div className="flex-1 space-y-2 pt-1">
-        <div className="h-2 bg-white/[0.07] rounded-full w-24" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-full" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-4/5" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-3/5" />
+        <div className="h-2 bg-[#e8f3f1]/70 rounded-full w-24" />
+        <div className="h-2.5 bg-[#e8f3f1]/60 rounded-full w-full" />
+        <div className="h-2.5 bg-[#e8f3f1]/60 rounded-full w-4/5" />
+        <div className="h-2.5 bg-[#e8f3f1]/60 rounded-full w-3/5" />
       </div>
     </div>
   </div>
@@ -262,6 +262,97 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
   );
 };
 
+/* ── Gallery Image Card ─────────────────────────────────────────────────── */
+
+const GalleryImage: React.FC<{ src: string; label: string; h: string; delay: number; inView: boolean; flat?: boolean }> = ({ src, label, h, delay, inView, flat }) => {
+  const ease = [0.16, 1, 0.3, 1] as const;
+  // Per-card mouse-tracking 3D tilt (desktop)
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-8, 8]), { stiffness: 260, damping: 26 });
+  const rotateX = useSpring(useTransform(mouseY, [0, 1], [8, -8]), { stiffness: 260, damping: 26 });
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    mouseX.set((e.clientX - left) / width);
+    mouseY.set((e.clientY - top) / height);
+  };
+  const onMouseLeave = () => { mouseX.set(0.5); mouseY.set(0.5); };
+
+  if (flat) {
+    // Flat illustration treatment — clean white card, object-contain, no dark overlay
+    return (
+      <div style={{ perspective: '900px' }}>
+        <motion.div
+          className={`relative ${h} overflow-hidden rounded-[2rem] bg-white group cursor-pointer shadow-[0_24px_60px_-16px_rgba(30,58,52,0.18)] border border-[#e8f3f1]`}
+          style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+          initial={{ clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 }}
+          animate={inView ? { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 } : {}}
+          transition={{ duration: 0.95, delay, ease }}
+          onMouseMove={onMouseMove}
+          onMouseLeave={onMouseLeave}
+        >
+          {/* Soft mint tint on the white — grounds it in the brand palette */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#e8f3f1]/30 to-white/0 pointer-events-none z-10" />
+          <motion.img
+            src={src}
+            loading="lazy"
+            className="w-full h-full object-contain p-3"
+            alt={label}
+            whileHover={{ scale: 1.04 }}
+            transition={{ duration: 0.65, ease }}
+          />
+          {/* Subtle bottom fade */}
+          <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-white/80 to-transparent pointer-events-none z-10" />
+          <motion.div
+            className="absolute bottom-4 left-4 z-20"
+            initial={{ opacity: 0, y: 10 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: delay + 0.48, ease }}
+          >
+            <span className="inline-block px-3.5 py-2 bg-[#e8f3f1]/90 backdrop-blur-md border border-[#448a7d]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1e3a34] shadow-sm">
+              {label}
+            </span>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ perspective: '900px' }}>
+      <motion.div
+        className={`relative ${h} overflow-hidden rounded-[2rem] shadow-[0_32px_80px_-20px_rgba(30,58,52,0.45)] group cursor-pointer`}
+        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+        initial={{ clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 }}
+        animate={inView ? { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 } : {}}
+        transition={{ duration: 0.95, delay, ease }}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
+      >
+        <motion.img
+          src={src}
+          loading="lazy"
+          className="w-full h-full object-cover"
+          alt={label}
+          whileHover={{ scale: 1.09 }}
+          transition={{ duration: 0.65, ease }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a34]/70 via-[#1e3a34]/10 to-transparent opacity-40 group-hover:opacity-85 transition-opacity duration-500" />
+        <motion.div
+          className="absolute bottom-4 left-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, delay: delay + 0.48, ease }}
+        >
+          <span className="inline-block px-3.5 py-2 bg-white/95 backdrop-blur-md border border-white/40 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1e3a34] shadow-sm">
+            {label}
+          </span>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+};
+
 /* ── Landing Page ───────────────────────────────────────────────────────── */
 
 const Landing: React.FC = () => {
@@ -284,6 +375,28 @@ const Landing: React.FC = () => {
 
   const qaRef = useRef<HTMLElement>(null);
   const qaInView = useInView(qaRef, { once: true, margin: '-60px' });
+
+  const galleryRef = useRef<HTMLElement>(null);
+  const galleryInView = useInView(galleryRef, { once: true, margin: '-80px' });
+  const { scrollYProgress: galleryScrollProgress } = useScroll({ target: galleryRef, offset: ['start start', 'end end'] });
+  // Desktop: col A fast, col B slow. Both climb up — speed contrast = depth.
+  const col1YRawDesk = useTransform(galleryScrollProgress, [0, 1], [160, -700]);
+  const col2YRawDesk = useTransform(galleryScrollProgress, [0, 1], [80, -500]);
+  // Mobile: single full-width filmstrip — steady parallax climb
+  const col1YRawMob = useTransform(galleryScrollProgress, [0, 1], [120, -520]);
+  const col1YDesk = useSpring(col1YRawDesk, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  const col2YDesk = useSpring(col2YRawDesk, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  const col1YMob = useSpring(col1YRawMob, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  // Velocity-driven skew — columns lean in opposite directions with scroll momentum
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const skewRawA = useTransform(scrollVelocity, [-3000, 0, 3000], [-2.2, 0, 2.2]);
+  const skewRawB = useTransform(scrollVelocity, [-3000, 0, 3000], [2.2, 0, -2.2]);
+  const skewA = useSpring(skewRawA, { stiffness: 32, damping: 18 });
+  const skewB = useSpring(skewRawB, { stiffness: 32, damping: 18 });
+  // Scale breath — columns compress slightly at start/end, open in the middle
+  const scaleA = useTransform(galleryScrollProgress, [0, 0.45, 1], [0.96, 1.0, 0.97]);
+  const scaleB = useTransform(galleryScrollProgress, [0, 0.55, 1], [1.0, 0.97, 1.0]);
 
   const promiseRef = useRef<HTMLElement>(null);
   const promiseViewportRef = useRef<HTMLDivElement>(null);
@@ -821,45 +934,314 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Visual Support Gallery */}
-      <section className="relative z-10 py-16 md:py-32 max-[400px]:py-12">
-        <div className="absolute inset-0 bg-white/82 backdrop-blur-[3px] pointer-events-none" />
-        <div className="relative z-10 container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
-            <div className="space-y-6 md:space-y-8 md:pr-12">
-              <h2 className="text-3xl md:text-5xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
-                A canvas for collective healing.<br className="hidden md:block" /> A space to navigate our experiences together.
+      {/* Visual Support Gallery — pinned scroll, viewport locked while images swim */}
+      <section
+        ref={galleryRef}
+        className="relative z-10"
+        style={{ height: 'calc(100vh + 900px)' }}
+      >
+        <div className="sticky top-0 h-screen overflow-hidden bg-[#f8f6f1]/70 backdrop-blur-[3px]">
+
+          {/* Ambient orb — teal */}
+          <motion.div
+            className="absolute top-1/2 left-1/4 w-[60vw] h-[60vw] max-w-[500px] bg-[#448a7d]/[0.07] rounded-full blur-3xl -translate-y-1/2 pointer-events-none"
+            animate={{ scale: [1, 1.12, 1], x: [0, 40, 0] }}
+            transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          {/* Ambient orb — coral */}
+          <motion.div
+            className="absolute bottom-[-4rem] right-1/4 w-[40vw] h-[40vw] max-w-[320px] bg-[#e57c6e]/[0.05] rounded-full blur-3xl pointer-events-none"
+            animate={{ scale: [1, 1.18, 1], x: [0, -25, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          />
+
+          {/* ── DESKTOP: left text panel + right image pool ── */}
+          <div className="hidden lg:flex h-full relative z-10">
+
+            {/* LEFT: text anchored, always visible */}
+            <div
+              className="w-[44%] xl:w-[42%] h-full flex flex-col justify-center px-12 xl:px-16 2xl:px-20 pt-14 flex-shrink-0 relative"
+              style={{ paddingBottom: 'min(300px, max(160px, calc(100vh - 460px)))' }}
+            >
+
+              {/* Eyebrow */}
+              <motion.div
+                className="flex items-center gap-2 mb-6"
+                initial={{ opacity: 0, x: -20 }}
+                animate={galleryInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ duration: 0.55, ease }}
+              >
+                <motion.div className="h-px bg-[#448a7d]"
+                  initial={{ width: 0 }} animate={galleryInView ? { width: 28 } : {}}
+                  transition={{ duration: 0.6, delay: 0.1, ease }}
+                />
+                <span className="w-1 h-1 rounded-full bg-[#448a7d] flex-shrink-0" />
+                <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
+              </motion.div>
+
+              {/* Heading */}
+              <h2 className="font-cabinet text-[2.6rem] xl:text-5xl 2xl:text-[3.6rem] font-black text-[#1e3a34] tracking-tight leading-[0.95] mb-6">
+                {[
+                  { text: 'A canvas for', italic: false, delay: 0.1 },
+                  { text: 'collective healing.', italic: true, delay: 0.2 },
+                ].map((line) => (
+                  <span key={line.text} className="block overflow-hidden leading-[1.06]">
+                    <motion.span
+                      className={`block ${line.italic ? 'italic' : ''}`}
+                      initial={{ y: '112%' }}
+                      animate={galleryInView ? { y: '0%' } : {}}
+                      transition={{ duration: 0.72, delay: line.delay, ease }}
+                    >{line.text}</motion.span>
+                  </span>
+                ))}
               </h2>
-              <p className="text-base md:text-xl text-gray-500 font-light leading-relaxed">
-                Starlings is more than a map. It's a testament to the fact that you aren't alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us move forward with hope, together.
-              </p>
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#448a7d] mb-1">100%</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Anonymous Space</p>
-                </div>
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#e57c6e] mb-1">Peer</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Led By Experience</p>
-                </div>
+
+              {/* Body copy */}
+              <motion.p
+                className="text-sm xl:text-base text-gray-500 font-light leading-relaxed mb-8 max-w-[340px]"
+                initial={{ opacity: 0, y: 14, filter: 'blur(4px)' }}
+                animate={galleryInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+                transition={{ duration: 0.75, delay: 0.38, ease }}
+              >
+                You aren't alone or defined by the struggles in your home. Here we gather the everyday strategies that help us move forward — with hope, together.
+              </motion.p>
+
+              {/* Stat cards — side by side */}
+              <div className="flex gap-2.5 mb-6">
+                <motion.div
+                  className="p-4 xl:p-5 bg-[#1e3a34] rounded-[1.35rem] overflow-hidden relative flex-1"
+                  initial={{ opacity: 0, y: 22, scale: 0.93 }}
+                  animate={galleryInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                  transition={{ duration: 0.55, delay: 0.5, ease }}
+                  whileHover={{ y: -3, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
+                >
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+                  <div className="absolute -right-5 -top-5 w-20 h-20 rounded-full border border-white/[0.08] pointer-events-none" />
+                  <motion.p className="text-3xl xl:text-4xl font-black text-white tabular-nums tracking-tight mb-0.5 relative z-10"
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={galleryInView ? { opacity: 1, scale: 1 } : {}}
+                    transition={{ duration: 0.45, delay: 0.62, type: 'spring', stiffness: 280, damping: 18 }}
+                  >100%</motion.p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest text-white/45 leading-tight relative z-10">Anonymous</p>
+                </motion.div>
+
+                <motion.div
+                  className="p-4 xl:p-5 bg-[#e57c6e] rounded-[1.35rem] overflow-hidden relative flex-1"
+                  initial={{ opacity: 0, y: 22, scale: 0.93 }}
+                  animate={galleryInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                  transition={{ duration: 0.55, delay: 0.62, ease }}
+                  whileHover={{ y: -3, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
+                >
+                  <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+                  <div className="absolute -left-4 -bottom-4 w-16 h-16 rounded-full bg-white/[0.08] pointer-events-none" />
+                  <motion.p className="text-3xl xl:text-4xl font-black text-white tracking-tight mb-0.5 relative z-10"
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={galleryInView ? { opacity: 1, scale: 1 } : {}}
+                    transition={{ duration: 0.45, delay: 0.76, type: 'spring', stiffness: 280, damping: 18 }}
+                  >Peer-Led</motion.p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest text-white/55 leading-tight relative z-10">By Experience</p>
+                </motion.div>
               </div>
+
+              {/* Scroll hint — compact */}
+              <motion.div className="flex items-center gap-2"
+                initial={{ opacity: 0 }} animate={galleryInView ? { opacity: 1 } : {}}
+                transition={{ duration: 0.5, delay: 0.85 }}
+              >
+                <motion.div
+                  className="w-3.5 h-6 rounded-full border border-[#448a7d]/40 flex items-start justify-center pt-1"
+                  animate={{ opacity: [0.35, 1, 0.35] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <motion.div className="w-0.5 h-1 rounded-full bg-[#448a7d]"
+                    animate={{ y: [0, 7, 0] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </motion.div>
+                <span className="text-[8px] font-black uppercase tracking-[0.22em] text-[#448a7d]/55">Scroll to explore</span>
+              </motion.div>
+
+              {/* Community illustration — absolute bottom, fills reserved pb space */}
+              <motion.div
+                className="absolute bottom-0 left-0 w-full pointer-events-none"
+                style={{ height: 'min(280px, max(150px, calc(100vh - 470px)))' }}
+                initial={{ opacity: 0, y: 28 }}
+                animate={galleryInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 1.0, delay: 0.6, ease }}
+              >
+                <motion.img
+                  src="/images/community-illustration.png"
+                  alt="A diverse community of people supporting each other"
+                  className="w-full h-full object-contain"
+                  style={{ objectPosition: 'center bottom' }}
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }}
+                />
+              </motion.div>
+
             </div>
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-3 md:space-y-4 pt-6 md:pt-10">
-                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
-                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
-                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
-                </div>
+
+            {/* RIGHT: image swimming pool — clips via parent overflow-hidden */}
+            <div className="flex-1 relative overflow-hidden">
+              {/* Top vignette */}
+              <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-[#f8f6f1] to-transparent z-20 pointer-events-none" />
+              {/* Bottom vignette */}
+              <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#f8f6f1] to-transparent z-20 pointer-events-none" />
+
+              <div className="absolute inset-0 grid grid-cols-2 gap-3 p-3">
+                {/* Col A — fast lane */}
+                <motion.div style={{ y: col1YDesk, skewY: skewA, scale: scaleA }} className="flex flex-col gap-3 origin-top">
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?auto=format&fit=crop&q=80&w=700', label: 'Hope', h: 'h-[30rem]' },
+                    { src: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=700', label: 'Self Care', h: 'h-[18rem]' },
+                    { src: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&q=80&w=700', label: 'Resilience', h: 'h-[34rem]' },
+                    { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=700', label: 'Growth', h: 'h-[22rem]' },
+                    { src: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=700', label: 'Healing', h: 'h-[26rem]' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.07} inView={galleryInView} />)}
+                </motion.div>
+                {/* Col B — slow lane, starts higher than col A */}
+                <motion.div style={{ y: col2YDesk, skewY: skewB, scale: scaleB }} className="flex flex-col gap-3 -mt-52 origin-top">
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=700', label: 'Together', h: 'h-[26rem]' },
+                    { src: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=700', label: 'Community', h: 'h-[32rem]' },
+                    { src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=80&w=700', label: 'Peace', h: 'h-[20rem]' },
+                    { src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=700', label: 'Support', h: 'h-[28rem]' },
+                    { src: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=700', label: 'Reflection', h: 'h-[24rem]' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.07 + 0.1} inView={galleryInView} />)}
+                </motion.div>
               </div>
             </div>
           </div>
+
+          {/* ── MOBILE / TABLET: full-width image pool + text overlay ── */}
+          <div className="flex lg:hidden h-full relative z-10">
+            <div className="flex-1 relative overflow-hidden">
+              {/* Top vignette */}
+              <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#f8f6f1]/90 to-transparent z-20 pointer-events-none" />
+              {/* Bottom vignette */}
+              <div className="absolute bottom-0 inset-x-0 h-64 bg-gradient-to-t from-[#f8f6f1] via-[#f8f6f1]/80 to-transparent z-20 pointer-events-none" />
+
+              {/* Single full-width filmstrip — much cleaner on mobile */}
+              <div className="absolute inset-0 px-2">
+                <motion.div
+                  style={{ y: col1YMob, skewY: skewA, scale: scaleA }}
+                  className="flex flex-col gap-2 origin-top"
+                >
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?auto=format&fit=crop&q=80&w=700', label: 'Hope',       h: 'h-72' },
+                    { src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=700', label: 'Together',    h: 'h-52' },
+                    { src: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&q=80&w=700', label: 'Resilience',  h: 'h-80' },
+                    { src: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=700', label: 'Community',   h: 'h-56' },
+                    { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=700', label: 'Growth',      h: 'h-72' },
+                    { src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=700', label: 'Support',     h: 'h-60' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.08} inView={galleryInView} />)}
+                </motion.div>
+              </div>
+
+              {/* Mobile text overlay — bottom of viewport */}
+              <div className="absolute bottom-0 inset-x-0 z-30 px-5 pb-6 pt-2">
+                <motion.div className="flex items-center gap-2 mb-3"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={galleryInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.5, ease }}
+                >
+                  <div className="h-px w-6 bg-[#448a7d]" />
+                  <span className="w-1 h-1 rounded-full bg-[#448a7d]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
+                </motion.div>
+                <h2 className="font-cabinet text-3xl font-black text-[#1e3a34] tracking-tight leading-[0.97] mb-2">
+                  {[
+                    { text: 'A canvas for', italic: false, delay: 0.1 },
+                    { text: 'collective healing.', italic: true, delay: 0.2 },
+                  ].map((line) => (
+                    <span key={line.text} className="block overflow-hidden leading-[1.1]">
+                      <motion.span className={`block ${line.italic ? 'italic' : ''}`}
+                        initial={{ y: '110%' }}
+                        animate={galleryInView ? { y: '0%' } : {}}
+                        transition={{ duration: 0.65, delay: line.delay, ease }}
+                      >{line.text}</motion.span>
+                    </span>
+                  ))}
+                </h2>
+
+                <motion.div className="flex items-center gap-1.5"
+                  initial={{ opacity: 0 }}
+                  animate={galleryInView ? { opacity: 1 } : {}}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                >
+                  <motion.div
+                    className="w-3 h-5 rounded-full border border-[#448a7d]/50 flex items-start justify-center pt-0.5"
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <motion.div className="w-0.5 h-1 rounded-full bg-[#448a7d]"
+                      animate={{ y: [0, 6, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  </motion.div>
+                  <span className="text-[8px] font-black uppercase tracking-[0.22em] text-[#448a7d]/60">Scroll to explore</span>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Scroll progress — fixed at base of viewport */}
+          <div className="absolute bottom-3 inset-x-0 z-40 px-8 max-[400px]:px-4">
+            <div className="h-px bg-[#1e3a34]/10 relative overflow-hidden rounded-full">
+              <motion.div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#448a7d] to-[#e57c6e] rounded-full"
+                style={{ scaleX: galleryScrollProgress, transformOrigin: 'left' }}
+              />
+            </div>
+          </div>
+
         </div>
       </section>
-      <div className="h-16 md:h-24 bg-gradient-to-b from-white to-[#f3f1e8] pointer-events-none" />
+
+      {/* ── MOBILE ONLY: community illustration reveal after gallery unlocks ── */}
+      <div className="lg:hidden bg-[#f8f6f1] px-6 pt-10 pb-12 flex flex-col items-center text-center">
+        <motion.div
+          className="flex items-center gap-2 mb-4"
+          initial={{ opacity: 0, x: -12 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, ease }}
+        >
+          <div className="h-px w-5 bg-[#448a7d]" />
+          <span className="w-1 h-1 rounded-full bg-[#448a7d]" />
+          <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">Our Community</span>
+        </motion.div>
+
+        <motion.div
+          className="relative w-full max-w-xs pointer-events-none"
+          style={{ height: '240px' }}
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.85, delay: 0.1, ease }}
+        >
+          <motion.img
+            src="/images/community-illustration.png"
+            alt="A diverse community of people supporting each other"
+            className="w-full h-full object-contain"
+            style={{ objectPosition: 'center center' }}
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+          />
+        </motion.div>
+
+        <motion.p
+          className="text-[11px] font-medium text-gray-500 leading-relaxed max-w-[260px] mt-2"
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.55, delay: 0.25, ease }}
+        >
+          A peer-led space for youth navigating family substance use — anonymous, safe, and built by people who get it.
+        </motion.p>
+      </div>
+
+      <div className="h-16 md:h-24 bg-gradient-to-b from-[#f8f6f1] to-[#f3f1e8] pointer-events-none" />
 
       {/* Horizontal Promise Journey */}
       <section

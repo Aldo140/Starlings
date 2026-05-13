@@ -38,7 +38,7 @@ Nothing goes public without human approval.
 
 | Tab | Purpose |
 |-----|---------|
-| `Flagged_Words` | List of words to auto-flag — ⚠️ **currently not active** (see note below) |
+| `Flagged_Words` | Live word list checked on every submission — edit column A to update |
 
 ---
 
@@ -124,13 +124,28 @@ The website will pick it up within a few minutes.
 
 ---
 
-## ⚠️ Flagged_Words Tab — Currently Not Active
+## Flagged_Words Tab — How to Use It
 
-The `Flagged_Words` tab exists and you can add words to it (one word per cell in column A). **However, the website does not currently read this tab.** The frontend uses its own hardcoded list of patterns to check submissions.
+The `Flagged_Words` tab is **active**. The website reads it on every page load and checks every submission against it.
 
-Until a developer wires this up, changes to the `Flagged_Words` sheet have no effect on what gets filtered.
+**To add a new term:**
+1. Go to the `Flagged_Words` tab
+2. Find the next empty row in column A
+3. Type the word or phrase (e.g. `meet up irl`)
+4. Press Enter — no other steps needed
 
-To request this be activated, contact the development team and reference the "Flagged Words Gap" note in the project README.
+The website caches the list for **30 minutes**. After adding a term, it will be live within half an hour.
+
+**Format rules:**
+- One word or phrase per cell, column A only
+- No headers — terms start at row 1
+- Case-insensitive — `Meet Up IRL` and `meet up irl` both match the same thing
+- Matching is substring-based — `score some` will flag "can you score some drugs" automatically
+
+**What happens when a term matches:**
+The submission is flagged for staff review (same as the hardcoded crisis keywords) — it is **not** auto-rejected. Everything still goes to a human moderator.
+
+**Note:** The website also has a built-in layer of hardcoded regex patterns (phone numbers, emails, URLs, core crisis keywords) that run regardless of this sheet. The sheet is an additional layer on top of those.
 
 ---
 

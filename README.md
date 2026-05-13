@@ -123,20 +123,15 @@ If submission fails (no network), `apiService` serialises the payload to `localS
 4. The Apps Script `onEdit` trigger fires and moves the row to the `Live_*` tab
 5. Frontend fetches from `Live_*` tabs (5-minute localStorage cache)
 
-### ⚠️ Flagged Words Gap
+### Flagged Words — Two-Layer System
 
-The `Flagged_Words` sheet exists in Google Sheets and the backend exposes it at `?action=getFlaggedWords`. However, **`services/api.ts` never calls this endpoint**. The frontend currently relies entirely on the hardcoded `BANNED_PATTERNS` regex in `constants.tsx`:
+Every submission is checked against two layers:
 
-```ts
-export const BANNED_PATTERNS = [
-  /https?:\/\/\S+/gi,                       // URLs
-  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // Emails
-  /(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, // Phone numbers
-  /\b(?:suicide|kill myself|hurt myself|end my life|die|self harm|...)\b/gi
-];
-```
+**Layer 1 — Static regex (`BANNED_PATTERNS` in `constants.tsx`):** Always-on. Catches URLs, emails, phone numbers, and hardcoded crisis keywords regardless of network state.
 
-To wire up the sheet, add `apiService.getFlaggedWords()` → call on app init → replace / augment `BANNED_PATTERNS` dynamically. Until then, changes to the `Flagged_Words` sheet have **no effect** on live moderation.
+**Layer 2 — Dynamic sheet list (`Flagged_Words` tab):** On app boot, `apiService.getFlaggedWords()` fetches the sheet and stores the word list in memory + localStorage (30-minute cache). Every submission then does a case-insensitive substring scan against the live list. If the sheet is unreachable, Layer 1 handles it alone — nothing breaks.
+
+To update the word list, edit column A of the `Flagged_Words` sheet (one term per row, no header). Users pick up changes within 30 minutes when their cache expires. No code deploy required.
 
 ---
 

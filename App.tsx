@@ -17,6 +17,11 @@ const App: React.FC = () => {
     // Attempt to sync any queued posts on initial mount
     apiService.syncOfflinePosts();
 
+    // Pre-fetch the sheet-sourced flagged word list so it's ready before
+    // any submission check runs. Fails silently — static BANNED_PATTERNS
+    // remain active as fallback.
+    apiService.getFlaggedWords();
+
     // Listen for browser gaining network connection
     const handleOnline = () => {
       apiService.syncOfflinePosts();

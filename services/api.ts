@@ -40,7 +40,9 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBU
 const CACHE_KEY = 'starlings_approved_posts_v3';
 const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v5';
 const QA_CACHE_KEY = 'starlings_approved_qa_v1';
+const FLAGGED_WORDS_CACHE_KEY = 'starlings_flagged_words_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const FLAGGED_WORDS_TTL = 30 * 60 * 1000; // 30 minutes — word list changes rarely
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 // One-time cleanup of stale cache keys from previous versions
@@ -48,11 +50,25 @@ const isLocalhost = typeof window !== 'undefined' && (window.location.hostname =
 
 let inFlightRequest: Promise<Post[]> | null = null;
 
+// ── Dynamic flagged-word list (sheet-sourced) ────────────────────────────────
+// Populated once on app boot via apiService.getFlaggedWords().
+// Checked synchronously on every submission alongside the static BANNED_PATTERNS.
+let dynamicFlaggedWords: string[] = [];
+
+const matchesDynamicWord = (text: string): boolean => {
+  if (dynamicFlaggedWords.length === 0) return false;
+  const lower = text.toLowerCase();
+  return dynamicFlaggedWords.some(word => lower.includes(word.toLowerCase()));
+};
+
 const matchesBannedPattern = (text: string): boolean => {
-  return BANNED_PATTERNS.some(pattern => {
+  // 1. Static regex patterns (always-on, crisis/PII/phone)
+  if (BANNED_PATTERNS.some(pattern => {
     pattern.lastIndex = 0;
     return pattern.test(text);
-  });
+  })) return true;
+  // 2. Dynamic sheet-sourced word list
+  return matchesDynamicWord(text);
 };
 
 const normalizeResource = (resource: any): Resource => {
@@ -535,6 +551,56 @@ export const apiService = {
 
   hasBannedContent(text: string): boolean {
     return matchesBannedPattern(text);
+  },
+
+  /**
+   * Fetch the Flagged_Words sheet and populate the dynamic word list used by
+   * matchesBannedPattern. Safe to call multiple times — returns the in-memory
+   * list immediately on subsequent calls. Falls back silently to static
+   * BANNED_PATTERNS if the sheet is unreachable.
+   */
+  async getFlaggedWords(): Promise<string[]> {
+    // Already in memory — nothing to do
+    if (dynamicFlaggedWords.length > 0) return dynamicFlaggedWords;
+
+    // Try localStorage cache first (30-min TTL)
+    try {
+      const cached = localStorage.getItem(FLAGGED_WORDS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (
+          Date.now() - parsed.timestamp < FLAGGED_WORDS_TTL &&
+          Array.isArray(parsed.data) &&
+          parsed.data.length > 0
+        ) {
+          dynamicFlaggedWords = parsed.data;
+          return dynamicFlaggedWords;
+        }
+        localStorage.removeItem(FLAGGED_WORDS_CACHE_KEY);
+      }
+    } catch { /* storage unavailable */ }
+
+    // Fetch from sheet
+    try {
+      const res = await fetch(`${GAS_URL}?action=getFlaggedWords`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        dynamicFlaggedWords = data.filter(
+          (w: unknown) => typeof w === 'string' && w.trim().length > 0
+        );
+        try {
+          localStorage.setItem(
+            FLAGGED_WORDS_CACHE_KEY,
+            JSON.stringify({ data: dynamicFlaggedWords, timestamp: Date.now() })
+          );
+        } catch { /* storage full */ }
+      }
+    } catch {
+      // Non-fatal — static BANNED_PATTERNS remain active
+      console.warn('[Starlings] Could not fetch Flagged_Words — using static patterns only.');
+    }
+
+    return dynamicFlaggedWords;
   },
 
   async getApprovedQA(): Promise<QAItem[]> {

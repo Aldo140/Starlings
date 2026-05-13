@@ -162,7 +162,7 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
 
   return (
     <motion.div
-      className="flex items-center justify-center w-full h-full p-6 md:p-8"
+      className="flex items-center justify-center w-full h-full p-3 md:p-8"
       animate={{ scale: [1, 1.03, 1] }}
       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
     >
@@ -467,35 +467,27 @@ const Landing: React.FC = () => {
             </motion.p>
 
             <motion.div
-              className="flex items-start gap-0 max-w-xs"
+              className="space-y-2"
               initial={{ opacity: 0, y: 16 }}
               animate={qaInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.52, ease }}
             >
               {[
-                { num: '01', label: 'Ask', desc: 'Write anonymously' },
-                { num: '02', label: 'Review', desc: 'Moderated by us' },
-                { num: '03', label: 'Answer', desc: 'Community responds' },
+                { num: '01', label: 'Ask anonymously', desc: 'No account needed' },
+                { num: '02', label: 'We review it', desc: "Safe before it's seen" },
+                { num: '03', label: 'Community answers', desc: 'Real perspectives shared' },
               ].map((step, idx) => (
-                <React.Fragment key={step.num}>
-                  <motion.div
-                    className="flex flex-col items-center text-center flex-1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={qaInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
-                  >
-                    <span className="text-[11px] font-black text-[#448a7d] tabular-nums tracking-tight leading-none mb-1.5">{step.num}</span>
-                    <span className="text-[11px] font-black text-white uppercase tracking-[0.18em] leading-none mb-1">{step.label}</span>
-                    <span className="text-[9px] font-medium text-white/35 leading-tight">{step.desc}</span>
-                  </motion.div>
-                  {idx < 2 && (
-                    <div className="flex items-center justify-center mt-[10px] mx-1 flex-shrink-0">
-                      <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden="true">
-                        <path d="M0.5 4H12.5M12.5 4L9.5 1M12.5 4L9.5 7" stroke="rgba(68,138,125,0.45)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                </React.Fragment>
+                <motion.div
+                  key={step.num}
+                  className="flex items-center gap-4"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={qaInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
+                >
+                  <span className="text-[11px] font-black text-[#448a7d] tabular-nums w-6 shrink-0">{step.num}</span>
+                  <span className="text-sm font-bold text-white/80">{step.label}</span>
+                  <span className="text-xs text-white/30 font-medium">{step.desc}</span>
+                </motion.div>
               ))}
             </motion.div>
 
@@ -604,131 +596,63 @@ const Landing: React.FC = () => {
           </div>
         </div>
 
-        <div id="answered-questions" className="mt-10 md:mt-16 overflow-hidden">
-          <AnimatePresence mode="wait">
-            {!showAnsweredQA && (
-              <motion.div
-                key="closed"
-                initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                animate={qaInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-                exit={{ opacity: 0, y: -12, scale: 0.98 }}
-                transition={{ duration: 0.65, ease }}
-                className="relative rounded-[2rem] md:rounded-[2.75rem] border border-white/[0.10] bg-white/[0.045] p-5 md:p-8 overflow-hidden"
+        {/* Answered questions toggle + reveal */}
+        <div id="answered-questions" className="mt-10 md:mt-14">
+
+          {/* Toggle button — always visible */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={qaInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.5, ease }}
+            className="flex items-center justify-between mb-6 pb-5 border-b border-white/[0.08]"
+          >
+            <div>
+              <p className="text-white font-black text-lg md:text-xl">Answered by the community</p>
+              <p className="text-white/40 text-sm font-medium mt-0.5">Questions answered by peers who've been there</p>
+            </div>
+            <motion.button
+              type="button"
+              onClick={showAnsweredQA ? () => setShowAnsweredQA(false) : openAnsweredQA}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white font-black text-xs uppercase tracking-widest transition-colors shrink-0 ml-4"
+            >
+              {showAnsweredQA ? 'Hide' : 'Read answers'}
+              <motion.svg
+                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+                animate={{ rotate: showAnsweredQA ? 180 : 0 }}
+                transition={{ duration: 0.35, ease }}
               >
-                <div className="absolute inset-0 pointer-events-none">
-                  <motion.div
-                    className="absolute -left-12 top-1/2 h-24 w-24 rounded-full bg-[#e57c6e]/20 blur-2xl"
-                    animate={{ x: [0, 24, 0], opacity: [0.25, 0.5, 0.25] }}
-                    transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  <motion.div
-                    className="absolute right-8 top-8 h-16 w-16 rounded-full border border-white/10"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-                  />
-                  <svg className="absolute inset-0 h-full w-full opacity-25" aria-hidden="true">
-                    <motion.path
-                      d="M 54 122 C 220 10, 360 220, 540 92 S 840 22, 1040 168"
-                      fill="none"
-                      stroke="rgba(232,243,241,0.55)"
-                      strokeWidth="1"
-                      strokeDasharray="5 10"
-                      initial={{ pathLength: 0 }}
-                      animate={qaInView ? { pathLength: 1 } : { pathLength: 0 }}
-                      transition={{ duration: 1.8, delay: 0.2, ease }}
-                    />
-                  </svg>
-                </div>
-                <div className="relative grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-7 md:gap-10 items-center">
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.35em] text-[#e57c6e]">Sealed questions</p>
-                    <h3 className="text-2xl md:text-4xl font-black text-white tracking-tight leading-tight">
-                      Let the room stay quiet until you touch a thread.
-                    </h3>
-                    <p className="text-sm md:text-base text-white/[0.55] font-medium leading-relaxed max-w-2xl">
-                      The answers are here, but they do not rush you. Tap a sealed thread to invite reviewed community perspective into the space.
-                    </p>
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </motion.svg>
+            </motion.button>
+          </motion.div>
+
+          {/* Expandable content */}
+          <AnimatePresence mode="wait">
+            {showAnsweredQA && (
+              <motion.div
+                key="qa-content"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.45, ease }}
+              >
+                {isLoadingQA ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    {[0, 1].map(i => <QASkeleton key={i} />)}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {[
-                      { title: 'Finding free support', meta: 'money, access, care' },
-                      { title: 'Protecting privacy', meta: 'anonymous, reviewed' },
-                      { title: 'Setting boundaries', meta: 'family, safety, space' },
-                    ].map((signal, idx) => (
-                      <motion.button
-                        key={signal.title}
-                        type="button"
-                        onClick={openAnsweredQA}
-                        className="group relative min-h-[180px] rounded-[1.5rem] border border-white/10 bg-[#e8f3f1]/[0.07] p-5 text-left overflow-hidden active:scale-[0.98] transition-transform"
-                        whileHover={{ y: -6, rotate: idx === 1 ? 0 : idx === 0 ? -1.5 : 1.5 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-                        aria-expanded={showAnsweredQA}
-                        aria-controls="answered-questions"
-                      >
-                        {/* Animated ✦ symbol in corner */}
-                        <motion.span
-                          className="absolute right-4 top-4 text-[#448a7d]/50 text-base leading-none select-none"
-                          animate={{ rotate: [0, 90, 180, 270, 360], opacity: [0.5, 0.85, 0.5] }}
-                          transition={{ duration: 6, repeat: Infinity, delay: idx * 0.7, ease: 'linear' }}
-                          aria-hidden="true"
-                        >
-                          ✦
-                        </motion.span>
-
-                        {/* Lock icon — appears on hover */}
-                        <motion.span
-                          className="absolute right-3.5 top-3.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                          aria-hidden="true"
-                        >
-                          <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
-                            <rect x="1" y="7" width="12" height="9" rx="2.5" stroke="rgba(229,124,110,0.7)" strokeWidth="1.3"/>
-                            <path d="M4 7V4.5a3 3 0 0 1 6 0V7" stroke="rgba(229,124,110,0.7)" strokeWidth="1.3" strokeLinecap="round"/>
-                            <circle cx="7" cy="11.5" r="1.2" fill="rgba(229,124,110,0.7)"/>
-                          </svg>
-                        </motion.span>
-
-                        <span className="relative block text-[9px] font-black uppercase tracking-[0.28em] text-[#e57c6e] mb-6">Thread {idx + 1}</span>
-                        <span className="relative block text-lg md:text-xl font-black text-white leading-tight mb-3">{signal.title}</span>
-                        <span className="relative block text-xs font-bold text-white/40">{signal.meta}</span>
-                        <span className="absolute bottom-4 left-5 right-5 h-px bg-gradient-to-r from-[#e57c6e]/70 to-transparent scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-500" />
-                      </motion.button>
+                ) : approvedQA.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                    {approvedQA.slice(0, 4).map((item, i) => (
+                      <QAThreadCard key={item.id} item={item} index={i} />
                     ))}
                   </div>
-                </div>
-              </motion.div>
-            )}
-
-            {showAnsweredQA && (isLoadingQA || approvedQA.length > 0) && (
-              <motion.div
-                key={isLoadingQA ? 'skeleton' : 'cards'}
-                initial={{ opacity: 0, y: 34, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.55, ease }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
-              >
-                {isLoadingQA
-                  ? [0, 1].map(i => <QASkeleton key={i} />)
-                  : approvedQA.slice(0, 4).map((item, i) => (
-                      <QAThreadCard key={item.id} item={item} index={i} />
-                    ))
-                }
-              </motion.div>
-            )}
-
-            {showAnsweredQA && !isLoadingQA && approvedQA.length === 0 && (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease }}
-                className="rounded-[2rem] border border-white/[0.10] bg-white/[0.055] p-8 md:p-10 text-center"
-              >
-                <h3 className="text-2xl md:text-3xl font-black text-white mb-3">The drawer is quiet right now.</h3>
-                <p className="text-white/[0.55] font-medium max-w-xl mx-auto">
-                  Your question can be the one that helps shape the next answered thread.
-                </p>
+                ) : (
+                  <div className="rounded-[2rem] border border-white/[0.08] bg-white/[0.04] p-10 text-center">
+                    <p className="text-white/50 font-medium">No answered questions yet — yours could be the first.</p>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -953,7 +877,7 @@ const Landing: React.FC = () => {
             />
           </div>
 
-          <div ref={gridRef} className="relative z-10 flex h-full flex-col pt-[6.5rem] pb-5 md:pt-28 md:pb-7">
+          <div ref={gridRef} className="relative z-10 flex h-full flex-col pt-14 pb-3 md:pt-28 md:pb-7">
             <div className="flex-shrink-0 px-6 md:px-[8vw]">
               <motion.div
                 className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
@@ -967,7 +891,7 @@ const Landing: React.FC = () => {
                     The care loop.
                   </h2>
                 </div>
-                <p className="max-w-md text-xs md:text-sm font-medium leading-relaxed text-[#5a4030]/[0.60]">
+                <p className="hidden md:block max-w-md text-sm font-medium leading-relaxed text-[#5a4030]/[0.60]">
                   The page holds still so the safety system can move sideways: private note, human pause, public shape, shared recognition.
                 </p>
               </motion.div>
@@ -1016,8 +940,8 @@ const Landing: React.FC = () => {
                   <motion.article
                     key={panel.eyebrow}
                     className="group relative grid shrink-0 overflow-hidden rounded-[1.15rem] border border-[#c8b49a]/30
-                      h-[clamp(400px,58dvh,520px)] w-[88vw] max-w-[940px]
-                      grid-cols-1 grid-rows-[1.1fr_1fr]
+                      h-[clamp(360px,52dvh,520px)] w-[88vw] max-w-[940px]
+                      grid-cols-1 grid-rows-[5fr_7fr]
                       shadow-[0_32px_80px_-40px_rgba(80,50,20,0.20)]
                       md:h-[clamp(390px,56dvh,530px)] md:w-[min(72vw,940px)]
                       md:grid-cols-[1fr_1fr] md:grid-rows-1
@@ -1032,13 +956,13 @@ const Landing: React.FC = () => {
 
                     {/* Text panel — bottom on mobile, right on desktop */}
                     <div
-                      className="relative flex min-h-0 flex-col justify-between p-6 md:p-8 overflow-hidden"
+                      className="relative flex min-h-0 flex-col justify-between p-4 md:p-8 overflow-hidden"
                       style={{ backgroundColor: panel.color }}
                     >
                       {/* Watermark number */}
                       <motion.span
-                        className="absolute bottom-3 right-5 font-black font-cabinet leading-none select-none pointer-events-none
-                          text-[5.5rem] md:text-[7.5rem]"
+                        className="absolute bottom-2 right-4 font-black font-cabinet leading-none select-none pointer-events-none
+                          text-[4rem] md:text-[7.5rem]"
                         style={{ color: '#fff' }}
                         animate={{ opacity: [0.05, 0.10, 0.05] }}
                         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: idx * 0.8 }}
@@ -1050,13 +974,13 @@ const Landing: React.FC = () => {
                       {/* Content */}
                       <div className="relative z-10 flex flex-col justify-between h-full gap-4">
                         <div>
-                          <p className="text-[9px] font-black uppercase tracking-[0.42em] text-white/50 mb-4">
+                          <p className="text-[9px] font-black uppercase tracking-[0.42em] text-white/50 mb-2 md:mb-4">
                             {panel.eyebrow}
                           </p>
-                          <h3 className="text-[1.65rem] md:text-[2.1rem] font-black font-cabinet leading-[0.96] tracking-tight text-white">
+                          <h3 className="text-[1.35rem] md:text-[2.1rem] font-black font-cabinet leading-[0.96] tracking-tight text-white">
                             {panel.title}
                           </h3>
-                          <p className="mt-3 text-[13px] md:text-[14px] text-white/60 font-medium leading-relaxed">
+                          <p className="mt-2 text-[12px] md:text-[14px] text-white/60 font-medium leading-relaxed line-clamp-3 md:line-clamp-none">
                             {panel.desc}
                           </p>
                         </div>
@@ -1081,10 +1005,11 @@ const Landing: React.FC = () => {
             </div>
 
             <div className="flex-shrink-0 px-6 md:px-[8vw]">
-              <div className="flex items-center justify-between gap-4 text-[10px] font-black uppercase tracking-[0.26em] text-[#7a5535]/[0.42]">
-                <span>Hold scroll</span>
-                <span>Care moves sideways</span>
-                <span>Release after the last panel</span>
+              <div className="flex items-center justify-between gap-4 text-[9px] md:text-[10px] font-black uppercase tracking-[0.26em] text-[#7a5535]/[0.42]">
+                <span className="md:hidden">Scroll down · care moves sideways</span>
+                <span className="hidden md:inline">Hold scroll</span>
+                <span className="hidden md:inline">Care moves sideways</span>
+                <span className="hidden md:inline">Release after the last panel</span>
               </div>
             </div>
           </div>

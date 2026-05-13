@@ -566,7 +566,7 @@ const ResourcesView: React.FC = () => {
                                                             <img
                                                                 src={resource.imageUrl}
                                                                 alt={resource.title}
-                                                                className="w-full h-full object-contain object-top"
+                                                                className="w-full h-full object-cover object-top"
                                                             />
                                                         ) : (
                                                             <div className="w-full h-full bg-gradient-to-br from-[#0f2e28] to-[#0d1a17] flex items-center justify-center">
@@ -662,7 +662,7 @@ const ResourcesView: React.FC = () => {
                                             {/* Screenshot — fades in only when active */}
                                             <div className={`absolute inset-0 bg-[#0d1a17] transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
                                                 {resource.imageUrl ? (
-                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top" />
+                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top" />
                                                 ) : (
                                                     <div className="w-full h-full bg-gradient-to-br from-[#e8f3f1] to-[#d4eae6] flex items-center justify-center text-[#448a7d]/20">
                                                         <div className="scale-[3]">{ICONS.Heart}</div>
@@ -1184,7 +1184,7 @@ const ResourcesView: React.FC = () => {
 
                                                 <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-[#f0f7f5] flex-shrink-0 relative overflow-hidden">
                                                     {resource.imageUrl ? (
-                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-contain object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
+                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
                                                             <div className="scale-150">{ICONS.Heart}</div>

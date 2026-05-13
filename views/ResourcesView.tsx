@@ -4,7 +4,7 @@ import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
 import { ICONS, SEED_RESOURCES } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [liked, setLiked] = useState(false);
@@ -197,6 +197,9 @@ const ResourcesView: React.FC = () => {
     const alignedPartners = useMemo(() => {
         return resources.filter(r => r.category === 'partner');
     }, [resources]);
+
+    const activeBucket = COMMUNITY_BUCKETS.find(b => b.id === activeCommunityIndex) ?? null;
+    const activeResources = activeCommunityIndex ? (communityBucketResources[activeCommunityIndex] || []) : [];
 
     return (
         <>
@@ -399,7 +402,7 @@ const ResourcesView: React.FC = () => {
 
 
                             </div>
-                            <div className="grid md:hidden xl:grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8 mt-8">
+                            <div className="grid md:hidden grid-cols-1 gap-6 mt-8">
                                 {COMMUNITY_BUCKETS.map((bucket, i) => {
                                     const bucketResources = communityBucketResources[bucket.id];
                                     const isActive = activeCommunityIndex === bucket.id;
@@ -426,9 +429,9 @@ const ResourcesView: React.FC = () => {
                                                 </div>
                                             </button>
 
-                                            {/* INLINE MOBILE EXPANSION For Mobile Screens ONLY */}
+                                            {/* INLINE MOBILE EXPANSION */}
                                             {isActive && (
-                                            <div className="xl:hidden overflow-hidden mt-4 col-[1/-1]">
+                                            <div className="overflow-hidden mt-4">
                                                 <div className="bg-white border border-gray-100 rounded-[2rem] p-4 shadow-xl">
                                                     {bucketResources.length === 0 ? (
                                                         <div className="text-center py-8">
@@ -449,42 +452,151 @@ const ResourcesView: React.FC = () => {
                                 })}
                             </div>
 
-                            {/* ACCORDION EXPANDED CONTENT For Large Desktop */}
-                            <div className="hidden xl:block">
-                                {activeCommunityIndex && (
-                                    <div className="bg-[#f9fbfa] border border-teal-100 rounded-[3rem] p-12 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] relative overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]"></div>
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f3f1] rounded-full opacity-10 pointer-events-none"></div>
+                            {/* DESKTOP XL: Elegant Side-by-Side Rail Layout */}
+                            <div className="hidden xl:flex gap-10 mt-10 items-start">
 
-                                        <div className="relative z-10 flex justify-between items-center mb-10">
-                                            <div>
-                                                <h3 className="text-4xl font-black text-[#1e3a34] capitalize italic tracking-tight">{activeCommunityIndex.replace('_', ' ')} Collection</h3>
-                                                <p className="text-gray-500 font-medium mt-2">Explore recommendations from peers below.</p>
+                                {/* LEFT RAIL — Category Selector */}
+                                <div className="w-[230px] flex-shrink-0">
+                                    <div className="sticky top-24">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 px-1 mb-3">Browse by type</p>
+                                        <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                            <div className="py-2">
+                                                {COMMUNITY_BUCKETS.map((bucket) => {
+                                                    const count = communityBucketResources[bucket.id].length;
+                                                    const isActive = activeCommunityIndex === bucket.id;
+                                                    return (
+                                                        <button
+                                                            key={bucket.id}
+                                                            onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
+                                                            className={`relative w-full flex items-center gap-3 px-4 py-3.5 transition-colors duration-150 text-left group ${isActive ? 'bg-[#e8f3f1]/70' : 'hover:bg-gray-50'}`}
+                                                        >
+                                                            {isActive && (
+                                                                <motion.div
+                                                                    layoutId="railIndicator"
+                                                                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#448a7d] rounded-r-full"
+                                                                    transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                                                                />
+                                                            )}
+                                                            <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center transition-all duration-150 ${isActive ? `bg-white shadow-sm border border-gray-100 ${bucket.color}` : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>
+                                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                            </div>
+                                                            <div className="flex-grow min-w-0">
+                                                                <span className={`text-sm font-black block leading-tight transition-colors ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>{bucket.label}</span>
+                                                            </div>
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 min-w-[22px] text-center transition-colors ${isActive ? 'bg-[#448a7d] text-white' : count > 0 ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-300'}`}>
+                                                                {count}
+                                                            </span>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                            <button onClick={() => setActiveCommunityIndex(null)} className="w-12 h-12 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors shadow-sm active:scale-95">
-                                                {ICONS.X}
-                                            </button>
                                         </div>
-
-                                        <div className="relative z-10">
-                                            {(communityBucketResources[activeCommunityIndex] || []).length === 0 ? (
-                                                <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-300">
-                                                    <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 shadow-inner transform rotate-3">
-                                                        <div className="scale-[2]">{ICONS.Heart}</div>
-                                                    </div>
-                                                    <p className="text-gray-400 font-bold text-2xl mb-4 tracking-tight">No resources yet.</p>
-                                                    <Link to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`} className="inline-flex px-10 py-4 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95">Recommend the First One</Link>
+                                        <div className="mt-4 px-1">
+                                            <Link
+                                                to="/add-resource?mode=recommend"
+                                                className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#448a7d]/60 hover:text-[#448a7d] transition-colors group"
+                                            >
+                                                <div className="w-6 h-6 rounded-full bg-[#448a7d]/10 group-hover:bg-[#448a7d]/20 flex items-center justify-center transition-colors flex-shrink-0">
+                                                    {ICONS.Plus}
                                                 </div>
-                                            ) : (
-                                                <div className="grid grid-cols-2 gap-8">
-                                                    {(communityBucketResources[activeCommunityIndex] || []).map(res => (
-                                                        <ResourceCard key={res.id} resource={res} />
-                                                    ))}
-                                                </div>
-                                            )}
+                                                Suggest a resource
+                                            </Link>
                                         </div>
                                     </div>
-                                )}
+                                </div>
+
+                                {/* RIGHT PANEL — Content Area */}
+                                <div className="flex-grow min-h-[580px]">
+                                    <AnimatePresence mode="wait" initial={false}>
+                                        {!activeBucket ? (
+                                            <motion.div
+                                                key="xl-empty"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="flex flex-col items-center justify-center py-28 text-center"
+                                            >
+                                                <div className="flex items-end gap-2 mb-10">
+                                                    {COMMUNITY_BUCKETS.map((bucket, i) => (
+                                                        <motion.div
+                                                            key={bucket.id}
+                                                            className={`rounded-2xl flex items-center justify-center shadow-md ${bucket.bg}`}
+                                                            style={{ width: 40 + (i === 2 ? 8 : i === 3 ? 4 : 0), height: 40 + (i === 2 ? 8 : i === 3 ? 4 : 0), opacity: 0.55 }}
+                                                            animate={{ y: [0, -(4 + i * 2.5), 0] }}
+                                                            transition={{ duration: 2.2 + i * 0.25, repeat: Infinity, delay: i * 0.32, ease: 'easeInOut' }}
+                                                        >
+                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4 text-white' })}
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                                <h3 className="text-2xl font-black text-[#1e3a34]/30 italic tracking-tight mb-2">Select a category</h3>
+                                                <p className="text-sm text-gray-400 font-medium max-w-xs leading-relaxed">Choose a type from the left to explore peer-recommended resources</p>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div
+                                                key={activeBucket.id}
+                                                initial={{ opacity: 0, y: 18 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -18 }}
+                                                transition={{ duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
+                                            >
+                                                {/* Panel header */}
+                                                <div className="flex items-center justify-between mb-8">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-lg ${activeBucket.bg}`}>
+                                                            {React.cloneElement(activeBucket.icon as React.ReactElement, { className: 'w-7 h-7 text-white' })}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-3xl font-black text-[#1e3a34] italic tracking-tight leading-none">{activeBucket.label}</h3>
+                                                            <p className="text-sm text-gray-500 font-medium mt-1.5">
+                                                                {activeResources.length === 0
+                                                                    ? 'No resources yet'
+                                                                    : `${activeResources.length} peer-recommended resource${activeResources.length !== 1 ? 's' : ''}`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setActiveCommunityIndex(null)}
+                                                        className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm active:scale-95"
+                                                    >
+                                                        {ICONS.X}
+                                                    </button>
+                                                </div>
+
+                                                {/* Resource grid or empty */}
+                                                {activeResources.length === 0 ? (
+                                                    <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200">
+                                                        <div className="w-20 h-20 bg-gray-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 text-gray-200 shadow-inner">
+                                                            <div className="scale-[2]">{ICONS.Heart}</div>
+                                                        </div>
+                                                        <p className="text-gray-400 font-bold text-xl mb-4 tracking-tight">No {activeBucket.label.toLowerCase()} yet.</p>
+                                                        <Link
+                                                            to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`}
+                                                            className="inline-flex px-8 py-3.5 rounded-full bg-[#e8f3f1] border border-[#448a7d]/20 text-[#448a7d] font-black tracking-widest uppercase text-xs hover:bg-[#d5e8e4] transition-all active:scale-95"
+                                                        >
+                                                            Recommend the First One
+                                                        </Link>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-2 gap-6">
+                                                        {activeResources.map((res, i) => (
+                                                            <motion.div
+                                                                key={res.id}
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: i * 0.07, duration: 0.38, ease: [0.25, 1, 0.5, 1] }}
+                                                            >
+                                                                <ResourceCard resource={res} />
+                                                            </motion.div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
                             </div>
                         </section>
 

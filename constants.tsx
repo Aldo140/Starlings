@@ -17,6 +17,12 @@ import {
   Navigation
 } from 'lucide-react';
 
+/** Signature easing curve — Expo Out. Use for all entrance reveals. */
+export const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+/** CSS string form for use in `transitionTimingFunction` inline styles. */
+export const EASE_OUT_EXPO_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
 export const COLORS = {
   teal900: '#1e3a34',
   teal700: '#2d5a52',
@@ -87,6 +93,7 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://mykickstand.ca/connect/",
     description: "A youth-focused virtual clinic and support hub connecting young people with mental health, substance use, peer support, and wellness services.",
     category: 'general',
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/kickstand.png`,
   },
   {
     id: "usay",
@@ -97,6 +104,7 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://usay.ca/",
     description: "Calgary-based programs and resources supporting Indigenous youth through culture, connection, learning, and community.",
     category: 'general',
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/usay.png`,
   },
   {
     id: "roots_of_hope_laronge",
@@ -107,5 +115,6 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://www.rootsofhope.ca/",
     description: "A community-led suicide prevention and life promotion initiative focused on hope, connection, and locally grounded support.",
     category: 'general',
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/roots-of-hope.png`,
   },
 ];

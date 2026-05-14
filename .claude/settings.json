@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(pip3 install *)",
+      "Bash(python3 -m pip install Pillow --quiet)",
+      "Bash(python3 -c \"from PIL import Image; print\\('ok'\\)\")",
+      "Bash(convert -version)",
+      "Bash(ffmpeg -version)",
+      "Bash(node -e \"const {execSync}=require\\('child_process'\\);try{require\\('sharp'\\);console.log\\('sharp ok'\\)}catch\\(e\\){console.log\\('no sharp'\\)}\")",
+      "Bash(node -e ' *)",
+      "Bash(npm install *)",
+      "Bash(node)",
+      "Bash(git -C /home/mrotiz14/github-projects/Starlings ls-files dist/)"
+    ]
+  },
+  "agent": "framer-ui-architect"
+}

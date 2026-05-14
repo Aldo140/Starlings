@@ -1,141 +1,187 @@
-# https://aldo140.github.io/Starlings/
+# Starlings Support Map
 
+**Live site:** https://aldo140.github.io/Starlings/
 
-# Starlings Support Map - Developer Guide
-
-This prototype is a working "Support Map" for Starlings Community. It is designed to allow youth impacted by family substance use to share anonymous notes of hope and coping strategies.
-
-## 🛠 Tech Stack
-- **Framework**: React 19
-- **Styling**: Tailwind CSS (Utility-first)
-- **Mapping**: Leaflet.js with CartoDB Light tiles
-- **Icons**: Lucide React
-- **UI Components**: Vaul (Bottom Sheets)
-- **Geocoding**: Hybrid (Local JSON Index + OpenStreetMap Nominatim API)
-- **Routing**: React Router 6 (HashRouter)
+An anonymous support map for youth impacted by family substance use — share notes of hope, discover community resources, and ask questions without revealing your identity.
 
 ---
 
-## 🏗 Key Architectural Decisions
+## Tech Stack
 
-### 1. Hybrid Geocoding (Performance First)
-To avoid the latency and rate-limiting issues of third-party geocoding APIs, we use a two-tier system in `services/api.ts`:
-- **Stage 1 (Instant)**: A local constant `CANADIAN_HUBS` containing the top 40+ Canadian cities by population. This provides zero-latency autocomplete for ~80% of users.
-- **Stage 2 (Deep Search)**: If no local match is found, or as the user stops typing, a debounced call is made to the **Nominatim (OSM) API** filtered strictly to `countrycodes=ca` and `featuretype=settlement`.
-
-### 2. Google Apps Script Backend & Offline Sync
-The `apiService` interacts with a deployed Google Apps Script (`services/gas-backend.js`) to use Google Sheets as a database:
-- **GET**: Fetches approved posts from the "Approved" tab in Google Sheets.
-- **POST**: Validates against `BANNED_PATTERNS` natively and saves to a "Pending" tab.
-- **Offline Reliability**: If a network failure occurs during submission, the client gracefully queues the post in `localStorage` and retries automatically when the connection is restored or upon application mount (`App.tsx`).
-
-### 3. Performance Mapping
-The map uses `preferCanvas: true` in the Leaflet configuration. This ensures that even with hundreds of markers, the browser renders them as a single canvas element rather than individual DOM nodes, keeping the "Fly To" animations smooth on mobile devices.
-
----
-
-## 🚦 Feature Logic
-
-### Moderation Workflow (Map & Resources)
-1. **Submission Options**: Users can submit a "Note of Hope" or "Recommend a Resource" directly from the map sharing view (`/share`). 
-   - **Location-Based**: If they attach a city to a Note or a Resource, it is plotted geographically on the map.  
-   - **Global Resources**: If a recommended resource has no specific city attachment (like a book or podcast), it bypasses the map and is queued for the global "Resources" tab.
-2. **Auto-Flagging**: The `BANNED_PATTERNS` regex automatically checks for URLs, emails, phone numbers, and crisis keywords across map notes.
-3. **Storage & Privacy Shielding**: Submissions are sent directly via a `POST` request to the "Pending" tab in the Google Sheet. This intentionally acts as a privacy shield for the 1-year pilot; no identifiable IP tracking data is stored alongside the Google Sheet submission. If offline, they are queued locally until connection is restored.
-4. **Approval**: A moderator drops into the Google Sheet to move the row to an "Approved" tab, which the frontend then fetches for either Posts or Resources.
-
-### Safety & Crisis
-The app features a persistent **Crisis Banner**. Per the Starlings policy, the `ShareView` requires explicit agreement to three safety checks (Age, Anonymity, and Moderation) before the "Share Note" button becomes active.
+| Concern | Choice |
+|---------|--------|
+| Framework | React 19 + Vite 7 + TypeScript |
+| Styling | Tailwind CSS 3 (utility-first, no CSS Modules) |
+| Animation | Framer Motion 12 |
+| Routing | React Router 6 — **HashRouter** (required for GitHub Pages) |
+| Mapping | Leaflet 1.9 via CDN |
+| Icons | Lucide React |
+| UI primitives | Vaul (bottom drawer) |
+| Backend | Google Apps Script → Google Sheets |
+| Geocoding | Local `CANADIAN_HUBS` index + Nominatim (OSM) fallback |
+| Fonts | Cabinet Grotesk (Fontshare) · Inter (Google Fonts) |
 
 ---
 
-## 📂 Project Structure
-- `App.tsx`: Main entry point configuring HashRouter routes and offline sync listeners.
-- `types.ts`: TypeScript interfaces for Posts and Locations.
-- `constants.tsx`: Global configuration, ICONS, and launch seed resources.
-- `services/api.ts`: All data fetching, offline queuing, and geocoding logic.
-- `services/gas-backend.js`: The Google Apps Script deployed as a Web App to interface between the frontend and Google Sheets.
-- `components/`:
-    - `Layout.tsx`: Main responsive layout shell containing the navigation and footer.
-    - `Map.tsx`: The Leaflet JS implementation and custom marker logic.
-    - `PostCard.tsx`: Reusable UI component for rendering individual notes.
-- `views/`:
-    - `Landing.tsx`: High-conversion hero page.
-    - `MapView.tsx`: The interactive dual-view (Sidebar + Map).
-    - `ShareView.tsx`: The multi-step submission form with city autocomplete.
-    - `ResourcesView.tsx`: Displays curated resources (Websites, Videos, Publications).
-    - `AddResourceView.tsx`: Form for recommending new resources to the community.
-    - `Guidelines.tsx`: Details community rules and safety policies.
+## Project Structure
 
----
-
-## 🚀 How to expand this
-- **Database Migration**: Currently uses Google Sheets. For high traffic, migrate the GAS backend to a structured database like PostgreSQL or Supabase.
-- **Analytics**: Add privacy-preserving analytics (like Plausible) to track map engagement without IP tracking.
-- **Filtering**: Expand the `useMemo` filter in `MapView.tsx` to allow filtering by the specific "What Helped" tags.
-
-## ⚠️ Important for Devs
-- **Leaflet CSS**: The Leaflet CSS is loaded via CDN in `index.html`. If moving to a production build system, ensure the icon assets are handled correctly.
-- **Geocoding Limits**: Nominatim has a strict usage policy. Always keep the debouncing in `ShareView` above 500ms and use the local `CANADIAN_HUBS` index for common queries.
-- **2xl breakpoint (1536px)**: Landing page floating images (the tilted photo cards flanking the hero text) only render at `2xl` to avoid overlapping the core message on smaller desktops.
-
-## ✅ Google Sheets Moderation Workflow
-
-For the soft launch, Google Sheets remains the source of truth. The deployed Apps Script expects these tabs:
-
-- `Pending_Stories` and `Live_Stories`
-- `Pending_Resources` and `Live_Resources`
-- `Pending_QA` and `Live_QA`
-- `Pending_Reflections` and `Live_Reflections`
-- `Flagged_Words`
-
-New submissions land in the matching `Pending_*` tab. A moderator reviews the row, edits content if needed, and changes the `status` cell to `APPROVED`. The Apps Script `onEdit` trigger moves that row into the matching `Live_*` tab, and the frontend reads from the live tabs.
-
-Q&A answers show publicly only when an approved `Live_QA` row has both `question` and `answer` filled in. Resource reactions are stored as `helpful_count`, `supportive_count`, and `exploring_count` columns in `Live_Resources`. Short resource reflections submit to `Pending_Reflections` for moderation.
-
----
-
-## 🌐 Deploying to GitHub Pages
-
-This project is configured for automatic deployment to GitHub Pages using GitHub Actions.
-
-### Initial Setup
-
-1. **Push your code to GitHub**:
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-   git push -u origin main
-   ```
-
-2. **Enable GitHub Pages**:
-   - Go to your repository on GitHub
-   - Navigate to **Settings** → **Pages**
-   - Under **Source**, select **GitHub Actions**
-   - Save the settings
-
-3. **Deploy automatically**:
-   - The GitHub Actions workflow will automatically build and deploy on every push to `main` or `master`
-   - Your site will be available at: `https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/`
-
-### Manual Deployment
-
-If you want to test the build locally:
-```bash
-npm run build
-npm run preview  # Preview the production build locally
+```
+/
+├── App.tsx                 — HashRouter, lazy-loaded routes, offline sync listener
+├── index.tsx               — React root mount
+├── index.html              — CSS variables, font CDN links, Leaflet CDN
+├── index.css               — Tailwind directives
+├── tailwind.config.js      — reveal animation, font-cabinet alias
+├── vite.config.ts          — manualChunks (vendor-react, vendor-motion, vendor-ui)
+├── constants.tsx           — COLORS, ICONS, EASE_OUT_EXPO, BANNED_PATTERNS, SEED_RESOURCES
+├── types.ts                — Post, Resource, QAItem, ResourceType, PostStatus
+│
+├── components/
+│   ├── Layout.tsx          — Nav, crisis banner, footer, page transition wrapper
+│   ├── Map.tsx             — Leaflet map + custom markers
+│   ├── PostCard.tsx        — Map pin popup / note card
+│   ├── StarlingFlock.tsx   — Ambient SVG flock (non-map pages)
+│   ├── LoadingBar.tsx      — YouTube-style thin progress bar
+│   ├── QAThread.tsx        — QASkeleton + QAThreadCard (extracted from Landing)
+│   ├── CardIllustration.tsx — Inline SVG illustrations for Care Loop cards
+│   └── GalleryImage.tsx    — 3D-tilt gallery card with clip-path wipe entrance
+│
+├── views/
+│   ├── Landing.tsx         — Full landing page (hero, Q&A, Care Loop, gallery, CTA)
+│   ├── MapView.tsx         — Interactive map (sidebar + Leaflet pane)
+│   ├── ShareView.tsx       — Note / resource submission form with city autocomplete
+│   ├── ResourcesView.tsx   — Three-panel resources layout (partners, buckets, aligned)
+│   ├── AddResourceView.tsx — Community resource suggestion form
+│   └── Guidelines.tsx      — Community rules and safety policies
+│
+├── services/
+│   └── api.ts              — Fetching, offline queue, geocoding, rate limiter
+│
+└── docs/
+    ├── backend/
+    │   └── gas-backend.js  — Google Apps Script source (deploy separately)
+    └── staff-guide.md      — Staff guide: spreadsheet workflow, moderation, flagged words
 ```
 
-### Important Notes
+---
 
-- **HashRouter**: This project uses `HashRouter` which is perfect for GitHub Pages (no server-side routing needed)
-- **Base Path**: The build automatically configures the base path based on your repository name
-- **Automatic**: Every push to the main branch triggers a new deployment
-- **Build Artifacts**: The built files are in the `dist/` folder (gitignored)
+## Key Architectural Decisions
 
-### Troubleshooting
+### 1. HashRouter (Never Change This)
+GitHub Pages serves static files with no server-side routing. `HashRouter` uses `/#/path` URLs that work without a server rewrite rule. All `<Link>` components and programmatic navigation must use hash-relative paths.
 
-- If your site shows a blank page, check the browser console for errors
-- Ensure GitHub Actions has permission to deploy (Settings → Actions → General → Workflow permissions)
-- The deployment URL format is: `https://YOUR_USERNAME.github.io/REPO_NAME/`
+### 2. Code Splitting
+`vite.config.ts` defines three manual chunks so the initial page load doesn't pull in all dependencies:
+
+| Chunk | Contents | Gzip |
+|-------|----------|------|
+| `vendor-react` | react, react-dom, react-router-dom | ~12 kB |
+| `vendor-motion` | framer-motion | ~45 kB |
+| `vendor-ui` | lucide-react, vaul | ~21 kB |
+
+Non-landing routes are `React.lazy`-loaded in `App.tsx` so framer-motion and Leaflet are deferred until the user navigates to them.
+
+### 3. Hybrid Geocoding
+`services/api.ts` uses a two-tier geocoding system:
+- **Stage 1 (instant):** `CANADIAN_HUBS` — top 40+ Canadian cities, zero-latency
+- **Stage 2 (deep search):** Nominatim (OSM) debounced at ≥500 ms, filtered to `countrycodes=ca`
+
+### 4. Google Apps Script Backend
+The backend is a single Apps Script file (`docs/backend/gas-backend.js`) deployed as a Web App. It routes `doGet`/`doPost` requests to Google Sheets tabs. All reads are from `Live_*` tabs; all writes go to `Pending_*` tabs awaiting moderator approval.
+
+An `onEdit` trigger auto-promotes rows: when column C changes to `"APPROVED"`, the row moves from `Pending_X` → `Live_X`.
+
+### 5. Offline Queue
+If submission fails (no network), `apiService` serialises the payload to `localStorage` under `offlineQueue`. On app mount and on the `online` browser event, `syncOfflinePosts()` drains the queue.
+
+### 6. Rate Limiting
+`checkRateLimit()` in `api.ts` caps submissions at **5 per 10-second window** to prevent abuse without requiring authentication.
+
+---
+
+## Moderation Workflow
+
+### Google Sheets Tabs
+
+| Tab | Purpose |
+|-----|---------|
+| `Pending_Stories` | Incoming map notes awaiting review |
+| `Live_Stories` | Approved notes shown on the map |
+| `Pending_Resources` | Incoming resource recommendations |
+| `Live_Resources` | Approved resources shown in Resources view |
+| `Pending_QA` | Incoming questions (answer column is blank) |
+| `Live_QA` | Approved Q&A pairs (both question + answer filled) |
+| `Pending_Reflections` | Short user reflections on resources |
+| `Live_Reflections` | Approved reflections |
+| `Flagged_Words` | ⚠️ Exists in the sheet but **not yet wired to the frontend** — see below |
+
+### Approval Flow
+
+1. Submission arrives in the matching `Pending_*` tab
+2. Moderator reviews row, edits content if needed
+3. Moderator changes the `status` column (column C) to `APPROVED`
+4. The Apps Script `onEdit` trigger fires and moves the row to the `Live_*` tab
+5. Frontend fetches from `Live_*` tabs (5-minute localStorage cache)
+
+### Flagged Words — Two-Layer System
+
+Every submission is checked against two layers:
+
+**Layer 1 — Static regex (`BANNED_PATTERNS` in `constants.tsx`):** Always-on. Catches URLs, emails, phone numbers, and hardcoded crisis keywords regardless of network state.
+
+**Layer 2 — Dynamic sheet list (`Flagged_Words` tab):** On app boot, `apiService.getFlaggedWords()` fetches the sheet and stores the word list in memory + localStorage (30-minute cache). Every submission then does a case-insensitive substring scan against the live list. If the sheet is unreachable, Layer 1 handles it alone — nothing breaks.
+
+To update the word list, edit column A of the `Flagged_Words` sheet (one term per row, no header). Users pick up changes within 30 minutes when their cache expires. No code deploy required.
+
+---
+
+## Safety Features
+
+- **Crisis banner**: Fixed at the top of every page (`z-50`). Never remove or cover it.
+- **Safety modal** (`z-[9000]`): In `Landing.tsx`, the Q&A form intercepts submissions that match crisis keywords and shows a resources modal before allowing submission.
+- **Server-side backstop**: `gas-backend.js` has its own hardcoded crisis keyword check that rejects submissions regardless of frontend state.
+- **ShareView consent gates**: Users must tick three safety checkboxes (age, anonymity, moderation) before the submit button activates.
+
+---
+
+## Design System
+
+All design tokens live in two places — use these, not arbitrary Tailwind palette names:
+
+- **`constants.tsx`** — `COLORS`, `ICONS`, `EASE_OUT_EXPO`, `EASE_OUT_EXPO_CSS`
+- **`index.html` `<style>`** — CSS custom properties (`--brand-teal-900`, etc.)
+
+Primary easing: `EASE_OUT_EXPO = [0.16, 1, 0.3, 1]` (Expo Out) — used on all entrance reveals.
+
+Fonts: `font-cabinet` (Cabinet Grotesk) for display headings; Inter for all body, labels, UI.
+
+---
+
+## Local Development
+
+```bash
+npm install
+npm run dev        # Vite dev server at http://localhost:5173
+npm run build      # Production build → dist/
+npm run preview    # Preview production build locally
+npm test           # Vitest unit tests
+```
+
+## Deployment (GitHub Pages)
+
+```bash
+npm run deploy     # Builds and pushes dist/ to gh-pages branch
+```
+
+The `GITHUB_PAGES_BASE` environment variable sets the Vite `base` path. If deploying to a project page (`username.github.io/repo-name/`), set it to `/repo-name/`. For a root custom domain, leave unset (defaults to `./`).
+
+> **HashRouter note:** Every push to the `gh-pages` branch is live immediately. No server-side routing config is needed.
+
+---
+
+## Important Notes for Developers
+
+- **Leaflet CSS/JS**: Loaded via CDN in `index.html`. If migrating away from CDN, ensure Leaflet icon assets are bundled correctly (the default icon path resolution breaks with Vite).
+- **Geocoding rate limits**: Nominatim's usage policy requires a User-Agent header and requests throttled ≥1 per second. The debounce in `ShareView` must stay ≥500 ms.
+- **Care Loop scroll mechanic**: The horizontal scrolling "Care Loop" section in `Landing.tsx` uses a scroll-pin + `useScroll`/`useTransform` pattern from Framer Motion. Do not change the `promiseRef`, `promiseViewportRef`, `promiseTrackRef` refs or their wiring without understanding this section fully.
+- **Z-index hierarchy**: Crisis banner `z-50`, nav `z-[5000]`, map UI `z-[2000]`, safety modal `z-[9000]`. Respect this — especially when adding overlays.

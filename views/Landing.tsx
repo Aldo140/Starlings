@@ -1,266 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useInView, useScroll, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useScroll, useTransform, useSpring } from 'framer-motion';
 import { apiService } from '../services/api.ts';
-import { ICONS } from '../constants.tsx';
+import { ICONS, EASE_OUT_EXPO } from '../constants.tsx';
 import { QAItem } from '../types.ts';
-
-const ease = [0.16, 1, 0.3, 1] as const;
-
-const formatDate = (timestamp: string): string => {
-  try {
-    return new Date(timestamp).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  } catch {
-    return '';
-  }
-};
-
-/* ── Q&A Thread Components ─────────────────────────────────────────────── */
-
-const QASkeleton: React.FC = () => (
-  <div className="bg-white/[0.04] border border-white/[0.05] rounded-[1.75rem] p-5 md:p-7 animate-pulse">
-    <div className="flex gap-3 items-start">
-      <div className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0" />
-      <div className="flex-1 space-y-2 pt-1">
-        <div className="flex items-center justify-between">
-          <div className="h-2 bg-white/10 rounded-full w-16" />
-          <div className="h-2 bg-white/[0.06] rounded-full w-20" />
-        </div>
-        <div className="h-3 bg-white/10 rounded-full w-4/5" />
-        <div className="h-3 bg-white/10 rounded-full w-3/5" />
-      </div>
-    </div>
-    <div className="ml-4 mt-3 mb-3 w-px h-4 bg-white/[0.06]" />
-    <div className="flex gap-3 items-start">
-      <div className="w-8 h-8 rounded-full bg-white/[0.07] flex-shrink-0" />
-      <div className="flex-1 space-y-2 pt-1">
-        <div className="h-2 bg-white/[0.07] rounded-full w-24" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-full" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-4/5" />
-        <div className="h-2.5 bg-white/[0.06] rounded-full w-3/5" />
-      </div>
-    </div>
-  </div>
-);
-
-const QAThreadCard: React.FC<{ item: QAItem; index: number }> = ({ item, index }) => {
-  const cardDelay = index * 0.13;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 44, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 16, scale: 0.97 }}
-      transition={{ duration: 0.65, delay: cardDelay, ease }}
-      whileHover={{ y: -5, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
-      className="relative bg-white/[0.06] border border-white/[0.09] rounded-[1.75rem] overflow-hidden group"
-    >
-      {/* Hover glow border */}
-      <motion.div
-        className="absolute inset-0 rounded-[1.75rem] opacity-0 group-hover:opacity-100 pointer-events-none"
-        style={{ boxShadow: 'inset 0 0 0 1px rgba(68,138,125,0.25), 0 20px 60px -15px rgba(68,138,125,0.18)' }}
-        transition={{ duration: 0.3 }}
-      />
-
-      <div className="p-5 md:p-7">
-        {/* Question row */}
-        <div className="flex gap-3 items-start">
-          <motion.div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#448a7d]/50 to-[#2d5a52]/70 flex-shrink-0 mt-0.5 flex items-center justify-center"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: cardDelay + 0.1, type: 'spring', stiffness: 400, damping: 22 }}
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-              <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="7" fontWeight="900" fontFamily="Inter, sans-serif" fill="rgba(255,255,255,0.75)">Q</text>
-            </svg>
-          </motion.div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#448a7d]/70">Anonymous</p>
-              {item.timestamp && (
-                <motion.span
-                  className="text-[8px] font-medium text-white/35 tracking-wide flex-shrink-0"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: cardDelay + 0.45, duration: 0.5 }}
-                >
-                  {formatDate(item.timestamp)}
-                </motion.span>
-              )}
-            </div>
-            <p className="text-white/90 font-bold italic text-sm md:text-[15px] leading-snug">{item.question}</p>
-          </div>
-        </div>
-
-        {/* Thread connector — draws itself down */}
-        <div className="ml-4 my-2.5 overflow-hidden w-px">
-          <motion.div
-            className="w-full bg-gradient-to-b from-white/[0.18] to-white/[0.05]"
-            initial={{ height: 0 }}
-            animate={{ height: 20 }}
-            transition={{ delay: cardDelay + 0.3, duration: 0.4, ease }}
-          />
-        </div>
-
-        {/* Answer row */}
-        <div className="flex gap-3 items-start">
-          <motion.div
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#e8f3f1]/10 to-[#448a7d]/20 flex-shrink-0 flex items-center justify-center text-[9px] font-black text-[#448a7d]/70"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: cardDelay + 0.35, type: 'spring', stiffness: 400, damping: 22 }}
-          >
-            ✦
-          </motion.div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/25 mb-1.5">Community Response</p>
-            <p className="text-white/[0.58] text-xs md:text-[13px] leading-relaxed">{item.answer}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Animated bottom accent */}
-      <motion.div
-        className="h-[1px] bg-gradient-to-r from-transparent via-[#448a7d]/0 to-transparent"
-        animate={{ background: 'linear-gradient(to right, transparent, rgba(68,138,125,0), transparent)' }}
-        whileHover={{ background: 'linear-gradient(to right, transparent, rgba(68,138,125,0.35), transparent)' }}
-        transition={{ duration: 0.4 }}
-      />
-    </motion.div>
-  );
-};
-
-// --- CardIllustration data ---
-const MURMURATION_BIRDS: [number, number, number][] = [
-  [52, 178, -25], [68, 167, -20], [85, 158, -15],
-  [102, 150, -9], [118, 146, -3], [134, 148, 4],
-  [148, 155, 11], [160, 166, 17], [168, 180, 22],
-  [62, 128, -22], [79, 118, -16], [96, 110, -9],
-  [114, 106, -2], [130, 108, 6], [145, 116, 13],
-  [157, 128, 19], [80, 82, -18], [97, 74, -10],
-  [114, 70, -1], [130, 73, 8], [145, 82, 15],
-  [42, 102, -28], [178, 98, 28], [108, 50, -2],
-  [38, 150, -30], [184, 162, 28], [65, 54, -20], [155, 48, 18],
-];
-
-const MURMURATION_STARS: [number, number][] = [
-  [35, 45], [180, 35], [196, 80], [25, 90],
-  [108, 28], [165, 58], [48, 178],
-];
-
-type IllustrationVariant = 'envelope' | 'hands' | 'pin' | 'murmuration';
-
-const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant }) => {
-  const svgBase = {
-    viewBox: '0 0 220 220' as const,
-    fill: 'none' as const,
-    xmlns: 'http://www.w3.org/2000/svg',
-    className: 'w-full h-full max-w-[175px] max-h-[175px]',
-    'aria-hidden': true as const,
-  };
-
-  return (
-    <motion.div
-      className="flex items-center justify-center w-full h-full p-3 md:p-8"
-      animate={{ scale: [1, 1.03, 1] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {variant === 'envelope' && (
-        <svg {...svgBase}>
-          {/* Envelope body */}
-          <rect x="28" y="88" width="164" height="105" rx="5" stroke="#448a7d" strokeWidth="1.8"/>
-          {/* Inner V crease */}
-          <path d="M28 88 L110 136 L192 88" stroke="#448a7d" strokeWidth="1.4" opacity="0.65"/>
-          {/* Open flap */}
-          <path d="M28 88 C28 52 66 36 110 47 C154 36 192 52 192 88"
-            stroke="#1e3a34" strokeWidth="1.8" fill="rgba(30,58,52,0.04)"/>
-          {/* Wax seal */}
-          <circle cx="110" cy="168" r="12" stroke="#1e3a34" strokeWidth="1.5" fill="rgba(68,138,125,0.10)"/>
-          <circle cx="110" cy="168" r="7"  stroke="#1e3a34" strokeWidth="1"   fill="rgba(68,138,125,0.14)"/>
-          {/* Central stem */}
-          <line x1="110" y1="135" x2="110" y2="62" stroke="#1e3a34" strokeWidth="1.2"/>
-          {/* Side branch — left */}
-          <path d="M110 105 C103 97 96 90 98 78" stroke="#1e3a34" strokeWidth="1" opacity="0.8"/>
-          {/* Side branch — right */}
-          <path d="M110 90 C117 82 124 77 122 65" stroke="#1e3a34" strokeWidth="1" opacity="0.8"/>
-          {/* Leaf pair 1 */}
-          <path d="M104 103 C94 92 90 78 98 68 C100 80 104 92 104 103Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.12)"/>
-          <path d="M116 90 C126 79 130 65 122 55 C120 67 116 79 116 90Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.12)"/>
-          {/* Leaf pair 2 */}
-          <path d="M108 72 C100 62 99 50 106 42 C107 52 108 62 108 72Z"
-            stroke="#448a7d" strokeWidth="1.4" fill="rgba(68,138,125,0.10)"/>
-          <path d="M112 72 C120 62 121 50 114 42 C113 52 112 62 112 72Z"
-            stroke="#448a7d" strokeWidth="1.4" fill="rgba(68,138,125,0.10)"/>
-          {/* Top bud */}
-          <path d="M110 56 C106 45 107 34 110 27 C113 34 114 45 110 56Z"
-            stroke="#448a7d" strokeWidth="1.4" fill="rgba(68,138,125,0.16)"/>
-        </svg>
-      )}
-
-      {variant === 'hands' && (
-        <svg {...svgBase}>
-          {/* Lens circle */}
-          <circle cx="96" cy="96" r="58" stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.06)"/>
-          {/* Inner lens ring */}
-          <circle cx="96" cy="96" r="51" stroke="#448a7d" strokeWidth="0.7" opacity="0.3"/>
-          {/* Handle */}
-          <line x1="140" y1="140" x2="178" y2="178" stroke="#1e3a34" strokeWidth="4" strokeLinecap="round"/>
-          <line x1="140" y1="140" x2="178" y2="178" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round" opacity="0.4"/>
-          {/* Stem inside lens */}
-          <line x1="96" y1="146" x2="96" y2="56" stroke="#1e3a34" strokeWidth="1.4"/>
-          {/* Lower leaf pair */}
-          <path d="M96 120 C86 108 83 94 90 83 C93 95 96 108 96 120Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.14)"/>
-          <path d="M96 120 C106 108 109 94 102 83 C99 95 96 108 96 120Z"
-            stroke="#448a7d" strokeWidth="1.5" fill="rgba(68,138,125,0.14)"/>
-          {/* Upper leaf pair */}
-          <path d="M96 90 C89 81 88 70 94 63 C95 71 96 81 96 90Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
-          <path d="M96 90 C103 81 104 70 98 63 C97 71 96 81 96 90Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.10)"/>
-        </svg>
-      )}
-
-      {variant === 'pin' && (
-        <svg {...svgBase}>
-          {/* Pin body — large teardrop */}
-          <path d="M56 92 C56 44 164 44 164 92 C164 126 136 154 110 184 C84 154 56 126 56 92 Z"
-            stroke="#448a7d" strokeWidth="1.8" fill="rgba(68,138,125,0.08)"/>
-          {/* Inner marker circle */}
-          <circle cx="110" cy="90" r="22" stroke="#1e3a34" strokeWidth="1.5" fill="rgba(30,58,52,0.10)"/>
-          {/* Inner marker dot */}
-          <circle cx="110" cy="90" r="7" stroke="#448a7d" strokeWidth="1" fill="rgba(68,138,125,0.20)"/>
-          {/* Small sprout at pin crown */}
-          <line x1="110" y1="44" x2="110" y2="22" stroke="#1e3a34" strokeWidth="1.3"/>
-          <path d="M110 36 C103 28 103 18 110 14 C110 22 110 30 110 36Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.14)"/>
-          <path d="M110 36 C117 28 117 18 110 14 C110 22 110 30 110 36Z"
-            stroke="#448a7d" strokeWidth="1.3" fill="rgba(68,138,125,0.14)"/>
-        </svg>
-      )}
-
-      {variant === 'murmuration' && (
-        <svg {...svgBase}>
-          {MURMURATION_STARS.map(([cx, cy], i) => (
-            <circle key={`s${i}`} cx={cx} cy={cy} r={1.8} fill="#448a7d" opacity={0.35}/>
-          ))}
-          {MURMURATION_BIRDS.map(([cx, cy, rotate], i) => (
-            <path
-              key={`b${i}`}
-              d="M7,0 C4,-1 0,-4 -4,-5 C-7,-3 -7,0 -5,0 C-7,0 -7,3 -4,5 C0,4 4,1 7,0 Z"
-              fill="#448a7d"
-              opacity={0.3 + (i % 4) * 0.12}
-              transform={`translate(${cx},${cy}) rotate(${rotate}) scale(${0.7 + (i % 3) * 0.2})`}
-            />
-          ))}
-        </svg>
-      )}
-    </motion.div>
-  );
-};
+import { QASkeleton, QAThreadCard } from '../components/QAThread.tsx';
+import CardIllustration, { type IllustrationVariant } from '../components/CardIllustration.tsx';
+import GalleryImage from '../components/GalleryImage.tsx';
 
 /* ── Landing Page ───────────────────────────────────────────────────────── */
 
@@ -284,6 +30,23 @@ const Landing: React.FC = () => {
 
   const qaRef = useRef<HTMLElement>(null);
   const qaInView = useInView(qaRef, { once: true, margin: '-60px' });
+
+  const galleryRef = useRef<HTMLElement>(null);
+  const galleryInView = useInView(galleryRef, { once: true, margin: '-80px' });
+  const { scrollYProgress: galleryScrollProgress } = useScroll({ target: galleryRef, offset: ['start start', 'end end'] });
+  // Desktop: col A fast, col B slow. Both climb up — speed contrast = depth.
+  const col1YRawDesk = useTransform(galleryScrollProgress, [0, 1], [160, -700]);
+  const col2YRawDesk = useTransform(galleryScrollProgress, [0, 1], [80, -500]);
+  // Mobile: single full-width filmstrip — steady parallax climb
+  const col1YRawMob = useTransform(galleryScrollProgress, [0, 1], [120, -520]);
+  const col1YDesk = useSpring(col1YRawDesk, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  const col2YDesk = useSpring(col2YRawDesk, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  const col1YMob = useSpring(col1YRawMob, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  // Subtle counter-rotation — col1 tilts CW, col2 CCW as you scroll. Max ±1.4°, spring-smoothed.
+  const col1RotRaw = useTransform(galleryScrollProgress, [0, 1], [1.4, -1.4]);
+  const col2RotRaw = useTransform(galleryScrollProgress, [0, 1], [-1.4, 1.4]);
+  const col1Rot = useSpring(col1RotRaw, { stiffness: 72, damping: 17, restDelta: 0.001 });
+  const col2Rot = useSpring(col2RotRaw, { stiffness: 72, damping: 17, restDelta: 0.001 });
 
   const promiseRef = useRef<HTMLElement>(null);
   const promiseViewportRef = useRef<HTMLDivElement>(null);
@@ -349,309 +112,467 @@ const Landing: React.FC = () => {
   };
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative bg-[#1e3a34] py-20 md:py-32 overflow-hidden">
+    <section ref={qaRef} id="ask-question" className="relative py-20 md:py-32 overflow-hidden" style={{ background: 'linear-gradient(150deg, #eaf6f1 0%, #f0f9f5 45%, #e6f4ef 100%)' }}>
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Animated sage-green blobs */}
         <motion.div
-          className="absolute rounded-full bg-white blur-3xl"
-          style={{ width: '45vw', height: '70px', top: '22%', left: '8%', rotate: '-14deg' }}
-          animate={{ x: [0, 60, 0], y: [0, -18, 0], opacity: [0.035, 0.07, 0.035] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-[-12%] left-[-10%] w-[55vw] h-[55vw] max-w-[640px] rounded-full blur-3xl"
+          style={{ background: 'radial-gradient(circle, #b8ddd5 0%, #c8e8e0 55%, transparent 100%)' }}
+          animate={{ opacity: [0.5, 0.7, 0.5], scale: [1, 1.07, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute rounded-full bg-white blur-2xl"
-          style={{ width: '28vw', height: '50px', top: '52%', left: '52%', rotate: '-6deg' }}
-          animate={{ x: [0, -35, 0], y: [0, 22, 0], opacity: [0.025, 0.055, 0.025] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+          className="absolute top-[-10%] right-[-8%] w-[40vw] h-[40vw] max-w-[460px] rounded-full blur-3xl"
+          style={{ background: 'radial-gradient(circle, #9ecfc3 0%, #b8e0d8 60%, transparent 100%)' }}
+          animate={{ opacity: [0.35, 0.55, 0.35], scale: [1, 1.06, 1] }}
+          transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
         />
         <motion.div
-          className="absolute rounded-full bg-white blur-3xl"
-          style={{ width: '32vw', height: '55px', top: '68%', left: '25%', rotate: '8deg' }}
-          animate={{ x: [0, 40, 0], y: [0, -12, 0], opacity: [0.02, 0.045, 0.02] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
-        />
-        {/* Animated orbs */}
-        <motion.div
-          className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] max-w-[600px] bg-[#2d5a52] rounded-full blur-3xl opacity-40"
-          animate={{ scale: [1, 1.14, 0.94, 1], x: [0, 28, -12, 0], y: [0, -18, 12, 0] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] max-w-[700px] bg-[#448a7d] rounded-full blur-2xl opacity-20"
-          animate={{ scale: [1, 0.91, 1.09, 1], x: [0, -22, 14, 0], y: [0, 22, -12, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute top-[38%] right-[10%] w-[18vw] h-[18vw] max-w-[220px] rounded-full blur-3xl"
+          style={{ background: 'radial-gradient(circle, rgba(229,124,110,0.22) 0%, transparent 70%)' }}
+          animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.12, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
         />
 
-        {/* Dot-matrix grid overlay — fades in on scroll */}
+        {/* Dot-matrix grid */}
         <motion.div
           className="absolute inset-0"
           initial={{ opacity: 0 }}
           animate={qaInView ? { opacity: 1 } : {}}
-          transition={{ duration: 2, ease }}
+          transition={{ duration: 2.5, ease: EASE_OUT_EXPO }}
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.028) 1px, transparent 1px)',
-            backgroundSize: '30px 30px',
+            backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.065) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
           }}
         />
 
-        {/* Aurora shimmer sweep */}
-        <motion.div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(108deg, transparent 35%, rgba(68,138,125,0.055) 50%, transparent 65%)',
-            width: '200%',
-            left: '-100%',
-          }}
-          animate={{ x: ['0%', '100%'] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'linear', repeatDelay: 6 }}
-        />
-
-        {/* Floating particles */}
-        {[
-          { left: '12%', top: '28%', dur: 7, delay: 0 },
-          { left: '55%', top: '15%', dur: 9, delay: 1.5 },
-          { left: '78%', top: '60%', dur: 6, delay: 0.8 },
-          { left: '30%', top: '70%', dur: 11, delay: 2.2 },
-          { left: '88%', top: '35%', dur: 8, delay: 3.1 },
-        ].map((p, i) => (
+        {/* ── Starling silhouettes drifting across the section ── */}
+        {([
+          { x: '9%',  y: '12%', w: 20, delay: 0,    dur: 14, dy: -24, dx: 18  },
+          { x: '20%', y: '8%',  w: 13, delay: 0.9,  dur: 18, dy: -14, dx: 8   },
+          { x: '33%', y: '6%',  w: 24, delay: 1.7,  dur: 11, dy: -30, dx: 22  },
+          { x: '62%', y: '4%',  w: 16, delay: 0.4,  dur: 16, dy: -20, dx: -10 },
+          { x: '76%', y: '8%',  w: 22, delay: 1.3,  dur: 12, dy: -26, dx: -16 },
+          { x: '87%', y: '17%', w: 12, delay: 2.2,  dur: 20, dy: -13, dx: -8  },
+          { x: '52%', y: '82%', w: 14, delay: 0.7,  dur: 15, dy: 18,  dx: 12  },
+          { x: '7%',  y: '75%', w: 18, delay: 2.0,  dur: 13, dy: 22,  dx: -14 },
+        ] as { x: string; y: string; w: number; delay: number; dur: number; dy: number; dx: number }[]).map((b, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-white/[0.12]"
-            style={{ left: p.left, top: p.top }}
-            animate={{ y: [0, -18, 0], opacity: [0.12, 0.32, 0.12] }}
-            transition={{ duration: p.dur, repeat: Infinity, ease: 'easeInOut', delay: p.delay }}
-          />
+            className="absolute hidden md:block"
+            style={{ left: b.x, top: b.y }}
+            initial={{ opacity: 0 }}
+            animate={qaInView ? {
+              opacity: [0, 0.2, 0.16, 0.2, 0],
+              y: [0, b.dy * 0.6, b.dy],
+              x: [0, b.dx * 0.5, b.dx],
+            } : {}}
+            transition={{ duration: b.dur, delay: b.delay, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
+          >
+            {/* Starling in-flight M-wing silhouette */}
+            <svg width={b.w} height={Math.round(b.w * 0.55)} viewBox="0 0 28 15" fill="none" aria-hidden="true">
+              <path
+                d="M14 7.5 C11.5 5 8.5 3 5.5 3.5 C7.5 4.2 9.5 5.8 11 7.5 C9 7 7 6.6 5 7.2 C7.2 6.8 9.5 8 11.5 7.8 L14 8.5 L16.5 7.8 C18.5 8 20.8 6.8 23 7.2 C21 6.6 19 7 17 7.5 C18.5 5.8 20.5 4.2 22.5 3.5 C19.5 3 16.5 5 14 7.5Z"
+                fill="#1e3a34"
+              />
+            </svg>
+          </motion.div>
         ))}
 
-        {/* Noise grain */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E")' }}
-        />
+        {/* Large decorative ? — desktop only */}
+        <motion.div
+          className="absolute font-cabinet font-black select-none leading-none hidden lg:block"
+          style={{
+            right: '2%', top: '6%',
+            fontSize: 'clamp(160px, 21vw, 290px)',
+            color: 'rgba(68,138,125,0.06)',
+            letterSpacing: '-0.05em',
+          }}
+          initial={{ opacity: 0, scale: 0.72, rotate: -10 }}
+          animate={qaInView ? { opacity: 1, scale: 1, rotate: 0 } : {}}
+          transition={{ duration: 1.5, delay: 0.15, ease: EASE_OUT_EXPO }}
+        >
+          ?
+        </motion.div>
       </div>
 
-      {/* ── Content ─────────────────────────────────────────────────── */}
+      {/* ── Content ──────────────────────────────────────────────────────── */}
       <div className="container mx-auto px-6 max-[400px]:px-4 max-w-7xl relative z-10">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        {/* ── ROW 1: Editorial header — heading left, desc+steps right ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-end mb-10 lg:mb-14">
 
-          {/* Left — heading + description */}
-          <div className="lg:col-span-6 space-y-7 md:pr-10">
-
-            {/* Badge */}
+          {/* Giant heading — col 1–7 */}
+          <div className="lg:col-span-7 space-y-5">
+            {/* Eyebrow with mini starling glyph */}
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full backdrop-blur-md shadow-lg"
-              initial={{ x: -32, opacity: 0 }}
+              initial={{ x: -24, opacity: 0 }}
               animate={qaInView ? { x: 0, opacity: 1 } : {}}
-              transition={{ duration: 0.6, ease }}
+              transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
             >
-              <span className="text-[#e57c6e] flex items-center">{ICONS.MessageCircle}</span>
-              <span className="text-white font-bold text-xs uppercase tracking-widest">Community Q&A</span>
+              <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.32em] text-[#448a7d]">
+                <svg width="22" height="9" viewBox="0 0 28 15" fill="none" aria-hidden="true">
+                  <path d="M14 7.5 C11.5 5 8.5 3 5.5 3.5 C7.5 4.2 9.5 5.8 11 7.5 C9 7 7 6.6 5 7.2 C7.2 6.8 9.5 8 11.5 7.8 L14 8.5 L16.5 7.8 C18.5 8 20.8 6.8 23 7.2 C21 6.6 19 7 17 7.5 C18.5 5.8 20.5 4.2 22.5 3.5 C19.5 3 16.5 5 14 7.5Z" fill="#448a7d"/>
+                </svg>
+                Community Q&amp;A
+              </span>
             </motion.div>
 
-            {/* Heading — blur-to-focus reveal */}
-            <h2 className="text-4xl md:text-5xl lg:text-7xl font-black font-cabinet text-white tracking-tight italic leading-tight drop-shadow-sm">
+            <h2 className="font-black font-cabinet text-[#1e3a34] tracking-tight leading-[0.9]" style={{ fontSize: 'clamp(3rem, 8vw, 5.5rem)' }}>
               <motion.span
-                className="inline-block"
-                initial={{ filter: 'blur(18px)', opacity: 0.2, scale: 1.08 }}
+                className="block"
+                initial={{ filter: 'blur(20px)', opacity: 0.12, scale: 1.06 }}
                 animate={qaInView ? { filter: 'blur(0px)', opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.9, ease }}
+                transition={{ duration: 0.95, ease: EASE_OUT_EXPO }}
               >
                 Ask what
               </motion.span>
-              <br />
               <motion.span
-                className="text-[#e57c6e] inline-block"
-                initial={{ y: 70, opacity: 0 }}
+                className="block text-[#e57c6e] italic relative"
+                initial={{ y: 80, opacity: 0 }}
                 animate={qaInView ? { y: 0, opacity: 1 } : {}}
-                transition={{ duration: 0.75, delay: 0.22, type: 'spring', stiffness: 200, damping: 22 }}
+                transition={{ duration: 0.78, delay: 0.22, type: 'spring', stiffness: 200, damping: 22 }}
               >
                 stays with you.
+                {/* Animated wavy underline */}
+                <svg
+                  className="absolute left-0 w-full pointer-events-none"
+                  style={{ bottom: '-5px' }}
+                  height="11"
+                  viewBox="0 0 400 11"
+                  preserveAspectRatio="none"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <motion.path
+                    d="M0 7 Q50 2 100 7 Q150 12 200 7 Q250 2 300 7 Q350 12 400 7"
+                    stroke="#e57c6e"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    fill="none"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={qaInView ? { pathLength: 1, opacity: 0.5 } : {}}
+                    transition={{ duration: 1.0, delay: 1.0, ease: EASE_OUT_EXPO }}
+                  />
+                </svg>
               </motion.span>
             </h2>
+          </div>
 
-            {/* Description */}
+          {/* Description + steps — col 8–12, bottom-aligned */}
+          <div className="lg:col-span-5 space-y-6 lg:pb-2">
             <motion.p
-              className="text-lg md:text-xl text-teal-50/[0.85] font-light leading-relaxed max-w-lg"
-              initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+              className="text-base md:text-lg text-[#1e3a34]/55 font-light leading-relaxed"
+              initial={{ opacity: 0, y: 18, filter: 'blur(4px)' }}
               animate={qaInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
-              transition={{ duration: 0.7, delay: 0.4, ease }}
+              transition={{ duration: 0.7, delay: 0.42, ease: EASE_OUT_EXPO }}
             >
-              Some questions need a place to land before they become words. Write anonymously, and open answered community questions only when you want to see them.
+              Some questions need a place to land before they become words. Write anonymously — answers come from people who've been there.
             </motion.p>
 
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, y: 16 }}
-              animate={qaInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.52, ease }}
-            >
+            {/* Steps — 01 → 02 → 03 */}
+            <div className="flex items-start gap-2">
               {[
                 { num: '01', label: 'Ask anonymously', desc: 'No account needed' },
                 { num: '02', label: 'We review it', desc: "Safe before it's seen" },
-                { num: '03', label: 'Community answers', desc: 'Real perspectives shared' },
+                { num: '03', label: 'Community answers', desc: 'Real perspectives' },
               ].map((step, idx) => (
-                <motion.div
-                  key={step.num}
-                  className="flex items-center gap-4"
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={qaInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease }}
-                >
-                  <span className="text-[11px] font-black text-[#448a7d] tabular-nums w-6 shrink-0">{step.num}</span>
-                  <span className="text-sm font-bold text-white/80">{step.label}</span>
-                  <span className="text-xs text-white/30 font-medium">{step.desc}</span>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            <AnimatePresence mode="wait">
-              {showAnsweredQA && !isLoadingQA && approvedQA.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease }}
-                  className="flex items-center gap-3"
-                >
-                  <div className="w-8 h-px bg-white/20" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/35">
-                    {approvedQA.length} answered by the community
-                  </span>
-                  <div className="w-8 h-px bg-white/20" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Right — form with 3D hover */}
-          <div className="lg:col-span-6">
-            <motion.div
-              initial={{ y: 72, opacity: 0 }}
-              animate={qaInView ? { y: 0, opacity: 1 } : {}}
-              transition={{ duration: 0.85, delay: 0.28, type: 'spring', stiffness: 140, damping: 20 }}
-            >
-              <div style={{ perspective: '1200px' }}>
-                <motion.div
-                  whileHover={{ rotateY: 1.5, rotateX: -1, scale: 1.01 }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  style={{ transformStyle: 'preserve-3d' }}
-                  className="bg-white rounded-[3rem] p-8 md:p-12 shadow-[0_30px_80px_-15px_rgba(0,0,0,0.4)] relative overflow-hidden"
-                >
-                  {/* Corner decoration — refined teal wash with speech bubble SVG */}
-                  <div className="absolute top-0 right-0 w-44 h-44 pointer-events-none overflow-hidden rounded-[3rem]">
-                    <div className="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-[#e8f3f1]/60 via-[#d4eae6]/30 to-transparent rounded-bl-[110%]" />
-                    <svg
-                      className="absolute top-4 right-4 opacity-[0.22]"
-                      width="52" height="52" viewBox="0 0 52 52" fill="none" aria-hidden="true"
+                <React.Fragment key={step.num}>
+                  <motion.div
+                    className="flex flex-col items-center text-center flex-1 min-w-[62px]"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={qaInView ? { opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.5, delay: 0.58 + idx * 0.1, ease: EASE_OUT_EXPO }}
+                  >
+                    <span className="text-[11px] font-black text-[#448a7d] tabular-nums mb-0.5">{step.num}</span>
+                    <span className="text-[10px] font-black text-[#1e3a34] uppercase tracking-[0.12em] leading-tight">{step.label}</span>
+                    <span className="text-[9px] font-medium text-[#1e3a34]/35 mt-0.5 leading-tight">{step.desc}</span>
+                  </motion.div>
+                  {idx < 2 && (
+                    <motion.div
+                      className="flex items-center mt-[10px] flex-shrink-0"
+                      initial={{ opacity: 0, scaleX: 0 }}
+                      animate={qaInView ? { opacity: 1, scaleX: 1 } : {}}
+                      transition={{ duration: 0.4, delay: 0.7 + idx * 0.1, ease: EASE_OUT_EXPO }}
+                      style={{ originX: 0 }}
                     >
-                      <rect x="2" y="2" width="40" height="32" rx="10" stroke="#448a7d" strokeWidth="2"/>
-                      <path d="M10 42 L16 34 H28" stroke="#448a7d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <line x1="11" y1="14" x2="31" y2="14" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
-                      <line x1="11" y1="22" x2="25" y2="22" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-
-                  {qSuccess ? (
-                    <div className="text-center py-12 animate-reveal">
-                      <div className="w-24 h-24 bg-gradient-to-br from-[#448a7d] to-[#2d5a52] text-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl transform hover:scale-110 transition-transform rotate-3">
-                        <div className="scale-[2.5]">{ICONS.Heart}</div>
-                      </div>
-                      <h3 className="text-3xl font-black text-[#1e3a34] mb-4">Question Submitted</h3>
-                      <p className="text-gray-500 font-medium text-lg mb-10 max-w-sm mx-auto">We'll review your question and it may be answered to help others.</p>
-                      <button onClick={() => setQSuccess(false)} className="px-10 py-4 bg-gray-50 text-[#1e3a34] font-black rounded-full hover:bg-gray-100 border border-gray-200 transition-colors uppercase tracking-widest text-sm shadow-sm active:scale-95">Ask Another</button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleQuestionSubmit} className="space-y-6 relative z-10">
-                      <div className="space-y-4">
-                        <label htmlFor="question" className="block text-[#1e3a34] font-black text-2xl md:text-3xl tracking-tight mb-2">What's on your mind?</label>
-                        <textarea
-                          id="question"
-                          required
-                          value={question}
-                          onChange={e => setQuestion(e.target.value)}
-                          placeholder="Share your question anonymously..."
-                          className="w-full p-6 md:p-8 bg-[#f8faf9] border border-[#e8f3f1] focus:border-[#448a7d]/40 rounded-[1.5rem] min-h-[160px] md:min-h-[200px] text-lg md:text-xl font-medium text-[#1e3a34] transition-all shadow-[inset_0_2px_8px_rgba(30,58,52,0.04)] focus:outline-none focus:bg-white focus:shadow-[inset_0_2px_8px_rgba(30,58,52,0.03),0_0_0_3px_rgba(68,138,125,0.10)] placeholder-gray-400/70 resize-none selection:bg-[#448a7d] selection:text-white"
-                        />
-                      </div>
-                      {qError && (
-                        <div className="p-4 bg-red-50/80 border border-red-100 text-red-600 rounded-2xl font-bold text-sm animate-reveal flex items-center gap-3">
-                          {ICONS.AlertCircle} {qError}
-                        </div>
-                      )}
-                      <div className="pt-2">
-                        <button
-                          type="submit"
-                          disabled={isSubmittingQ || !question.trim()}
-                          className="w-full relative group overflow-hidden px-8 py-5 bg-[#e57c6e] text-white rounded-[2rem] font-black text-lg md:text-xl uppercase tracking-widest shadow-[0_15px_30px_-10px_rgba(229,124,110,0.4)] hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                        >
-                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)', backgroundSize: '200% 100%', animation: 'none' }} />
-                          <span className="relative flex items-center justify-center gap-3">
-                            {isSubmittingQ ? 'Submitting...' : 'Send Question'}
-                            {!isSubmittingQ && <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>}
-                          </span>
-                        </button>
-                      </div>
-                      <div className="flex justify-center mt-6 pt-4 border-t border-gray-100">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f0f7f5] border border-[#d4eae6]">
-                          <svg width="10" height="12" viewBox="0 0 10 12" fill="none" aria-hidden="true">
-                            <rect x="1" y="5" width="8" height="7" rx="2" stroke="#448a7d" strokeWidth="1.4"/>
-                            <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="#448a7d" strokeWidth="1.4" strokeLinecap="round"/>
-                          </svg>
-                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#448a7d]/70">Anonymous and reviewed before use</span>
-                        </span>
-                      </div>
-                    </form>
+                      <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden="true">
+                        <path d="M1 4h10M8 1l3 3-3 3" stroke="rgba(68,138,125,0.4)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </motion.div>
                   )}
-                </motion.div>
-              </div>
-            </motion.div>
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Answered questions toggle + reveal */}
-        <div id="answered-questions" className="mt-10 md:mt-14">
-
-          {/* Toggle button — always visible */}
+        {/* ── Divider with perched starling ── */}
+        <motion.div
+          className="relative mb-10 lg:mb-12 hidden lg:block"
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={qaInView ? { scaleX: 1, opacity: 1 } : {}}
+          transition={{ duration: 1.1, delay: 0.62, ease: EASE_OUT_EXPO }}
+          style={{ originX: 0 }}
+        >
+          <div className="h-px bg-gradient-to-r from-[#c8e0da]/80 via-[#448a7d]/20 to-transparent" />
+          {/* Starling perched at 58% of the line */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={qaInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.5, ease }}
-            className="flex items-center justify-between mb-6 pb-5 border-b border-white/[0.08]"
+            className="absolute -top-3 left-[58%]"
+            initial={{ opacity: 0, y: 8, scale: 0.5 }}
+            animate={qaInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+            transition={{ duration: 0.55, delay: 1.45, type: 'spring', stiffness: 280, damping: 22 }}
           >
-            <div>
-              <p className="text-white font-black text-lg md:text-xl">Answered by the community</p>
-              <p className="text-white/40 text-sm font-medium mt-0.5">Questions answered by peers who've been there</p>
-            </div>
-            <motion.button
-              type="button"
-              onClick={showAnsweredQA ? () => setShowAnsweredQA(false) : openAnsweredQA}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white font-black text-xs uppercase tracking-widest transition-colors shrink-0 ml-4"
+            <motion.svg
+              width="26" height="22" viewBox="0 0 28 24" fill="none" aria-hidden="true"
+              animate={{ rotate: [-2, 2, -2] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             >
-              {showAnsweredQA ? 'Hide' : 'Read answers'}
-              <motion.svg
-                width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
-                animate={{ rotate: showAnsweredQA ? 180 : 0 }}
-                transition={{ duration: 0.35, ease }}
+              {/* Perched starling: body ellipse + head circle + tail + feet */}
+              <ellipse cx="13" cy="13" rx="6" ry="4.5" fill="#1e3a34" opacity="0.2"/>
+              <circle cx="11" cy="9.5" r="2.8" fill="#1e3a34" opacity="0.2"/>
+              {/* tail */}
+              <path d="M18 15 L21 17.5" stroke="#1e3a34" strokeWidth="1.5" strokeLinecap="round" opacity="0.18"/>
+              {/* feet */}
+              <path d="M10 17.5 L9 20 M13 18 L13 21 M13 21 L11 22 M13 21 L15 22" stroke="#1e3a34" strokeWidth="1.2" strokeLinecap="round" opacity="0.18"/>
+              {/* beak */}
+              <path d="M8.5 9 L6 8" stroke="#1e3a34" strokeWidth="1.2" strokeLinecap="round" opacity="0.18"/>
+            </motion.svg>
+          </motion.div>
+        </motion.div>
+
+        {/* ── ROW 2: Form left, Illustration right ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+
+          {/* Form card — col 1–7 */}
+          <motion.div
+            className="lg:col-span-7"
+            initial={{ y: 60, opacity: 0 }}
+            animate={qaInView ? { y: 0, opacity: 1 } : {}}
+            transition={{ duration: 0.9, delay: 0.3, type: 'spring', stiffness: 130, damping: 20 }}
+          >
+            <div style={{ perspective: '1400px' }}>
+              <motion.div
+                whileHover={{ rotateY: 1.2, rotateX: -0.8, scale: 1.008 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                style={{ transformStyle: 'preserve-3d' }}
+                className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-[0_36px_90px_-36px_rgba(30,58,52,0.24)] border border-[#c8e0da] relative overflow-hidden"
               >
-                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </motion.svg>
-            </motion.button>
+                {/* Corner decoration */}
+                <div className="absolute top-0 right-0 w-56 h-56 pointer-events-none overflow-hidden rounded-[2.5rem]">
+                  <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-bl from-[#d4eae6]/55 via-[#e2f2ee]/30 to-transparent rounded-bl-[130%]" />
+                  <svg className="absolute top-5 right-5 opacity-[0.17]" width="58" height="58" viewBox="0 0 58 58" fill="none" aria-hidden="true">
+                    <rect x="2" y="2" width="46" height="36" rx="12" stroke="#448a7d" strokeWidth="2.2"/>
+                    <path d="M11 48 L19 38 H34" stroke="#448a7d" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="12" y1="17" x2="36" y2="17" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="12" y1="25" x2="28" y2="25" stroke="#448a7d" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+
+                {qSuccess ? (
+                  <div className="text-center py-14 animate-reveal">
+                    <div className="w-24 h-24 bg-gradient-to-br from-[#448a7d] to-[#2d5a52] text-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl transform hover:scale-110 transition-transform rotate-3">
+                      <div className="scale-[2.5]">{ICONS.Heart}</div>
+                    </div>
+                    <h3 className="text-3xl font-black text-[#1e3a34] mb-4">Question Submitted</h3>
+                    <p className="text-gray-500 font-medium text-lg mb-10 max-w-sm mx-auto">We'll review your question and it may be answered to help others.</p>
+                    <button onClick={() => setQSuccess(false)} className="px-10 py-4 bg-gray-50 text-[#1e3a34] font-black rounded-full hover:bg-gray-100 border border-gray-200 transition-colors uppercase tracking-widest text-sm shadow-sm active:scale-95">Ask Another</button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleQuestionSubmit} className="space-y-6 relative z-10">
+                    <div className="space-y-3">
+                      <label htmlFor="question" className="block text-[#1e3a34] font-black text-xl tracking-tight">What's on your mind?</label>
+                      <textarea
+                        id="question"
+                        required
+                        value={question}
+                        onChange={e => setQuestion(e.target.value)}
+                        placeholder="Share your question anonymously..."
+                        className="w-full p-5 bg-[#f4faf7] border border-[#c8e0da] focus:border-[#448a7d]/50 rounded-2xl min-h-[130px] md:min-h-[150px] text-base font-medium text-[#1e3a34] transition-all shadow-[inset_0_2px_8px_rgba(30,58,52,0.05)] focus:outline-none focus:bg-white focus:shadow-[inset_0_2px_8px_rgba(30,58,52,0.03),0_0_0_3px_rgba(68,138,125,0.15)] placeholder-[#1e3a34]/30 resize-none selection:bg-[#448a7d] selection:text-white"
+                      />
+                    </div>
+                    {qError && (
+                      <div className="p-4 bg-red-50/80 border border-red-100 text-red-600 rounded-2xl font-bold text-sm animate-reveal flex items-center gap-3">
+                        {ICONS.AlertCircle} {qError}
+                      </div>
+                    )}
+                    {/* Footer: anonymous LEFT + coral CTA RIGHT */}
+                    <div className="flex items-center justify-between gap-3 pt-5 border-t border-[#c8e0da]">
+                      <span className="inline-flex items-center gap-2 flex-shrink-0">
+                        <svg width="10" height="12" viewBox="0 0 10 12" fill="none" aria-hidden="true">
+                          <rect x="1" y="5" width="8" height="7" rx="2" stroke="#448a7d" strokeWidth="1.4"/>
+                          <path d="M3 5V3.5a2 2 0 0 1 4 0V5" stroke="#448a7d" strokeWidth="1.4" strokeLinecap="round"/>
+                        </svg>
+                        <span className="text-[9px] font-black uppercase tracking-[0.22em] text-[#448a7d]/65">Anonymous · reviewed before posting</span>
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingQ || !question.trim()}
+                        className="relative group overflow-hidden flex-shrink-0 px-7 py-3.5 bg-[#e57c6e] text-white rounded-full font-black text-xs uppercase tracking-widest shadow-[0_10px_28px_-8px_rgba(229,124,110,0.52)] hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                      >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+                        <span className="relative flex items-center gap-2">
+                          {isSubmittingQ ? 'Sending...' : 'Send Question'}
+                          {!isSubmittingQ && <span className="group-hover:translate-x-0.5 transition-transform">{ICONS.ArrowRight}</span>}
+                        </span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </motion.div>
+            </div>
           </motion.div>
 
-          {/* Expandable content */}
+          {/* Illustration + answered card — col 8–12 */}
+          <div className="lg:col-span-5 flex flex-col gap-5 max-w-sm mx-auto w-full sm:max-w-none lg:max-w-none lg:mx-0">
+
+            {/* Illustration with floating decorations */}
+            <motion.div
+              className="relative w-full"
+              aria-hidden="true"
+              initial={{ y: 52, opacity: 0, rotate: 5, scale: 0.94 }}
+              animate={qaInView ? { y: 0, opacity: 1, rotate: 0, scale: 1 } : {}}
+              transition={{ duration: 0.95, delay: 0.38, type: 'spring', stiffness: 125, damping: 18 }}
+            >
+              {/* Floating teal speech bubble — top-left */}
+              <motion.div
+                className="absolute -top-4 left-[6%] z-10 w-10 h-10 rounded-2xl bg-[#d4eae6] border border-[#b8d9d1] shadow-[0_6px_18px_-6px_rgba(30,58,52,0.18)] hidden sm:flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0, y: 10 }}
+                animate={qaInView ? { opacity: 1, scale: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: 1.0, type: 'spring', stiffness: 280, damping: 20 }}
+              >
+                <motion.div
+                  animate={{ y: [0, -5, 0], rotate: [-3, 3, -3] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="1.5" y="1.5" width="10" height="8" rx="3" stroke="#448a7d" strokeWidth="1.3"/>
+                    <path d="M4 9.5l1.5 3" stroke="#448a7d" strokeWidth="1.3" strokeLinecap="round"/>
+                    <line x1="4" y1="4.5" x2="8.5" y2="4.5" stroke="#448a7d" strokeWidth="1.2" strokeLinecap="round"/>
+                    <line x1="4" y1="6.5" x2="7" y2="6.5" stroke="#448a7d" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </motion.div>
+              </motion.div>
+
+              {/* Floating coral chat bubble — right */}
+              <motion.div
+                className="absolute top-[30%] -right-5 z-10 w-9 h-9 rounded-xl bg-[#fbd6d1]/90 border border-[#fbd6d1] shadow-[0_6px_18px_-6px_rgba(229,124,110,0.28)] hidden sm:flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0, x: 10 }}
+                animate={qaInView ? { opacity: 1, scale: 1, x: 0 } : {}}
+                transition={{ duration: 0.5, delay: 1.15, type: 'spring', stiffness: 280, damping: 20 }}
+              >
+                <motion.div
+                  animate={{ y: [0, 8, 0], rotate: [4, -4, 4] }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M7 1.5C4.015 1.5 1.5 4.015 1.5 7s2.515 5.5 5.5 5.5a5.47 5.47 0 0 0 2.9-.832l2.6.832-.832-2.6A5.47 5.47 0 0 0 12.5 7c0-2.985-2.515-5.5-5.5-5.5z" stroke="#e57c6e" strokeWidth="1.2"/>
+                  </svg>
+                </motion.div>
+              </motion.div>
+
+              {/* Floating dot grid — bottom-left */}
+              <motion.div
+                className="absolute bottom-[15%] -left-4 z-10 hidden sm:block"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={qaInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.4, delay: 1.25, type: 'spring', stiffness: 300, damping: 22 }}
+              >
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1.6 }}
+                  className="flex flex-col gap-1.5"
+                >
+                  {[0,1,2].map(i => (
+                    <div key={i} className="flex gap-1.5">
+                      {[0,1,2].map(j => (
+                        <div key={j} className="w-1 h-1 rounded-full bg-[#448a7d]" style={{ opacity: 0.15 + (i + j) * 0.04 }} />
+                      ))}
+                    </div>
+                  ))}
+                </motion.div>
+              </motion.div>
+
+              {/* Glowing radial behind illustration */}
+              <motion.div
+                className="absolute inset-0 rounded-3xl -z-[1]"
+                style={{ background: 'radial-gradient(ellipse 80% 70% at 52% 50%, rgba(68,138,125,0.14) 0%, transparent 70%)' }}
+                animate={{ opacity: [0.65, 1, 0.65], scale: [0.94, 1.06, 0.94] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              />
+
+              {/* Illustration */}
+              <motion.img
+                src="/images/asset-qna.png"
+                alt=""
+                className="w-full h-auto relative z-[1]"
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </motion.div>
+
+            {/* Answered by community card */}
+            <motion.div
+              className="bg-white rounded-[1.75rem] p-5 border border-[#c8e0da] shadow-[0_14px_42px_-14px_rgba(30,58,52,0.2)] w-full"
+              initial={{ opacity: 0, y: 22 }}
+              animate={qaInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.7, delay: 0.6, type: 'spring', stiffness: 155, damping: 22 }}
+              whileHover={{ y: -4, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-[#d4eae6] flex items-center justify-center shrink-0">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                      <circle cx="9" cy="6" r="3" stroke="#448a7d" strokeWidth="1.5"/>
+                      <path d="M3 15c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black text-sm text-[#1e3a34] leading-tight">
+                      Answered by the community
+                      {showAnsweredQA && approvedQA.length > 0 && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-[#448a7d]/10 text-[#448a7d] text-[9px] font-black">
+                          {approvedQA.length}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[11px] font-medium text-[#1e3a34]/50 mt-0.5 leading-tight">Questions answered by peers who've been there</p>
+                  </div>
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={showAnsweredQA ? () => setShowAnsweredQA(false) : openAnsweredQA}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#e8f4ef] border border-[#b8d9d1] text-[#1e3a34] font-black text-xs uppercase tracking-widest hover:bg-[#d4eae6] transition-colors shrink-0"
+                >
+                  {showAnsweredQA ? 'Hide' : 'Read answers'}
+                  <motion.svg
+                    width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"
+                    animate={{ rotate: showAnsweredQA ? 180 : 0 }}
+                    transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+                  >
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </motion.svg>
+                </motion.button>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+
+        {/* ── Answers Grid — full width below ──────────────────────── */}
+        <div id="answered-questions" className="mt-10 md:mt-14">
           <AnimatePresence mode="wait">
             {showAnsweredQA && (
               <motion.div
                 key="qa-content"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.45, ease }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.45, ease: EASE_OUT_EXPO }}
               >
                 {isLoadingQA ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
@@ -664,14 +585,15 @@ const Landing: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-[2rem] border border-white/[0.08] bg-white/[0.04] p-10 text-center">
-                    <p className="text-white/50 font-medium">No answered questions yet — yours could be the first.</p>
+                  <div className="rounded-[2rem] border border-[#c8e0da] bg-white/60 backdrop-blur-sm p-10 text-center">
+                    <p className="text-[#1e3a34]/50 font-medium">No answered questions yet — yours could be the first.</p>
                   </div>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
       </div>
     </section>
   );
@@ -731,7 +653,7 @@ const Landing: React.FC = () => {
                 className="hero-title font-black text-[#1e3a34]"
                 initial={{ y: 40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.85, ease }}
+                transition={{ duration: 0.85, ease: EASE_OUT_EXPO }}
               >
                 Find your
               </motion.h1>
@@ -739,7 +661,7 @@ const Landing: React.FC = () => {
                 className="hero-title font-black hero-gradient italic pr-1"
                 initial={{ y: 40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.85, delay: 0.12, ease }}
+                transition={{ duration: 0.85, delay: 0.12, ease: EASE_OUT_EXPO }}
               >
                 Community.
               </motion.h1>
@@ -750,7 +672,7 @@ const Landing: React.FC = () => {
                 className="text-[11px] md:text-xl lg:text-2xl max-[400px]:text-[10px] text-gray-500 leading-relaxed font-light px-2"
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.75, delay: 0.32, ease }}
+                transition={{ duration: 0.75, delay: 0.32, ease: EASE_OUT_EXPO }}
               >
                 An anonymous space for individuals to share what helps them navigate a parent's or other family member's substance use challenges.
               </motion.p>
@@ -761,7 +683,7 @@ const Landing: React.FC = () => {
                   className="text-[10px] md:text-xs font-bold italic text-[#448a7d] whitespace-nowrap"
                   initial={{ x: -14, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5, ease }}
+                  transition={{ delay: 0.5, duration: 0.5, ease: EASE_OUT_EXPO }}
                 >
                   Shared wisdom.
                 </motion.span>
@@ -777,7 +699,7 @@ const Landing: React.FC = () => {
                   className="text-[10px] md:text-xs font-bold italic text-[#e57c6e] whitespace-nowrap"
                   initial={{ x: 14, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.72, duration: 0.5, ease }}
+                  transition={{ delay: 0.72, duration: 0.5, ease: EASE_OUT_EXPO }}
                 >
                   Collective strength.
                 </motion.span>
@@ -790,7 +712,7 @@ const Landing: React.FC = () => {
             className="w-full flex-grow flex items-center justify-center overflow-hidden max-h-[25vh] md:max-h-[35vh] min-h-[80px] md:min-h-[120px] relative"
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.1, delay: 0.22, ease }}
+            transition={{ duration: 1.1, delay: 0.22, ease: EASE_OUT_EXPO }}
             style={{ y: imageY }}
           >
             <img
@@ -800,8 +722,8 @@ const Landing: React.FC = () => {
             />
           </motion.div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 md:gap-4 w-full px-4 flex-shrink-0">
+          {/* CTA Buttons — hidden on desktop (lg+), visible on mobile/tablet only */}
+          <div className="lg:hidden flex flex-col sm:flex-row items-center justify-center gap-2.5 md:gap-4 w-full px-4 flex-shrink-0">
             {[
               <Link key="map" to="/map" className="group w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-[#1e3a34] text-white rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:bg-[#2d5a52] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-[0_20px_40px_-10px_rgba(30,58,52,0.3)] hover:scale-[1.05] active:scale-95">
                 Explore the Map <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>
@@ -813,7 +735,7 @@ const Landing: React.FC = () => {
                 Share a Note or Resource {ICONS.Plus}
               </Link>
             ].map((btn, i) => (
-              <motion.div key={i} className="w-full sm:w-auto" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.68 + i * 0.1, ease }}>
+              <motion.div key={i} className="w-full sm:w-auto" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.68 + i * 0.1, ease: EASE_OUT_EXPO }}>
                 {btn}
               </motion.div>
             ))}
@@ -821,45 +743,596 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Visual Support Gallery */}
-      <section className="relative z-10 py-16 md:py-32 max-[400px]:py-12">
-        <div className="absolute inset-0 bg-white/82 backdrop-blur-[3px] pointer-events-none" />
-        <div className="relative z-10 container mx-auto px-6 max-[400px]:px-4 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-center">
-            <div className="space-y-6 md:space-y-8 md:pr-12">
-              <h2 className="text-3xl md:text-5xl font-black text-[#1e3a34] tracking-tight leading-tight italic">
-                A canvas for collective healing.<br className="hidden md:block" /> A space to navigate our experiences together.
-              </h2>
-              <p className="text-base md:text-xl text-gray-500 font-light leading-relaxed">
-                Starlings is more than a map. It's a testament to the fact that you aren't alone or defined by the struggles in your home. Here, we gather and share the small, everyday strategies that help us move forward with hope, together.
-              </p>
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#448a7d] mb-1">100%</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Anonymous Space</p>
+      {/* Visual Support Gallery — pinned scroll, viewport locked while images swim */}
+      <section
+        ref={galleryRef}
+        className="relative z-10"
+        style={{ height: 'calc(100vh + 900px)' }}
+      >
+        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#f4f1e8' }}>
+
+          {/* Static soft glow — teal; no animation to avoid continuous compositing */}
+          <div className="absolute top-1/2 left-1/4 w-[50vw] h-[50vw] max-w-[420px] rounded-full pointer-events-none -translate-y-1/2"
+            style={{ background: 'radial-gradient(circle, rgba(68,138,125,0.08) 0%, transparent 70%)' }} />
+
+          {/* ── DESKTOP: left text panel + right image pool ── */}
+          <div className="hidden lg:flex h-full relative z-10">
+
+            {/* LEFT: editorial anchor — headline dominant, illustration as environment */}
+            <div
+              className="w-[44%] h-full flex-shrink-0 relative overflow-hidden flex flex-col"
+            >
+
+              {/* ─── Environment ──────────────────────────────────────────── */}
+
+              {/* Warm cream base */}
+              <div className="absolute inset-0 pointer-events-none" style={{ background: '#f4f1e8' }} />
+
+              {/* Very faint dot grid — tactile depth */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: 'radial-gradient(circle, #2d5a52 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.018 }}
+              />
+
+              {/* Teal atmosphere — top left, slow breath animation */}
+              <motion.div className="absolute pointer-events-none"
+                animate={{ opacity: [0.11, 0.17, 0.11], scale: [1, 1.08, 1] }}
+                transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ top: '-12rem', left: '-12rem', width: '560px', height: '560px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(68,138,125,0.35) 0%, transparent 65%)' }}
+              />
+
+              {/* Right-edge column softener — bridges into the image column */}
+              <div className="absolute right-0 top-0 bottom-0 w-28 pointer-events-none z-20"
+                style={{ background: 'linear-gradient(to right, transparent 0%, rgba(244,241,232,0.80) 100%)' }}
+              />
+
+              {/* ─── Diagonal tropical leaf — drawn in final position, no CSS rotation ── */}
+              {/* Broad leaf (not narrow blade). Tip at upper-right, base lower-left.    */}
+              {/* SVG is landscape so the leaf shape fills the element naturally at its   */}
+              {/* diagonal axis. Positioned so the tip bleeds past the right edge (seam)  */}
+              {/* and the base dissolves into the lower-center of the left panel.          */}
+              <motion.div
+                className="absolute pointer-events-none z-[1]"
+                animate={{ y: [0, -7, 0], x: [0, 3, 0], rotateZ: [0, 0.5, 0] }}
+                transition={{
+                  y:       { duration: 20, repeat: Infinity, ease: 'easeInOut' },
+                  x:       { duration: 26, repeat: Infinity, ease: 'easeInOut', delay: 3 },
+                  rotateZ: { duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 1 },
+                }}
+                style={{ top: '-3rem', right: '-4rem', width: '38rem', height: '28rem', opacity: 0.085 }}
+              >
+                <svg viewBox="0 0 420 310" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+                  {/* ── Leaf body — broad tropical, tip upper-right, base lower-left ── */}
+                  <path d="
+                    M 388 14
+                    C 368 48, 344 75, 345 102
+                    C 346 132, 295 170, 264 198
+                    C 238 226, 185 248, 160 258
+                    C 128 270, 80 282, 48 287
+                    C 28 272, 26 254, 38 230
+                    C 58 196, 102 164, 103 146
+                    C 104 122, 148 106, 192 88
+                    C 232 70, 290 38, 340 15
+                    C 362 8, 380 8, 388 14 Z
+                  " fill="#2d5a52"/>
+                  {/* ── Midrib — curves from tip to base ── */}
+                  <path d="M 388 14 C 355 52, 270 122, 188 178 C 118 226, 74 260, 48 287"
+                    stroke="#f4f1e8" strokeWidth="2.0" opacity="0.30" strokeLinecap="round" fill="none"/>
+                  {/* ── Vein pairs, alternating, opacity fades toward base ── */}
+                  {/* ~20% along midrib: roughly (330, 62) */}
+                  <path d="M 330 62 C 342 46, 356 38" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round"/>
+                  <path d="M 330 62 C 316 76, 302 82" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round"/>
+                  {/* ~35% along midrib: roughly (278, 104) */}
+                  <path d="M 278 104 C 292 92, 308 86" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round"/>
+                  <path d="M 278 104 C 264 116, 248 120" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round"/>
+                  {/* ~50% along midrib: roughly (228, 146) */}
+                  <path d="M 228 146 C 244 136, 260 132" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round"/>
+                  <path d="M 228 146 C 212 156, 196 160" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round"/>
+                  {/* ~65% along midrib: roughly (168, 192) */}
+                  <path d="M 168 192 C 182 182, 196 178" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round"/>
+                  <path d="M 168 192 C 154 202, 138 206" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round"/>
+                  {/* ~80% along midrib: roughly (108, 234) */}
+                  <path d="M 108 234 C 120 226, 132 222" stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round"/>
+                  <path d="M 108 234 C 96 242, 82 246"  stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round"/>
+                </svg>
+              </motion.div>
+
+              {/* Ambient shimmer pulse on the right edge — suggests light from the image column */}
+              <motion.div
+                className="absolute right-0 top-0 bottom-0 w-20 pointer-events-none z-[2]"
+                animate={{ opacity: [0.4, 0.72, 0.4] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                style={{ background: 'linear-gradient(to right, transparent 0%, rgba(244,241,232,0.55) 100%)' }}
+              />
+
+              {/* ─── Content — z-20, no overflow-hidden so content can bleed over illustration if needed ── */}
+              <div
+                className="relative z-20 flex-grow flex flex-col justify-start"
+                style={{
+                  paddingLeft: 'clamp(2.5rem, 4.2vw, 5.5rem)',
+                  paddingRight: 'clamp(1.5rem, 2.4vw, 3rem)',
+                  paddingTop: 'min(3.5rem, 5vh)',
+                  paddingBottom: '1.5rem',
+                }}
+              >
+
+                {/* Eyebrow */}
+                <motion.div
+                  className="flex items-center gap-2 mb-5"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={galleryInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
+                >
+                  <motion.div className="h-px bg-[#448a7d]"
+                    initial={{ width: 0 }} animate={galleryInView ? { width: 28 } : {}}
+                    transition={{ duration: 0.6, delay: 0.1, ease: EASE_OUT_EXPO }}
+                  />
+                  <span className="w-1 h-1 rounded-full bg-[#448a7d] flex-shrink-0" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
+                </motion.div>
+
+                {/* ── HEADLINE — editorial two-tier hierarchy ── */}
+                {/* "A canvas for" whispers; "collective healing." lands */}
+                <h2 className="font-cabinet font-black tracking-tight mb-4">
+
+                  {/* Lead-in: small, pulled back — creates anticipation */}
+                  <span className="block overflow-hidden" style={{ lineHeight: 1.25 }}>
+                    <motion.span
+                      className="block"
+                      style={{ fontSize: 'clamp(1.45rem, 1.85vw, 2.05rem)', fontWeight: 700, color: 'rgba(26,53,48,0.58)' }}
+                      initial={{ y: '112%' }}
+                      animate={galleryInView ? { y: '0%' } : {}}
+                      transition={{ duration: 0.62, delay: 0.08, ease: EASE_OUT_EXPO }}
+                    >A canvas for</motion.span>
+                  </span>
+
+                  {/* Hero line: large, italic — the emotional payload */}
+                  <span className="block overflow-hidden" style={{ lineHeight: 0.92 }}>
+                    <motion.span
+                      className="block italic"
+                      style={{ fontSize: 'clamp(3.2rem, 4.4vw, 5.2rem)', color: '#1a3530' }}
+                      initial={{ y: '112%' }}
+                      animate={galleryInView ? { y: '0%' } : {}}
+                      transition={{ duration: 0.80, delay: 0.18, ease: EASE_OUT_EXPO }}
+                    >collective healing.</motion.span>
+                  </span>
+
+                </h2>
+
+                {/* Body copy — narrow, editorial */}
+                <motion.p
+                  className="leading-[1.78] mb-5"
+                  style={{ fontSize: '0.875rem', color: '#587068', fontWeight: 360, maxWidth: '320px' }}
+                  initial={{ opacity: 0, y: 12, filter: 'blur(3px)' }}
+                  animate={galleryInView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+                  transition={{ duration: 0.75, delay: 0.36, ease: EASE_OUT_EXPO }}
+                >
+                  You are not defined by what happens in your home. This space holds the strategies, stories, and quiet signals left behind by people who found a way through.
+                </motion.p>
+
+                {/* Stat cards — subordinate to headline, refined presence */}
+                <div className="flex gap-2.5 mb-5" style={{ maxWidth: '310px' }}>
+
+                  {/* Card 1 — 100% Anonymous */}
+                  <motion.div
+                    className="flex-1 rounded-[1.75rem] overflow-hidden relative flex flex-col justify-between"
+                    style={{
+                      padding: 'clamp(0.85rem, 1.3vw, 1.2rem)',
+                      background: 'linear-gradient(148deg, #1f3b35 0%, #254440 62%, #1b342e 100%)',
+                      boxShadow: '0 14px 36px -14px rgba(30,58,52,0.36)',
+                    }}
+                    initial={{ opacity: 0, y: 18, scale: 0.95 }}
+                    animate={galleryInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                    transition={{ duration: 0.58, delay: 0.5, ease: EASE_OUT_EXPO }}
+                    whileHover={{ y: -3, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
+                  >
+                    <div className="absolute pointer-events-none rounded-full border"
+                      style={{ right: '-1.5rem', top: '-1.5rem', width: '6.5rem', height: '6.5rem', borderColor: 'rgba(255,255,255,0.055)' }} />
+                    <div className="absolute inset-0 opacity-[0.038] pointer-events-none"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+                    <div className="relative z-10">
+                      <motion.p
+                        className="font-black text-white tabular-nums tracking-tight leading-none mb-1"
+                        style={{ fontSize: 'clamp(1.7rem, 2.3vw, 2.5rem)' }}
+                        initial={{ opacity: 0, scale: 0.68 }}
+                        animate={galleryInView ? { opacity: 1, scale: 1 } : {}}
+                        transition={{ duration: 0.46, delay: 0.62, type: 'spring', stiffness: 240, damping: 16 }}
+                      >100%</motion.p>
+                      <p style={{ fontSize: '7.5px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.34)', textTransform: 'uppercase', fontWeight: 700 }}>Anonymous</p>
+                    </div>
+                  </motion.div>
+
+                  {/* Card 2 — Peer-Led */}
+                  <motion.div
+                    className="flex-1 rounded-[1.75rem] overflow-hidden relative flex flex-col justify-between"
+                    style={{
+                      padding: 'clamp(0.85rem, 1.3vw, 1.2rem)',
+                      background: 'linear-gradient(148deg, #e07862 0%, #ea8870 62%, #d9725c 100%)',
+                      boxShadow: '0 14px 36px -14px rgba(220,118,98,0.30)',
+                    }}
+                    initial={{ opacity: 0, y: 18, scale: 0.95 }}
+                    animate={galleryInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                    transition={{ duration: 0.58, delay: 0.62, ease: EASE_OUT_EXPO }}
+                    whileHover={{ y: -3, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
+                  >
+                    <div className="absolute pointer-events-none rounded-full"
+                      style={{ left: '-1rem', bottom: '-1rem', width: '5rem', height: '5rem', background: 'rgba(255,255,255,0.07)' }} />
+                    <div className="absolute inset-0 opacity-[0.038] pointer-events-none"
+                      style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+                    <div className="relative z-10">
+                      <motion.p
+                        className="font-black text-white tracking-tight leading-none mb-1"
+                        style={{ fontSize: 'clamp(1.3rem, 1.85vw, 1.9rem)' }}
+                        initial={{ opacity: 0, scale: 0.68 }}
+                        animate={galleryInView ? { opacity: 1, scale: 1 } : {}}
+                        transition={{ duration: 0.46, delay: 0.76, type: 'spring', stiffness: 240, damping: 16 }}
+                      >Peer-Led</motion.p>
+                      <p style={{ fontSize: '7.5px', letterSpacing: '0.3em', color: 'rgba(255,255,255,0.40)', textTransform: 'uppercase', fontWeight: 700 }}>By Experience</p>
+                    </div>
+                  </motion.div>
+
                 </div>
-                <div className="p-4 md:p-6 bg-gray-50 rounded-[1.5rem] md:rounded-[2rem] border border-gray-100">
-                  <p className="text-2xl md:text-3xl font-black text-[#e57c6e] mb-1">Peer</p>
-                  <p className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-tight">Led By Experience</p>
-                </div>
+
+                {/* Scroll hint — very quiet */}
+                <motion.div className="flex items-center gap-2.5"
+                  initial={{ opacity: 0 }} animate={galleryInView ? { opacity: 1 } : {}}
+                  transition={{ duration: 0.5, delay: 0.92 }}
+                >
+                  <motion.div
+                    className="rounded-full flex items-start justify-center flex-shrink-0"
+                    style={{ width: '12px', height: '18px', paddingTop: '2.5px', border: '1.5px solid rgba(68,138,125,0.30)' }}
+                    animate={{ opacity: [0.28, 0.85, 0.28] }}
+                    transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <motion.div className="rounded-full bg-[#448a7d]" style={{ width: '1.5px', height: '3.5px' }}
+                      animate={{ y: [0, 5, 0] }}
+                      transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  </motion.div>
+                  <span style={{ fontSize: '7.5px', letterSpacing: '0.26em', color: 'rgba(68,138,125,0.42)', fontWeight: 800, textTransform: 'uppercase' }}>Scroll to explore</span>
+                </motion.div>
+
               </div>
+
+              {/* ─── ILLUSTRATION — Ken Burns slow zoom, never crops people ──── */}
+              {/* Outer entrance wrapper; inner overflow-hidden contains the scale. */}
+              <motion.div
+                className="relative z-10 w-full flex-shrink-0 overflow-hidden"
+                initial={{ opacity: 0, y: 20 }}
+                animate={galleryInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 1.2, delay: 0.48, ease: EASE_OUT_EXPO }}
+              >
+                {/* Thin top-edge cream fade */}
+                <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
+                  style={{ height: '3.5rem', background: 'linear-gradient(to bottom, #f4f1e8 0%, transparent 100%)' }}
+                />
+                {/* Ken Burns — slow zoom from 100% → 105%, 24s cycle, reverses back */}
+                <motion.img
+                  src="/images/asset3.png"
+                  alt="A diverse group of young people sitting together in a community circle"
+                  className="w-full h-auto block origin-bottom"
+                  style={{ mixBlendMode: 'multiply', opacity: 0.96 }}
+                  animate={galleryInView ? { scale: [1, 1.045, 1] } : {}}
+                  transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+                />
+              </motion.div>
+
             </div>
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                <div className="space-y-3 md:space-y-4 pt-6 md:pt-10">
-                  <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Self Care" />
-                  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Community" />
-                </div>
-                <div className="space-y-3 md:space-y-4">
-                  <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-56 md:h-80 object-cover rounded-[2rem] shadow-xl" alt="Meditation" />
-                  <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=400" loading="lazy" className="w-full h-40 md:h-64 object-cover rounded-[2rem] shadow-xl" alt="Support" />
-                </div>
+
+
+            {/* Seam glow — thin teal column at the 44% divide, pulses slowly */}
+            {/* Lives on the flex container so it straddles both panels freely */}
+            <motion.div
+              className="absolute top-0 bottom-0 pointer-events-none z-20"
+              style={{ left: 'calc(44% - 3px)', width: '6px', background: 'linear-gradient(to bottom, transparent 0%, rgba(68,138,125,0.22) 25%, rgba(68,138,125,0.22) 75%, transparent 100%)' }}
+              animate={{ opacity: [0.3, 0.9, 0.3] }}
+              transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+            />
+
+            {/* RIGHT: image swimming pool — atmospheric, secondary to headline */}
+            <div className="flex-1 relative overflow-hidden">
+              {/* Top vignette */}
+              <div className="absolute top-0 inset-x-0 z-20 pointer-events-none"
+                style={{ height: '10rem', background: 'linear-gradient(to bottom, #f4f1e8 0%, rgba(244,241,232,0.82) 40%, transparent 100%)' }} />
+              {/* Bottom vignette */}
+              <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none"
+                style={{ height: '11rem', background: 'linear-gradient(to top, #f4f1e8 0%, rgba(244,241,232,0.72) 42%, transparent 100%)' }} />
+              {/* Left-edge fade */}
+              <div className="absolute left-0 top-0 bottom-0 z-20 pointer-events-none"
+                style={{ width: '5rem', background: 'linear-gradient(to right, rgba(244,241,232,0.88) 0%, transparent 100%)' }} />
+
+              <div className="absolute inset-0 grid grid-cols-2 gap-4 p-3">
+                {/* Col A — fast lane, tilts CW on scroll */}
+                <motion.div style={{ y: col1YDesk, rotate: col1Rot, willChange: 'transform' }} className="flex flex-col gap-3">
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?auto=format&fit=crop&q=80&w=700', label: 'Hope', h: 'h-[30rem]' },
+                    { src: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=700', label: 'Self Care', h: 'h-[18rem]' },
+                    { src: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&q=80&w=700', label: 'Resilience', h: 'h-[34rem]' },
+                    { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=700', label: 'Growth', h: 'h-[22rem]' },
+                    { src: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=700', label: 'Healing', h: 'h-[26rem]' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.07} inView={galleryInView} />)}
+                </motion.div>
+                {/* Col B — slow lane, tilts CCW on scroll (opposite to col A) */}
+                <motion.div style={{ y: col2YDesk, rotate: col2Rot, willChange: 'transform' }} className="flex flex-col gap-3 -mt-52">
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=700', label: 'Together', h: 'h-[26rem]' },
+                    { src: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=700', label: 'Community', h: 'h-[32rem]' },
+                    { src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&q=80&w=700', label: 'Peace', h: 'h-[20rem]' },
+                    { src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=700', label: 'Support', h: 'h-[28rem]' },
+                    { src: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=700', label: 'Reflection', h: 'h-[24rem]' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.07 + 0.1} inView={galleryInView} />)}
+                </motion.div>
               </div>
             </div>
           </div>
+
+          {/* ── MOBILE / TABLET: full-width image pool + text overlay ── */}
+          <div className="flex lg:hidden h-full relative z-10">
+            <div className="flex-1 relative overflow-hidden">
+              {/* Top vignette */}
+              <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#f4f1e8]/90 to-transparent z-20 pointer-events-none" />
+              {/* Bottom vignette */}
+              <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none"
+                style={{ height: 'min(75%, 360px)', background: 'linear-gradient(to top, #f4f1e8 0%, #f4f1e8 28%, rgba(244,241,232,0.88) 48%, rgba(244,241,232,0.52) 68%, transparent 100%)' }}
+              />
+
+              {/* Single full-width filmstrip */}
+              <div className="absolute inset-0 px-2">
+                <motion.div
+                  style={{ y: col1YMob, willChange: 'transform' }}
+                  className="flex flex-col gap-2"
+                >
+                  {[
+                    { src: 'https://images.unsplash.com/photo-1474552226712-ac0f0961a954?auto=format&fit=crop&q=80&w=700', label: 'Hope',       h: 'h-72' },
+                    { src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=700', label: 'Together',    h: 'h-52' },
+                    { src: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&q=80&w=700', label: 'Resilience',  h: 'h-80' },
+                    { src: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=700', label: 'Community',   h: 'h-56' },
+                    { src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=700', label: 'Growth',      h: 'h-72' },
+                    { src: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=700', label: 'Support',     h: 'h-60' },
+                  ].map((img, i) => <GalleryImage key={img.label} {...img} delay={i * 0.08} inView={galleryInView} />)}
+                </motion.div>
+              </div>
+
+              {/* Mobile text overlay — editorial panel over the vignette */}
+              <div className="absolute bottom-0 inset-x-0 z-30 px-5 pb-7">
+
+                {/* Eyebrow */}
+                <motion.div className="flex items-center gap-2 mb-3"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={galleryInView ? { opacity: 1, x: 0 } : {}}
+                  transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+                >
+                  <div className="h-px w-6 bg-[#448a7d]" />
+                  <span className="w-1 h-1 rounded-full bg-[#448a7d]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
+                </motion.div>
+
+                {/* Heading — stagger reveal */}
+                <h2 className="font-cabinet text-[2.75rem] font-black text-[#1e3a34] tracking-tight leading-[0.93] mb-3">
+                  {[
+                    { text: 'A canvas for', italic: false, delay: 0.1 },
+                    { text: 'collective healing.', italic: true, delay: 0.22 },
+                  ].map((line) => (
+                    <span key={line.text} className="block overflow-hidden leading-[1.08]">
+                      <motion.span className={`block ${line.italic ? 'italic' : ''}`}
+                        initial={{ y: '110%' }}
+                        animate={galleryInView ? { y: '0%' } : {}}
+                        transition={{ duration: 0.68, delay: line.delay, ease: EASE_OUT_EXPO }}
+                      >{line.text}</motion.span>
+                    </span>
+                  ))}
+                </h2>
+
+                {/* Tagline */}
+                <motion.p
+                  className="text-[11px] font-medium text-[#1e3a34]/65 leading-relaxed mb-3.5 max-w-[290px]"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={galleryInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.55, delay: 0.38, ease: EASE_OUT_EXPO }}
+                >
+                  No sign-in. No judgement. Just a community shaped by youth who&apos;ve lived this — and chose to leave a light on.
+                </motion.p>
+
+                {/* Scroll hint — enhanced */}
+                <motion.div className="flex items-center gap-2.5"
+                  initial={{ opacity: 0 }}
+                  animate={galleryInView ? { opacity: 1 } : {}}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                >
+                  {/* Animated mouse */}
+                  <motion.div
+                    className="w-[13px] h-[19px] rounded-full border-[1.5px] border-[#448a7d]/50 flex items-start justify-center pt-[3px] flex-shrink-0"
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <motion.div className="w-[2px] h-[4px] rounded-full bg-[#448a7d]"
+                      animate={{ y: [0, 5, 0] }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  </motion.div>
+                  <div className="flex flex-col gap-px">
+                    <span className="text-[8px] font-black uppercase tracking-[0.22em] text-[#448a7d]/60">Scroll to explore</span>
+                    <div className="flex items-center gap-1">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <motion.div key={i}
+                          className="h-px rounded-full bg-[#448a7d]/30"
+                          style={{ width: i === 0 ? 12 : 4 }}
+                          animate={{ opacity: [0.3, 0.8, 0.3], scaleX: [1, 1.2, 1] }}
+                          transition={{ duration: 1.6, delay: i * 0.15, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Scroll progress — fixed at base of viewport */}
+          <div className="absolute bottom-3 inset-x-0 z-40 px-8 max-[400px]:px-4">
+            <div className="h-px bg-[#1e3a34]/10 relative overflow-hidden rounded-full">
+              <motion.div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#448a7d] to-[#e57c6e] rounded-full"
+                style={{ scaleX: galleryScrollProgress, transformOrigin: 'left' }}
+              />
+            </div>
+          </div>
+
         </div>
       </section>
-      <div className="h-16 md:h-24 bg-gradient-to-b from-white to-[#f3f1e8] pointer-events-none" />
+
+      {/* ── IMMERSIVE EDITORIAL COMMUNITY SECTION (mobile only) ── */}
+      <section
+        className="lg:hidden relative overflow-hidden"
+        style={{ background: 'linear-gradient(175deg, #f5f2eb 0%, #f0ede6 55%, #ece8de 100%)' }}
+      >
+        <div className="w-full h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(68,138,125,0.18), transparent)' }} />
+
+        {/* ── Editorial text header ── */}
+        <div className="px-5 pt-10 pb-7">
+          <motion.div
+            className="flex items-center gap-2 mb-4"
+            initial={{ opacity: 0, x: -10 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+          >
+            <div className="h-px w-5 bg-[#448a7d]" />
+            <span className="w-[3px] h-[3px] rounded-full bg-[#448a7d]" />
+            <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">Our Community</span>
+          </motion.div>
+
+          <motion.h2
+            className="font-cabinet font-black text-[#1e3a34] tracking-tight leading-[0.9]"
+            style={{ fontSize: 'clamp(2.8rem, 12.5vw, 3.6rem)' }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.8, delay: 0.06, ease: EASE_OUT_EXPO }}
+          >
+            Built by those<br />
+            <em>who&apos;ve been</em><br />
+            <em>exactly here.</em>
+          </motion.h2>
+        </div>
+
+        {/* ── Illustration card — rounded panel, fills width with small margin ── */}
+        <motion.div
+          className="relative mx-4 overflow-hidden"
+          style={{
+            height: 'clamp(300px, 86vw, 400px)',
+            borderRadius: '2rem',
+            background: '#f0ede6',
+          }}
+          initial={{ opacity: 0, y: 20, scale: 0.975 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: '-30px' }}
+          transition={{ duration: 0.85, delay: 0.1, ease: EASE_OUT_EXPO }}
+        >
+          {/* Illustration — blends white bg into card */}
+          <img
+            src="/images/asset3.png"
+            alt="A diverse community of young people sitting together outdoors in Calgary"
+            className="absolute inset-0 w-full h-full object-contain object-bottom"
+            style={{ mixBlendMode: 'multiply' }}
+          />
+
+          {/* Subtle vignette ring */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ boxShadow: 'inset 0 0 60px rgba(236,232,222,0.45)' }}
+          />
+
+          {/* Bottom gradient — blends image into next zone */}
+          <div
+            className="absolute inset-x-0 bottom-0 pointer-events-none"
+            style={{
+              height: '50%',
+              background: 'linear-gradient(to top, #ece8de 0%, rgba(240,237,230,0.55) 55%, transparent 100%)',
+            }}
+          />
+
+          {/* ── Stat chips — glassmorphism, float at bottom of card ── */}
+          <div className="absolute bottom-4 inset-x-4 flex gap-2.5">
+            <motion.div
+              className="flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-[0.9rem]"
+              style={{
+                background: 'rgba(22,50,44,0.82)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                boxShadow: '0 10px 28px -8px rgba(22,50,44,0.55)',
+              }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ duration: 0.45, delay: 0.38, ease: EASE_OUT_EXPO }}
+            >
+              <span className="text-[#7ec5b8] flex-shrink-0 scale-[0.85]">{ICONS.ShieldCheck}</span>
+              <div className="min-w-0">
+                <div className="text-[14px] font-black font-cabinet text-white leading-none">100%</div>
+                <div className="text-[7.5px] font-black uppercase tracking-[0.2em] text-white/45 mt-[2px]">Anonymous</div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="flex-1 flex items-center gap-2 px-3.5 py-2.5 rounded-[0.9rem]"
+              style={{
+                background: 'rgba(200,106,90,0.88)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+                border: '1px solid rgba(255,255,255,0.13)',
+                boxShadow: '0 10px 28px -8px rgba(200,100,85,0.5)',
+              }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ duration: 0.45, delay: 0.48, ease: EASE_OUT_EXPO }}
+            >
+              <span className="text-white/75 flex-shrink-0 scale-[0.85]">{ICONS.Users}</span>
+              <div className="min-w-0">
+                <div className="text-[13px] font-black font-cabinet text-white leading-tight">Peer-Led</div>
+                <div className="text-[7.5px] font-black uppercase tracking-[0.2em] text-white/50 mt-[2px]">By Experience</div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* ── Body copy + full-width CTA ── */}
+        <div className="px-5 pt-6 pb-10">
+          <motion.p
+            className="text-[12px] font-medium leading-relaxed mb-6"
+            style={{ color: 'rgba(30,58,52,0.55)' }}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ duration: 0.55, delay: 0.08, ease: EASE_OUT_EXPO }}
+          >
+            Every pin is proof. You&apos;re not the first to stand here — and you won&apos;t be the last to find a way through.
+          </motion.p>
+
+          {/* Primary CTA — full-width coral button */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-30px' }}
+            transition={{ duration: 0.5, delay: 0.18, ease: EASE_OUT_EXPO }}
+          >
+            <Link
+              to="/map"
+              className="flex items-center justify-center gap-2.5 w-full py-[14px] rounded-full font-black text-[11px] uppercase tracking-[0.22em] text-white active:scale-[0.97] transition-transform duration-150"
+              style={{
+                background: 'linear-gradient(135deg, #e57c6e 0%, #d46a5c 100%)',
+                boxShadow: '0 16px 36px -12px rgba(229,124,110,0.5)',
+              }}
+            >
+              Explore the Map
+              <span aria-hidden="true">{ICONS.ArrowRight}</span>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="h-16 md:h-24 bg-gradient-to-b from-[#ece8de] to-[#f3f1e8] pointer-events-none" />
 
       {/* Horizontal Promise Journey */}
       <section
@@ -897,7 +1370,7 @@ const Landing: React.FC = () => {
                 className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
                 initial={{ opacity: 0, y: 28 }}
                 animate={gridInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 }}
-                transition={{ duration: 0.7, ease }}
+                transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
               >
                 <div>
                   <p className="text-[#448a7d] font-black text-[9px] md:text-[10px] uppercase tracking-[0.5em]">Our Promise</p>

@@ -7,6 +7,36 @@ import { Post } from '../types.ts';
 import { ICONS } from '../constants.tsx';
 import { Drawer } from 'vaul';
 import { motion, AnimatePresence } from 'framer-motion';
+import LoadingBar from '../components/LoadingBar.tsx';
+
+/** Shimmer skeleton cards shown during initial data fetch */
+const CitySkeleton: React.FC = () => (
+  <>
+    {[0, 1, 2].map(i => (
+      <div
+        key={i}
+        className="p-5 rounded-2xl bg-white border border-gray-100 animate-pulse"
+        style={{ animationDelay: `${i * 120}ms` }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#e8f3f1]" />
+            <div className="space-y-2">
+              <div className="h-4 w-28 bg-[#e8f3f1] rounded-lg" />
+              <div className="h-2.5 w-16 bg-[#e8f3f1]/60 rounded" />
+            </div>
+          </div>
+          <div className="h-7 w-10 rounded-full bg-[#e8f3f1]" />
+        </div>
+        <div className="flex gap-1.5">
+          <div className="h-5 w-16 rounded-full bg-[#e8f3f1]/70" />
+          <div className="h-5 w-12 rounded-full bg-[#e8f3f1]/50" />
+          <div className="h-5 w-20 rounded-full bg-[#e8f3f1]/60" />
+        </div>
+      </div>
+    ))}
+  </>
+);
 
 interface CityGroup {
   id: string;
@@ -175,6 +205,9 @@ const MapView: React.FC = () => {
   return (
     <div className="flex-grow h-full flex flex-col md:flex-row overflow-hidden relative bg-[#f0f4f3] w-full">
 
+      {/* Global loading bar — fixed above nav, covers mobile + desktop */}
+      <LoadingBar isLoading={refreshing} className="fixed top-0 left-0 right-0 z-[5001]" />
+
       {/* FLOATING TOP BAR (Mobile Only) */}
       <div className="md:hidden absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
 
@@ -249,6 +282,13 @@ const MapView: React.FC = () => {
                   <span>{groupedPosts.length} Cities</span>
                   <span className="text-[#1e3a34]/20">•</span>
                   <span>{posts.length} Stories & Resources</span>
+                  {refreshing && posts.length > 0 && (
+                    <motion.span
+                      className="w-1.5 h-1.5 rounded-full bg-[#448a7d] ml-0.5 shrink-0"
+                      animate={{ opacity: [1, 0.25, 1] }}
+                      transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
@@ -299,11 +339,8 @@ const MapView: React.FC = () => {
 
           {/* List of Cities */}
           <div className="flex-grow overflow-y-auto p-4 space-y-3 no-scrollbar">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-40">
-                <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading...</p>
-              </div>
+            {refreshing && posts.length === 0 ? (
+              <CitySkeleton />
             ) : filteredGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center h-56 px-6 opacity-60">
                 <div className="w-20 h-20 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-6">{ICONS.Search}</div>
@@ -456,11 +493,8 @@ const MapView: React.FC = () => {
 
               {/* Drawer Scrollable Content */}
               <div className="px-4 py-4 overflow-y-auto flex-grow no-scrollbar space-y-4">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center h-40">
-                    <div className="w-8 h-8 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-[#1e3a34]/30 font-bold text-[10px] uppercase tracking-widest">Loading...</p>
-                  </div>
+                {refreshing && posts.length === 0 ? (
+                  <CitySkeleton />
                 ) : filteredGroups.length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center py-10 opacity-60">
                     <div className="w-16 h-16 bg-white shadow-sm text-gray-400 rounded-full flex items-center justify-center mb-4">{ICONS.Search}</div>

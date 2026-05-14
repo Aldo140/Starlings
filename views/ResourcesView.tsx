@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
-import { ICONS, SEED_RESOURCES } from '../constants.tsx';
+import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
 import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
 import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { useRef } from 'react';
+import LoadingBar from '../components/LoadingBar.tsx';
 
 
 const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
@@ -196,12 +197,12 @@ const ResourcesHero: React.FC = () => {
                     <motion.div
                         initial={{ opacity: 0, x: -16 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
                         className="flex items-center gap-3 mb-5 md:mb-6"
                     >
                         <motion.span
                             initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
-                            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                            transition={{ duration: 0.5, ease: EASE_OUT_EXPO, delay: 0.1 }}
                             style={{ originX: 0 }}
                             className="block w-6 h-px bg-[#448a7d]"
                         />
@@ -218,7 +219,7 @@ const ResourcesHero: React.FC = () => {
                                     key={line}
                                     initial={{ opacity: 0, y: 40, rotateX: -20 }}
                                     animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                                    transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 + i * 0.1 }}
+                                    transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.15 + i * 0.1 }}
                                     style={{ display: 'block', transformOrigin: 'bottom' }}
                                 >
                                     {line}
@@ -230,7 +231,7 @@ const ResourcesHero: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.45 }}
+                            transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0.45 }}
                             className="space-y-4 md:space-y-5 shrink-0 md:w-64 lg:w-72 md:pb-1"
                         >
                             <p className="text-white/55 text-sm leading-relaxed font-light">
@@ -258,26 +259,170 @@ const ResourcesHero: React.FC = () => {
     );
 };
 
+/**
+ * Full-width loading experience shown while Google Sheets data hot-swaps.
+ * Uses the murmuration photo as background + animated starling silhouettes.
+ */
+const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ syncing, count }) => {
+    const [phase, setPhase] = useState<'idle' | 'syncing' | 'done'>('idle');
+
+    useEffect(() => {
+        if (syncing) {
+            setPhase('syncing');
+        } else if (phase === 'syncing') {
+            setPhase('done');
+            const t = setTimeout(() => setPhase('idle'), 2600);
+            return () => clearTimeout(t);
+        }
+    }, [syncing]);
+
+    const birds = [
+        { dur: 9,  delay: 0,   size: 22, yOff: 28 },
+        { dur: 13, delay: 1.4, size: 14, yOff: 52 },
+        { dur: 8,  delay: 3.1, size: 20, yOff: 42 },
+        { dur: 15, delay: 0.7, size: 11, yOff: 68 },
+        { dur: 10, delay: 2.4, size: 17, yOff: 35 },
+        { dur: 7,  delay: 4.2, size: 24, yOff: 60 },
+        { dur: 12, delay: 1.0, size: 13, yOff: 22 },
+    ];
+
+    return (
+        <AnimatePresence>
+            {phase === 'syncing' && (
+                <motion.div
+                    key="sync-banner"
+                    className="relative overflow-hidden rounded-[2.5rem] mb-10 md:mb-16"
+                    initial={{ opacity: 0, y: -24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -16, scale: 0.98 }}
+                    transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+                    style={{ height: 'clamp(168px, 22vw, 256px)' }}
+                    aria-live="polite"
+                    aria-label="Loading live community resources"
+                >
+                    {/* Murmuration photo */}
+                    <img
+                        src="/images/promise/murmuration-nick-fewings.jpg"
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover object-center scale-105"
+                        style={{ filter: 'brightness(0.82)' }}
+                    />
+                    {/* Teal wash */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a34]/85 via-[#2d5a52]/60 to-[#448a7d]/35" />
+                    {/* Right vignette */}
+                    <div className="absolute inset-y-0 right-0 w-2/5 bg-gradient-to-l from-[#1e3a34]/55 to-transparent" />
+                    {/* Bottom vignette — fades into page bg */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/5 to-transparent" />
+
+                    {/* Starlings flying left→right */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        {birds.map((b, i) => (
+                            <motion.div
+                                key={i}
+                                className="absolute"
+                                style={{ top: `${b.yOff}%` }}
+                                animate={{ x: ['-40px', '110%'] }}
+                                transition={{ duration: b.dur, delay: b.delay, repeat: Infinity, ease: 'linear', repeatDelay: 0 }}
+                            >
+                                <svg width={b.size} height={Math.round(b.size * 0.56)} viewBox="0 0 28 15" fill="none" aria-hidden="true">
+                                    <path
+                                        d="M14 7.5 C11.5 5 8.5 3 5.5 3.5 C7.5 4.2 9.5 5.8 11 7.5 C9 7 7 6.6 5 7.2 C7.2 6.8 9.5 8 11.5 7.8 L14 8.5 L16.5 7.8 C18.5 8 20.8 6.8 23 7.2 C21 6.6 19 7 17 7.5 C18.5 5.8 20.5 4.2 22.5 3.5 C19.5 3 16.5 5 14 7.5Z"
+                                        fill="white" fillOpacity="0.65"
+                                    />
+                                </svg>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Text + explicit loading indicator */}
+                    <div className="absolute inset-0 flex flex-col justify-center px-7 md:px-12 gap-5">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.65, delay: 0.1, ease: EASE_OUT_EXPO }}
+                            className="space-y-2"
+                        >
+                            {/* Spinner + explicit "Loading" label */}
+                            <div className="inline-flex items-center gap-2.5 select-none">
+                                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin flex-shrink-0" aria-hidden="true" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-white/80">
+                                    Loading resources
+                                </span>
+                            </div>
+
+                            <h3 className="font-cabinet font-black text-white leading-tight tracking-tight" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.75rem)' }}>
+                                Gathering live<br className="hidden sm:block" /> community resources.
+                            </h3>
+                        </motion.div>
+
+                        {/* Indeterminate progress bar — one clear track, unmistakably a loader */}
+                        <div className="relative w-full max-w-xs h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.18)' }}>
+                            <motion.div
+                                className="absolute inset-y-0 rounded-full"
+                                style={{ width: '42%', background: 'rgba(255,255,255,0.9)' }}
+                                animate={{ x: ['-42%', '260%'] }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: [0.4, 0, 0.6, 1], repeatDelay: 0.1 }}
+                            />
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {phase === 'done' && (
+                <motion.div
+                    key="sync-done"
+                    className="flex justify-center mb-10 md:mb-16"
+                    initial={{ opacity: 0, scale: 0.82, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                    transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+                >
+                    <div className="inline-flex items-center gap-3 px-5 py-3.5 bg-[#1e3a34] text-white rounded-full shadow-[0_12px_36px_-8px_rgba(30,58,52,0.6)]">
+                        <div className="w-6 h-6 rounded-full bg-[#448a7d] flex items-center justify-center flex-shrink-0">
+                            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                <path d="M2.5 6l2.5 2.5L9.5 3.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </div>
+                        <span className="font-black text-sm tracking-tight">
+                            {count > 0 ? `${count} live resources loaded` : 'Live data loaded'}
+                        </span>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
+    /** Tracks the background Google Sheets hot-swap — drives the LoadingBar + MurmurationSyncBanner */
+    const [syncing, setSyncing] = useState(false);
+    /** Captured when sync completes — passed to the banner for the "N resources loaded" message */
+    const [syncedCount, setSyncedCount] = useState(0);
     const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(null);
     const [activeGeneralIndex, setActiveGeneralIndex] = useState<number>(0);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchResources = async () => {
-            // Show real seed resources immediately while Google Sheets loads.
+            // Show seed resources immediately so the page is never blank.
             const seedResources = SEED_RESOURCES.map(r => ({ ...r, alias: r.alias || apiService.generateAlias() })) as Resource[];
             setResources(seedResources);
             setLoading(false);
 
-            // Silently fetch and hot-swap global Google Sheets data in the background
+            // Background hot-swap with live Google Sheets data.
+            // LoadingBar + MurmurationSyncBanner both track this state.
+            setSyncing(true);
             try {
                 const data = await apiService.getApprovedResources();
+                setSyncedCount(data.length);
                 setResources(data);
             } catch (error) {
                 console.error('Failed to fetch resources', error);
+            } finally {
+                setSyncing(false);
             }
         };
         fetchResources();
@@ -325,16 +470,17 @@ const ResourcesView: React.FC = () => {
 
     return (
         <>
+            {/* Page-level loading bar — tracks the background Google Sheets hot-swap */}
+            <LoadingBar isLoading={syncing} className="fixed top-0 left-0 right-0 z-[5001]" />
+
             <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
 
                 <ResourcesHero />
 
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center h-64">
-                        <div className="w-10 h-10 border-4 border-[#448a7d] border-t-transparent rounded-full animate-spin mb-4" />
-                        <p className="text-[#1e3a34]/40 font-bold text-xs uppercase tracking-widest">Loading resources...</p>
-                    </div>
-                ) : resources.length === 0 ? (
+                {/* Murmuration loading experience — slides in while Google Sheets data loads */}
+                <MurmurationSyncBanner syncing={syncing} count={syncedCount} />
+
+                {resources.length === 0 ? (
                     <div className="text-center py-20 bg-white/80 rounded-[3rem] border border-gray-100">
                         <p className="text-gray-500 font-medium mb-6">No resources found yet.</p>
                         <Link to="/add-resource" className="text-[#448a7d] font-bold underline hover:text-[#1e3a34] transition-colors">
@@ -378,136 +524,116 @@ const ResourcesView: React.FC = () => {
                                     try { mobDomain = resource.url ? new URL(resource.url).hostname.replace('www.', '') : ''; } catch { mobDomain = ''; }
 
                                     return (
-                                        <motion.div
+                                        <div
                                             key={resource.id}
-                                            animate={{ height: isActive ? 268 : 62 }}
-                                            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-                                            className="relative overflow-hidden rounded-[1.5rem] cursor-pointer flex flex-col justify-end"
-                                            style={{ height: 62 }}
+                                            className="rounded-[1.5rem] overflow-hidden cursor-pointer bg-white border border-[#e8f3f1] shadow-[0_2px_12px_-4px_rgba(30,58,52,0.08)] hover:shadow-[0_6px_22px_-6px_rgba(30,58,52,0.14)] hover:border-[#c8e0da] transition-shadow duration-300"
                                             onClick={() => setActiveGeneralIndex(isActive ? -1 : index)}
                                         >
-                                            {/* Background image */}
-                                            <div className="absolute inset-0">
-                                                {resource.imageUrl ? (
-                                                    <motion.img
-                                                        src={resource.imageUrl}
-                                                        alt={resource.title}
-                                                        className="w-full h-full object-cover"
-                                                        animate={{ scale: isActive ? 1.04 : 1.1 }}
-                                                        transition={{ duration: 0.9, ease: [0.25, 1, 0.5, 1] }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center">
-                                                        <div className="text-indigo-200 scale-[4]">{ICONS.Heart}</div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            {/* Teal accent bar — top of card */}
+                                            <div className="h-[3px] bg-gradient-to-r from-[#448a7d]/70 via-[#448a7d]/20 to-transparent" />
 
-                                            {/* Gradient overlay */}
-                                            <motion.div
-                                                animate={{ opacity: isActive ? 0.88 : 0.55 }}
-                                                transition={{ duration: 0.45 }}
-                                                className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent"
-                                            />
-
-                                            {/* Browser Chrome Tab Bar — mobile */}
-                                            <AnimatePresence>
-                                                {isActive && (
-                                                    <motion.div
-                                                        key={`chrome-mob-${resource.id}`}
-                                                        initial={{ opacity: 0, y: -8 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: -8 }}
-                                                        transition={{ delay: 0.12, duration: 0.2 }}
-                                                        className="absolute top-0 left-0 right-0 z-30 flex items-center gap-2.5 px-3.5 py-2 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
-                                                    >
-                                                        {/* Traffic lights — left (macOS style) */}
-                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                            <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-2.5 h-2.5 rounded-full bg-[#ff5f57] flex items-center justify-center group/dot" title="Close">
-                                                                <svg className="w-1 h-1 text-[#820000]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                            </button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#febc2e] flex items-center justify-center group/dot">
-                                                                <span className="text-[#7d5800]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[6px] font-black leading-none">−</span>
-                                                            </button>
-                                                            <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#28c840] flex items-center justify-center group/dot" title="Open">
-                                                                <svg className="w-1.5 h-1.5 text-[#006500]/90 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                                                            </a>
-                                                        </div>
-                                                        {/* Address bar pill */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="bg-white/[0.08] rounded-md px-2 py-1 flex items-center gap-1.5">
-                                                                <svg className="w-2 h-2 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                                                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                                                </svg>
-                                                                <span className="text-[9px] font-medium text-white/50 truncate">{mobDomain}</span>
-                                                            </div>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            {/* Content pinned to bottom */}
-                                            <div className="relative z-10 px-4 pb-4 pt-3 w-full">
-                                                {/* Row always visible: badge + title (collapsed) + chevron */}
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-2 min-w-0">
-                                                        <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2 py-1 rounded-full flex-shrink-0 ${config.color} border border-white/20 shadow`}>
-                                                            {config.label}
-                                                        </span>
-                                                        {!isActive && (
-                                                            <span className="text-white font-black text-sm truncate drop-shadow">{resource.title}</span>
-                                                        )}
-                                                    </div>
-                                                    <motion.div
-                                                        animate={{ rotate: isActive ? 180 : 0 }}
-                                                        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                                                        className="flex-shrink-0"
-                                                    >
-                                                        <svg className="w-4 h-4 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </motion.div>
+                                            {/* ── Collapsed header row — always visible ── */}
+                                            <div className="flex items-center justify-between gap-2 px-4 py-3.5 bg-white">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className={`text-[8px] text-white font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0 ${config.color} shadow-sm`}>
+                                                        {config.label}
+                                                    </span>
+                                                    <span className="text-[#1e3a34] font-black text-sm truncate">{resource.title}</span>
                                                 </div>
-
-                                                {/* Expanded content */}
-                                                <AnimatePresence>
-                                                    {isActive && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0 }}
-                                                            transition={{ delay: 0.1, duration: 0.22 }}
-                                                            className="mt-2.5"
-                                                        >
-                                                            <h3 className="text-white font-black text-2xl leading-tight tracking-tight mb-1.5 drop-shadow-md">
-                                                                {resource.title}
-                                                            </h3>
-                                                            <p className="text-white/70 text-xs font-medium leading-relaxed mb-4 line-clamp-2">
-                                                                {cleanDescription}
-                                                            </p>
-                                                            <a
-                                                                href={resource.url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400/50 shadow-[0_8px_20px_-8px_rgba(99,102,241,0.8)] active:scale-95 transition-all"
-                                                            >
-                                                                Explore Resource
-                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                                                </svg>
-                                                            </a>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
+                                                <motion.div
+                                                    animate={{ rotate: isActive ? 180 : 0 }}
+                                                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                                                    className="flex-shrink-0"
+                                                >
+                                                    <svg className="w-4 h-4 text-[#1e3a34]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </motion.div>
                                             </div>
-                                        </motion.div>
+
+                                            {/* ── Expandable body: landscape screenshot + content ── */}
+                                            <div
+                                                className="grid overflow-hidden transition-[grid-template-rows] duration-500"
+                                                style={{
+                                                    gridTemplateRows: isActive ? '1fr' : '0fr',
+                                                    transitionTimingFunction: EASE_OUT_EXPO_CSS,
+                                                }}
+                                            >
+                                                <div className="min-h-0">
+                                                    {/* Screenshot — natural 16/9 landscape shape */}
+                                                    <div className="w-full aspect-[16/9] relative overflow-hidden bg-[#0d1a17]">
+                                                        {resource.imageUrl ? (
+                                                            <img
+                                                                src={resource.imageUrl}
+                                                                alt={resource.title}
+                                                                className="w-full h-full object-cover object-top"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-[#0f2e28] to-[#0d1a17] flex items-center justify-center">
+                                                                <div className="text-[#448a7d]/30 scale-[3]">{ICONS.Heart}</div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Browser chrome bar */}
+                                                        <AnimatePresence>
+                                                            {isActive && (
+                                                                <motion.div
+                                                                    key={`chrome-mob-${resource.id}`}
+                                                                    initial={{ opacity: 0, y: -8 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, y: -8 }}
+                                                                    transition={{ delay: 0.18, duration: 0.2 }}
+                                                                    className="absolute top-0 left-0 right-0 z-30 flex items-center gap-2.5 px-3.5 py-2 bg-black/75 backdrop-blur-xl border-b border-white/[0.07]"
+                                                                >
+                                                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                                        <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                                                                        <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                                                                        <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-2.5 h-2.5 rounded-full bg-[#28c840] block" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="bg-white/[0.08] rounded-md px-2 py-0.5 flex items-center gap-1.5">
+                                                                            <svg className="w-2 h-2 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                                            <span className="text-[9px] font-medium text-white/50 truncate">{mobDomain}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+
+                                                    {/* Content strip below screenshot */}
+                                                    <AnimatePresence>
+                                                        {isActive && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                exit={{ opacity: 0 }}
+                                                                transition={{ delay: 0.15, duration: 0.22 }}
+                                                                className="px-4 pt-3 pb-4 bg-white border-t border-[#e8f3f1]"
+                                                            >
+                                                                <p className="text-[#1e3a34]/65 text-xs font-medium leading-relaxed mb-3 line-clamp-2">{cleanDescription}</p>
+                                                                <a
+                                                                    href={resource.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="inline-flex items-center gap-2 text-white font-black text-[10px] uppercase tracking-[0.18em] px-5 py-2.5 rounded-full bg-[#448a7d] hover:bg-[#2d5a52] border border-[#448a7d]/50 shadow-[0_8px_20px_-8px_rgba(68,138,125,0.4)] active:scale-95 transition-all"
+                                                                >
+                                                                    Explore Resource
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                                </a>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>
 
                             {/* DESKTOP/TABLET Accordion Gallery */}
-                            <div className="hidden md:flex w-full h-[600px] gap-4 mt-8">
+                            <div className="hidden md:flex w-full h-[340px] lg:h-[400px] gap-4 mt-8">
                                 {communityPartners.map((resource, index) => {
                                     const config = typeConfig[resource.type] || typeConfig.website;
                                     const isActive = activeGeneralIndex === index;
@@ -527,22 +653,27 @@ const ResourcesView: React.FC = () => {
                                             key={resource.id}
                                             onMouseEnter={() => setActiveGeneralIndex(index)}
                                             onClick={() => setActiveGeneralIndex(index)}
-                                            className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[3rem] transition-all duration-[800ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end ${isActive ? 'flex-[10] shadow-[0_30px_60px_-15px_rgba(99,102,241,0.5)] border-2 border-indigo-100' : 'flex-[1] shadow-sm border border-gray-100/50 hover:flex-[1.5]'}`}
+                                            className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] transition-all duration-[700ms] ease-[cubic-bezier(0.25,1,0.5,1)] cursor-pointer group flex flex-col justify-end
+                                                ${isActive
+                                                    ? 'flex-[10] shadow-[0_24px_64px_-16px_rgba(30,58,52,0.45)] bg-[#0f172a] border-2 border-[#448a7d]/25'
+                                                    : 'flex-[1] bg-white border border-[#e8f3f1] shadow-[0_2px_12px_-4px_rgba(30,58,52,0.08)] hover:flex-[1.6] hover:shadow-[0_8px_28px_-8px_rgba(30,58,52,0.14)] hover:border-[#c8e0da]'
+                                                }`}
                                         >
-                                            <div className="absolute inset-0">
+                                            {/* Screenshot — fades in only when active */}
+                                            <div className={`absolute inset-0 bg-[#0d1a17] transition-opacity duration-500 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
                                                 {resource.imageUrl ? (
-                                                    <img src={resource.imageUrl} alt={resource.title} className={`w-full h-full object-cover transition-transform duration-[1.5s] ease-out ${isActive ? 'scale-100' : 'scale-110'}`} />
+                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top" />
                                                 ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-indigo-50 to-purple-100 flex items-center justify-center text-indigo-500/20">
+                                                    <div className="w-full h-full bg-gradient-to-br from-[#e8f3f1] to-[#d4eae6] flex items-center justify-center text-[#448a7d]/20">
                                                         <div className="scale-[3]">{ICONS.Heart}</div>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Gradient Overlay */}
-                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/40 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-40 group-hover:opacity-60'}`}></div>
+                                            {/* Dark gradient overlay — active only */}
+                                            <div className={`absolute inset-0 bg-gradient-to-t from-[#0f172a] via-[#0f172a]/50 to-transparent transition-opacity duration-700 ${isActive ? 'opacity-90' : 'opacity-0'}`} />
 
-                                            {/* Browser Chrome Tab Bar — desktop */}
+                                            {/* Browser Chrome — active only */}
                                             <AnimatePresence>
                                                 {isActive && (
                                                     <motion.div
@@ -553,22 +684,20 @@ const ResourcesView: React.FC = () => {
                                                         transition={{ delay: 0.18, duration: 0.22 }}
                                                         className="absolute top-0 left-0 right-0 z-30 flex items-center gap-3 px-5 md:px-6 py-2.5 bg-black/70 backdrop-blur-xl border-b border-white/[0.07] pointer-events-auto"
                                                     >
-                                                        {/* Traffic lights — LEFT (macOS convention) */}
                                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             <button onClick={(e) => { e.stopPropagation(); setActiveGeneralIndex(-1); }} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Close">
                                                                 <svg className="w-1.5 h-1.5 text-[#820000]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                                             </button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Minimize">
-                                                                <span className="text-[#7d5800]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity text-[7px] font-black leading-none">−</span>
+                                                            <button onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-90 transition-all">
+                                                                <span className="sr-only">Minimize</span>
                                                             </button>
                                                             <a href={resource.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-90 transition-all flex items-center justify-center group/dot" title="Open">
                                                                 <svg className="w-2 h-2 text-[#006500]/80 opacity-0 group-hover/dot:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                                                             </a>
                                                         </div>
-                                                        {/* Address bar pill — RIGHT */}
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="bg-white/[0.08] rounded-md px-3 py-1 flex items-center gap-2 max-w-xs mx-auto">
-                                                                <svg className="w-2.5 h-2.5 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                            <div className="bg-white/[0.09] rounded-md px-3 py-1 flex items-center gap-2 max-w-xs mx-auto">
+                                                                <svg className="w-2.5 h-2.5 text-white/30 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                                                 <span className="text-[10px] font-medium text-white/50 truncate">{deskDomain}</span>
                                                             </div>
                                                         </div>
@@ -576,51 +705,47 @@ const ResourcesView: React.FC = () => {
                                                 )}
                                             </AnimatePresence>
 
-                                            {/* Content Wrapper */}
-                                            <div className="relative z-10 p-5 md:p-8 lg:p-10 w-full flex-shrink-0 transition-opacity duration-500 pointer-events-none">
-                                                {/* ACTIVE CONTENT */}
-                                                <div className={`flex flex-col transform transition-all duration-[800ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-100' : 'translate-y-16 opacity-0 absolute bottom-0'}`}>
-                                                    <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3 md:mb-4 w-full">
-                                                        <span className={`text-[9px] md:text-[10px] text-white shadow-xl font-black uppercase tracking-widest px-3 md:px-4 py-1.5 md:py-2 rounded-full ${config.color} border border-white/20`}>
+                                            {/* Active content — slides up from bottom */}
+                                            <div className="relative z-10 p-6 md:p-8 lg:p-10 w-full flex-shrink-0 pointer-events-none">
+                                                <div className={`flex flex-col transition-all duration-[600ms] ease-out ${isActive ? 'translate-y-0 opacity-100 delay-[120ms]' : 'translate-y-12 opacity-0'}`}>
+                                                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                                                        <span className="text-[9px] text-white font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-[#448a7d] border border-[#448a7d]/40 shadow-sm">
                                                             {config.label}
                                                         </span>
                                                         {recommender && (
-                                                            <div className="flex items-center gap-1.5 md:gap-2">
-                                                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center text-[10px] md:text-xs font-black shadow-lg">
-                                                                    {recommender.charAt(0).toUpperCase()}
-                                                                </div>
-                                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-[#e8f3f1]">Found by {recommender}</span>
-                                                            </div>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-[#e8f3f1]/70">Found by {recommender}</span>
                                                         )}
                                                     </div>
-
-                                                    <h3 className="text-white font-black text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight tracking-tight mb-2 md:mb-4 drop-shadow-md">
+                                                    <h3 className="text-white font-black text-2xl md:text-3xl lg:text-4xl leading-tight tracking-tight mb-2 md:mb-3">
                                                         {resource.title}
                                                     </h3>
-
-                                                    <p className="text-indigo-100 font-medium text-xs md:text-sm lg:text-base max-w-2xl leading-relaxed mb-4 md:mb-6 lg:mb-8 pointer-events-auto line-clamp-2 md:line-clamp-none">
+                                                    <p className="text-[#c8e0da] font-medium text-xs md:text-sm max-w-2xl leading-relaxed mb-4 md:mb-6 pointer-events-auto line-clamp-2 md:line-clamp-3">
                                                         {cleanDescription}
                                                     </p>
-
                                                     {isActive && (
                                                         <a
                                                             href={resource.url}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="pointer-events-auto inline-flex items-center justify-center md:justify-start gap-2 md:gap-3 text-white font-black text-[10px] md:text-xs uppercase tracking-[0.2em] w-full md:w-fit px-6 md:px-8 py-3 md:py-4 rounded-full bg-indigo-500 hover:bg-indigo-400 border border-indigo-400 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] transition-all active:scale-95 group/btn"
+                                                            className="pointer-events-auto inline-flex items-center gap-2 md:gap-3 text-white font-black text-[10px] uppercase tracking-[0.2em] w-fit px-6 md:px-8 py-2.5 md:py-3.5 rounded-full bg-[#448a7d] hover:bg-[#2d5a52] border border-[#5a9e91] shadow-[0_8px_24px_-8px_rgba(68,138,125,0.6)] transition-all active:scale-95 group/btn"
                                                         >
-                                                            Explore Resource <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                                            Explore Resource
+                                                            <svg className="w-3 h-3 md:w-4 md:h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                                         </a>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            {/* INACTIVE / VERTICAL BADGE */}
-                                            <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isActive ? 'opacity-0' : 'opacity-100 flex-col justify-end pb-4 md:pb-12'}`}>
-                                                <div className="transform md:-rotate-90 origin-center text-white/90 font-black md:uppercase tracking-[0.1em] md:tracking-[0.4em] text-xs md:text-xs whitespace-nowrap drop-shadow-xl flex items-center gap-2 md:gap-4">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                                    {config.label}
+                                            {/* Inactive state — white card with vertical label */}
+                                            <div className={`absolute inset-0 flex flex-col items-center justify-between py-6 pointer-events-none transition-opacity duration-300 ${isActive ? 'opacity-0' : 'opacity-100'}`}>
+                                                {/* Teal top accent bar */}
+                                                <div className="w-full h-[3px] bg-gradient-to-r from-[#448a7d]/70 via-[#448a7d]/20 to-transparent flex-shrink-0" />
+                                                {/* Vertical title */}
+                                                <div className="-rotate-90 whitespace-nowrap text-[#1e3a34]/50 font-black uppercase tracking-[0.35em] text-[9px] flex-1 flex items-center">
+                                                    {resource.title}
                                                 </div>
+                                                {/* Dot accent */}
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#448a7d]/30 flex-shrink-0" />
                                             </div>
                                         </div>
                                     );
@@ -631,13 +756,75 @@ const ResourcesView: React.FC = () => {
 
                         {/* COMMUNITY RESOURCES SECTION (BUCKETS) */}
                         <section className="relative w-full pb-16">
-                            <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-8">
-                                <div className="w-10 h-10 md:w-16 md:h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1rem] md:rounded-[1.5rem] flex items-center justify-center shadow-md flex-shrink-0">
-                                    {ICONS.Users}
+
+                            {/* ── Contextual sync bar — visible even when user scrolls past the page-level bar ── */}
+                            <AnimatePresence>
+                                {syncing && (
+                                    <motion.div
+                                        className="absolute top-0 left-0 right-0 h-[2.5px] overflow-hidden rounded-full pointer-events-none"
+                                        style={{ background: 'rgba(68,138,125,0.12)' }}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <motion.div
+                                            className="absolute inset-y-0 rounded-full"
+                                            style={{ width: '38%', background: 'linear-gradient(90deg, #448a7d 0%, #7ec5b8 50%, #e57c6e 100%)' }}
+                                            animate={{ x: ['-42%', '290%'] }}
+                                            transition={{ duration: 1.55, repeat: Infinity, ease: [0.4, 0, 0.6, 1], repeatDelay: 0.08 }}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="flex items-center gap-3 md:gap-4 mb-5 md:mb-8 pt-3">
+                                {/* Icon — pulse ring on sync */}
+                                <div className="relative flex-shrink-0">
+                                    <div className="w-10 h-10 md:w-16 md:h-16 bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 rounded-[1rem] md:rounded-[1.5rem] flex items-center justify-center shadow-md">
+                                        {ICONS.Users}
+                                    </div>
+                                    <AnimatePresence>
+                                        {syncing && (
+                                            <motion.span
+                                                className="absolute inset-0 rounded-[1rem] md:rounded-[1.5rem] border-2 border-[#448a7d]"
+                                                initial={{ opacity: 0.7, scale: 1 }}
+                                                animate={{ opacity: 0, scale: 1.28 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
+                                            />
+                                        )}
+                                    </AnimatePresence>
                                 </div>
-                                <div>
+
+                                <div className="min-w-0">
                                     <h2 className="text-xl md:text-4xl font-black text-[#1e3a34] italic tracking-tight leading-tight">Community Suggested Resources</h2>
-                                    <p className="text-gray-500 font-medium text-xs md:text-lg mt-0.5 md:mt-1">Peer-recommended by the community.</p>
+                                    <AnimatePresence mode="wait">
+                                        {syncing ? (
+                                            <motion.div
+                                                key="syncing-label"
+                                                className="flex items-center gap-1.5 mt-1"
+                                                initial={{ opacity: 0, y: 4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -4 }}
+                                                transition={{ duration: 0.25 }}
+                                            >
+                                                <span className="w-3 h-3 rounded-full border-[1.5px] border-[#448a7d]/30 border-t-[#448a7d] animate-spin flex-shrink-0" aria-hidden="true" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#448a7d]">Syncing live data…</span>
+                                            </motion.div>
+                                        ) : (
+                                            <motion.p
+                                                key="normal-label"
+                                                className="text-gray-500 font-medium text-xs md:text-lg mt-0.5 md:mt-1"
+                                                initial={{ opacity: 0, y: 4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -4 }}
+                                                transition={{ duration: 0.25 }}
+                                            >
+                                                Peer-recommended by the community.
+                                            </motion.p>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
 
@@ -995,9 +1182,9 @@ const ResourcesView: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-[#f0f7f5] flex-shrink-0 relative overflow-hidden">
                                                     {resource.imageUrl ? (
-                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
                                                             <div className="scale-150">{ICONS.Heart}</div>

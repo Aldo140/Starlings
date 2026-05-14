@@ -35,6 +35,7 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
 };
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
+const EXPECTED_SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
 
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
@@ -224,6 +225,65 @@ const checkRateLimit = (): boolean => {
   }
   actionHistory.push(now);
   return true; // Allow actions
+};
+
+const parseJsonResponse = async (res: Response): Promise<any> => {
+  const contentType = res.headers.get('content-type') || '';
+  const bodyText = await res.text();
+
+  if (!contentType.includes('application/json')) {
+    throw new Error(`Expected JSON from Google Apps Script, got ${contentType || 'unknown content type'}: ${bodyText.slice(0, 120)}`);
+  }
+
+  try {
+    return JSON.parse(bodyText);
+  } catch {
+    throw new Error(`Invalid JSON from Google Apps Script: ${bodyText.slice(0, 120)}`);
+  }
+};
+
+const verifyBackendTarget = async (): Promise<{ ok: true } | { ok: false; error: string }> => {
+  const publicError = 'Question submission is temporarily unavailable. Please try again later.';
+
+  try {
+    const res = await fetch(`${GAS_URL}?action=health&ts=${Date.now()}`, { cache: 'no-store' });
+    const data = await parseJsonResponse(res);
+
+    if (!res.ok || data.success !== true) {
+      console.error('Google Sheets backend is outdated or did not return health diagnostics.', data);
+      return {
+        ok: false,
+        error: publicError,
+      };
+    }
+
+    if (data.spreadsheetId !== EXPECTED_SPREADSHEET_ID) {
+      console.error('Google Sheets backend is connected to the wrong spreadsheet.', {
+        expected: EXPECTED_SPREADSHEET_ID,
+        actual: data.spreadsheetId,
+      });
+      return {
+        ok: false,
+        error: publicError,
+      };
+    }
+
+    if (Array.isArray(data.expectedTabs) && !data.expectedTabs.includes('Pending_QA')) {
+      console.error('Google Sheets backend health response is missing Pending_QA.', data);
+      return {
+        ok: false,
+        error: publicError,
+      };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error('Backend health check failed:', error);
+    return {
+      ok: false,
+      error: publicError,
+    };
+  }
 };
 
 export const apiService = {
@@ -520,10 +580,15 @@ export const apiService = {
     }
   },
 
-  async submitQuestion(question: string): Promise<{ success: boolean; flagged: boolean }> {
+  async submitQuestion(question: string): Promise<{ success: boolean; flagged: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: true, flagged: false };
+      return { success: false, flagged: false, error: 'Too many submissions too quickly. Please wait a moment and try again.' };
+    }
+
+    const backendTarget = await verifyBackendTarget();
+    if (!backendTarget.ok) {
+      return { success: false, flagged: false, error: backendTarget.error };
     }
 
     const matchInfo = getBannedMatchInfo(question);
@@ -546,11 +611,23 @@ export const apiService = {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
-      const result = await res.json();
-      return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
+      const result = await parseJsonResponse(res);
+      if (!res.ok || result.success !== true) {
+        return {
+          success: false,
+          flagged: result.flagged !== undefined ? result.flagged : flagged,
+          error: result.error || 'The question could not be saved to the moderation sheet.',
+        };
+      }
+
+      return { success: true, flagged: result.flagged !== undefined ? result.flagged : flagged };
     } catch (e) {
-      console.error(e);
-      return { success: true, flagged };
+      console.error("Failed to submit question:", e);
+      return {
+        success: false,
+        flagged,
+        error: 'Network error while saving your question. Please try again.',
+      };
     }
   },
 

@@ -20,7 +20,7 @@ const MURMURATION_STARS: [number, number][] = [
 
 export type IllustrationVariant = 'envelope' | 'hands' | 'pin' | 'murmuration';
 
-const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant }) => {
+const CardIllustration: React.FC<{ variant: IllustrationVariant; animated?: boolean }> = ({ variant, animated = true }) => {
   const svgBase = {
     viewBox: '0 0 220 220' as const,
     fill: 'none' as const,
@@ -32,8 +32,8 @@ const CardIllustration: React.FC<{ variant: IllustrationVariant }> = ({ variant 
   return (
     <motion.div
       className="flex items-center justify-center w-full h-full p-3 md:p-8"
-      animate={{ scale: [1, 1.03, 1] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      animate={animated ? { scale: [1, 1.03, 1] } : undefined}
+      transition={animated ? { duration: 8, repeat: Infinity, ease: 'easeInOut' } : undefined}
     >
       {variant === 'envelope' && (
         <svg {...svgBase}>

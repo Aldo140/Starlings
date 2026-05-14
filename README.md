@@ -129,9 +129,9 @@ Every submission is checked against two layers:
 
 **Layer 1 — Static regex (`BANNED_PATTERNS` in `constants.tsx`):** Always-on. Catches URLs, emails, phone numbers, and hardcoded crisis keywords regardless of network state.
 
-**Layer 2 — Dynamic sheet list (`Flagged_Words` tab):** On app boot, `apiService.getFlaggedWords()` fetches the sheet and stores the word list in memory + localStorage (30-minute cache). Every submission then does a case-insensitive substring scan against the live list. If the sheet is unreachable, Layer 1 handles it alone — nothing breaks.
+**Layer 2 — Dynamic sheet list (`Flagged_Words` tab):** On app boot, `apiService.getFlaggedWords()` fetches the sheet and stores the word list in memory + localStorage (30-minute cache). Every checked submission then does a case-insensitive substring scan against the live list. If the sheet is unreachable, Layer 1 handles it alone — nothing breaks.
 
-To update the word list, edit column A of the `Flagged_Words` sheet (one term per row, no header). Users pick up changes within 30 minutes when their cache expires. No code deploy required.
+To update the word list, edit the `Term` column of the `Flagged_Words` sheet. The tab has headers, so terms start on row 2. Users pick up changes within 30 minutes when their cache expires. No code deploy required.
 
 ---
 
@@ -139,7 +139,7 @@ To update the word list, edit column A of the `Flagged_Words` sheet (one term pe
 
 - **Crisis banner**: Fixed at the top of every page (`z-50`). Never remove or cover it.
 - **Safety modal** (`z-[9000]`): In `Landing.tsx`, the Q&A form intercepts submissions that match crisis keywords and shows a resources modal before allowing submission.
-- **Server-side backstop**: `gas-backend.js` has its own hardcoded crisis keyword check that rejects submissions regardless of frontend state.
+- **Server-side backstop**: `gas-backend.js` has its own hardcoded crisis keyword check that marks submitted rows as `flagged` even if frontend checks are bypassed.
 - **ShareView consent gates**: Users must tick three safety checkboxes (age, anonymity, moderation) before the submit button activates.
 
 ---

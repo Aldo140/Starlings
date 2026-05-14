@@ -11,6 +11,61 @@ interface GalleryImageProps {
   flat?: boolean;
 }
 
+const GalleryLabelIcon: React.FC<{ label: string }> = ({ label }) => {
+  const common = {
+    width: 12,
+    height: 12,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true as const,
+  };
+
+  const normalized = label.toLowerCase();
+
+  if (normalized.includes('hope') || normalized.includes('growth')) {
+    return (
+      <svg {...common}>
+        <path d="M12 19V5" />
+        <path d="M7 10c-2.5 0-4-1.5-4-4 2.5 0 4 1.5 4 4Z" />
+        <path d="M17 10c2.5 0 4-1.5 4-4-2.5 0-4 1.5-4 4Z" />
+        <path d="M12 14c-3 0-5-2-5-5" />
+        <path d="M12 14c3 0 5-2 5-5" />
+      </svg>
+    );
+  }
+
+  if (normalized.includes('community') || normalized.includes('together') || normalized.includes('support')) {
+    return (
+      <svg {...common}>
+        <path d="M16 21v-2a4 4 0 0 0-8 0v2" />
+        <circle cx="12" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M2 21v-2a4 4 0 0 1 3-3.87" />
+      </svg>
+    );
+  }
+
+  if (normalized.includes('peace') || normalized.includes('reflection') || normalized.includes('self')) {
+    return (
+      <svg {...common}>
+        <path d="M12 21s-7-4.35-7-11a7 7 0 0 1 14 0c0 6.65-7 11-7 11Z" />
+        <path d="M12 7v5" />
+        <path d="M9 12h6" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+    </svg>
+  );
+};
+
 const GalleryImage: React.FC<GalleryImageProps> = ({ src, label, h, delay, inView, flat }) => {
   // Per-card mouse-tracking 3D tilt (desktop)
   const mouseX = useMotionValue(0.5);
@@ -55,7 +110,8 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ src, label, h, delay, inVie
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: delay + 0.48, ease: EASE_OUT_EXPO }}
           >
-            <span className="inline-block px-3.5 py-2 bg-[#e8f3f1]/90 backdrop-blur-md border border-[#448a7d]/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#1e3a34] shadow-sm">
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#1e3a34]">
+              <GalleryLabelIcon label={label} />
               {label}
             </span>
           </motion.div>
@@ -90,7 +146,8 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ src, label, h, delay, inVie
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: delay + 0.48, ease: EASE_OUT_EXPO }}
         >
-          <span className="inline-block px-3 py-1.5 bg-white/55 backdrop-blur-sm border border-white/28 rounded-xl text-[8.5px] font-bold uppercase tracking-widest text-[#1e3a34]">
+          <span className="inline-flex items-center gap-1.5 text-[8.5px] font-black uppercase tracking-widest text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.55)]">
+            <GalleryLabelIcon label={label} />
             {label}
           </span>
         </motion.div>

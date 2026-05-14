@@ -38,7 +38,7 @@ Nothing goes public without human approval.
 
 | Tab | Purpose |
 |-----|---------|
-| `Flagged_Words` | Live word list checked on every submission — edit column A to update |
+| `Flagged_Words` | Live word list checked on every submission — edit the `Term` column to update |
 
 ---
 
@@ -130,15 +130,16 @@ The `Flagged_Words` tab is **active**. The website reads it on every page load a
 
 **To add a new term:**
 1. Go to the `Flagged_Words` tab
-2. Find the next empty row in column A
+2. Find the next empty row in the `Term` column
 3. Type the word or phrase (e.g. `meet up irl`)
 4. Press Enter — no other steps needed
 
 The website caches the list for **30 minutes**. After adding a term, it will be live within half an hour.
 
 **Format rules:**
-- One word or phrase per cell, column A only
-- No headers — terms start at row 1
+- Put each word or phrase in the `Term` column
+- The tab has headers — terms start on row 2
+- Optional context can live in `Category`, `Severity`, `Route To`, and `Notes`
 - Case-insensitive — `Meet Up IRL` and `meet up irl` both match the same thing
 - Matching is substring-based — `score some` will flag "can you score some drugs" automatically
 

@@ -14,13 +14,75 @@
 //    - Pending_Reflections
 //    - Live_Reflections
 //    - Flagged_Words
-// 3. For the Flagged_Words tab, just put words in column A (one per row).
+// 3. For the Flagged_Words tab, put terms in the "Term" column starting on row 2.
 // 4. In the menu, click Extensions > Apps Script
 // 5. Delete all old code, paste this entire file, and click "Deploy > Manage Deployments"
 // 6. Edit the existing deployment, select "New version", and click "Deploy".
 // ==========================================
 
 const SCRIPT_PROP = PropertiesService.getScriptProperties();
+const SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
+
+function getSpreadsheet_() {
+    const spreadsheetId = SPREADSHEET_ID || SCRIPT_PROP.getProperty('key');
+    if (!spreadsheetId) {
+        throw new Error("Spreadsheet ID is not configured. Set SPREADSHEET_ID or run setup().");
+    }
+    return SpreadsheetApp.openById(spreadsheetId);
+}
+
+function normalizeHeader_(header) {
+    const clean = String(header || '').trim();
+    if (!clean) return "";
+
+    // Some moderation tabs decorate row 1 with guidance text after the real
+    // column name, e.g. "id Pending_QA - Peer Question..." or "question ".
+    // The first token remains the canonical key the website submits.
+    return clean.split(/\s+/)[0].trim();
+}
+
+function getPostValue_(postData, header) {
+    const aliases = {
+        submitter_email: ['submitter_email', 'submitterEmail'],
+        image_url: ['image_url', 'imageUrl'],
+        resource_type: ['resource_type', 'type'],
+        what_helped: ['what_helped', 'whatHelped'],
+    };
+
+    const keys = aliases[header] || [header];
+    for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        if (postData[key] !== undefined && postData[key] !== null) return postData[key];
+    }
+
+    return "";
+}
+
+function getSheetDiagnostics_(doc, sheetName) {
+    const sheet = doc.getSheetByName(sheetName);
+    if (!sheet) {
+        return { name: sheetName, exists: false };
+    }
+
+    const rawHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    return {
+        name: sheetName,
+        exists: true,
+        lastRow: sheet.getLastRow(),
+        rawHeaders,
+        normalizedHeaders: rawHeaders.map(normalizeHeader_)
+    };
+}
+
+function writePendingSubmission_(sheet, rowValues) {
+    // Pending tabs include staff guidance/dashboard content below the live
+    // moderation table. Appending at getLastRow()+1 can bury new submissions
+    // under that content, so insert directly below the header instead.
+    const targetRow = 2;
+    sheet.insertRowBefore(targetRow);
+    sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+    return targetRow;
+}
 
 function setup() {
     const doc = SpreadsheetApp.getActiveSpreadsheet();
@@ -32,11 +94,37 @@ function setup() {
 // ------------------------------------------------------------------
 function doGet(e) {
     try {
-        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'));
+        const doc = getSpreadsheet_();
 
         // Defaults to "Live_Stories" for backwards compatibility if no action is provided
         const action = e.parameter.action || "getStories";
         let sheetName = "Live_Stories";
+
+        if (action === "health") {
+            const spreadsheetId = doc.getId();
+            const expectedTabs = [
+                "Pending_Stories",
+                "Live_Stories",
+                "Pending_Resources",
+                "Live_Resources",
+                "Pending_QA",
+                "Live_QA",
+                "Pending_Reflections",
+                "Live_Reflections",
+                "Flagged_Words"
+            ];
+
+            return responseJSON({
+                success: true,
+                backendVersion: "2026-05-14-newest-pending-first",
+                spreadsheetId,
+                spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
+                expectedTabs,
+                sheets: expectedTabs.map(function (sheetName) {
+                    return getSheetDiagnostics_(doc, sheetName);
+                })
+            });
+        }
 
         if (action === "getResources") sheetName = "Live_Resources";
         if (action === "getQA") sheetName = "Live_QA";
@@ -94,7 +182,7 @@ function doGet(e) {
 // ------------------------------------------------------------------
 function doPost(e) {
     try {
-        const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'));
+        const doc = getSpreadsheet_();
 
         let postData;
         if (e.postData && e.postData.contents) {
@@ -123,6 +211,7 @@ function doPost(e) {
         }
 
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const normalizedHeaders = headers.map(normalizeHeader_);
 
         // Server-side safety backstop (frontend handles the primary check via Flagged_Words)
         const messageString = JSON.stringify(postData).toLowerCase();
@@ -134,26 +223,30 @@ function doPost(e) {
             messageString.includes("kill myself") ||
             messageString.includes("overdose");
 
-        const nextRow = sheet.getLastRow() + 1;
-        const newRow = headers.map(function (header) {
+        const newRow = normalizedHeaders.map(function (header) {
             if (header === 'timestamp') return new Date().toISOString();
             if (header === 'id') return Utilities.getUuid();
             if (header === 'status') return 'PENDING';
             if (header === 'flagged') return isFlagged;
+            if (header === 'Approve') return false;
 
             // Deep stringify objects/arrays for Google Sheet cells
-            if (typeof postData[header] === 'object') return JSON.stringify(postData[header] || []);
+            const value = getPostValue_(postData, header);
+            if (typeof value === 'object') return JSON.stringify(value || []);
 
-            return postData[header] || "";
+            return value || "";
         });
 
-        // Append the row
-        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+        const insertedRow = writePendingSubmission_(sheet, newRow);
 
         return responseJSON({
             success: true,
             message: `Successfully added to ${targetSheetName} queue`,
-            flagged: isFlagged
+            flagged: isFlagged,
+            spreadsheetId: doc.getId(),
+            spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${doc.getId()}/edit`,
+            targetSheetName,
+            rowNumber: insertedRow
         });
 
     } catch (e) {

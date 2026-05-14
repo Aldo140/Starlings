@@ -642,10 +642,10 @@ const Landing: React.FC = () => {
       )}
 
       {/* Hero */}
-      <section ref={heroRef} style={{ position: 'relative' }} className="relative w-full flex-grow flex flex-col items-center justify-center px-4 max-[400px]:px-3 overflow-hidden min-h-[calc(100vh-90px)] py-4">
+      <section ref={heroRef} style={{ position: 'relative' }} className="relative w-full flex-grow flex flex-col items-center justify-center px-4 max-[400px]:px-3 overflow-hidden min-h-[calc(100vh-90px)] lg:min-h-screen py-4">
         <div className="absolute inset-0 pointer-events-none -z-10 bg-gradient-to-b from-white via-white/80 to-transparent" />
 
-        <div className="container mx-auto max-w-5xl relative z-10 text-center flex flex-col items-center justify-center space-y-3 md:space-y-4 py-2">
+        <div className="container mx-auto max-w-5xl relative z-10 text-center flex flex-col items-center justify-center lg:justify-between space-y-3 md:space-y-4 lg:space-y-0 py-2 lg:pt-8 lg:pb-12 lg:h-screen">
 
           <div className="flex flex-col items-center justify-start space-y-2 md:space-y-3 flex-shrink-0">
             <div className="space-y-0 md:space-y-1 overflow-hidden">
@@ -722,8 +722,8 @@ const Landing: React.FC = () => {
             />
           </motion.div>
 
-          {/* CTA Buttons — hidden on desktop (lg+), visible on mobile/tablet only */}
-          <div className="lg:hidden flex flex-col sm:flex-row items-center justify-center gap-2.5 md:gap-4 w-full px-4 flex-shrink-0">
+          {/* CTA Buttons — visible on all screens; on lg+ they sit below the fold */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 md:gap-4 w-full px-4 flex-shrink-0">
             {[
               <Link key="map" to="/map" className="group w-full sm:w-auto px-8 md:px-10 py-3 md:py-5 max-[400px]:px-6 max-[400px]:py-3 bg-[#1e3a34] text-white rounded-[2rem] font-bold text-sm md:text-xl max-[400px]:text-sm hover:bg-[#2d5a52] transition-all flex items-center justify-center gap-2 md:gap-3 shadow-[0_20px_40px_-10px_rgba(30,58,52,0.3)] hover:scale-[1.05] active:scale-95">
                 Explore the Map <span className="group-hover:translate-x-1 transition-transform">{ICONS.ArrowRight}</span>
@@ -749,7 +749,7 @@ const Landing: React.FC = () => {
         className="relative z-10"
         style={{ height: 'calc(100vh + 900px)' }}
       >
-        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#f4f1e8' }}>
+        <div className="sticky top-0 h-screen" style={{ background: '#f4f1e8', overflow: 'clip' }}>
 
           {/* Static soft glow — teal; no animation to avoid continuous compositing */}
           <div className="absolute top-1/2 left-1/4 w-[50vw] h-[50vw] max-w-[420px] rounded-full pointer-events-none -translate-y-1/2"
@@ -760,7 +760,8 @@ const Landing: React.FC = () => {
 
             {/* LEFT: editorial anchor — headline dominant, illustration as environment */}
             <div
-              className="w-[44%] h-full flex-shrink-0 relative overflow-hidden flex flex-col"
+              className="w-[44%] h-full flex-shrink-0 relative flex flex-col"
+              style={{ overflow: 'clip' }}
             >
 
               {/* ─── Environment ──────────────────────────────────────────── */}
@@ -870,30 +871,41 @@ const Landing: React.FC = () => {
                   <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#448a7d]">About Starlings</span>
                 </motion.div>
 
-                {/* ── HEADLINE — editorial two-tier hierarchy ── */}
-                {/* "A canvas for" whispers; "collective healing." lands */}
+                {/* ── HEADLINE — editorial three-tier cascade ── */}
+                {/* "A canvas for" whispers; "collective" builds; "healing." lands */}
                 <h2 className="font-cabinet font-black tracking-tight mb-4">
 
                   {/* Lead-in: small, pulled back — creates anticipation */}
-                  <span className="block overflow-hidden" style={{ lineHeight: 1.25 }}>
+                  <span className="block overflow-hidden" style={{ lineHeight: 1.3 }}>
                     <motion.span
                       className="block"
-                      style={{ fontSize: 'clamp(1.45rem, 1.85vw, 2.05rem)', fontWeight: 700, color: 'rgba(26,53,48,0.58)' }}
+                      style={{ fontSize: 'clamp(1.1rem, 1.6vw, 1.9rem)', fontWeight: 700, color: 'rgba(26,53,48,0.58)' }}
                       initial={{ y: '112%' }}
                       animate={galleryInView ? { y: '0%' } : {}}
                       transition={{ duration: 0.62, delay: 0.08, ease: EASE_OUT_EXPO }}
                     >A canvas for</motion.span>
                   </span>
 
-                  {/* Hero line: large, italic — the emotional payload */}
-                  <span className="block overflow-hidden" style={{ lineHeight: 0.92 }}>
+                  {/* Hero line 1: "collective" */}
+                  <span className="block overflow-hidden" style={{ lineHeight: 0.95 }}>
                     <motion.span
                       className="block italic"
-                      style={{ fontSize: 'clamp(3.2rem, 4.4vw, 5.2rem)', color: '#1a3530' }}
+                      style={{ fontSize: 'clamp(2.6rem, 3.8vw, 5.2rem)', color: '#1a3530' }}
                       initial={{ y: '112%' }}
                       animate={galleryInView ? { y: '0%' } : {}}
-                      transition={{ duration: 0.80, delay: 0.18, ease: EASE_OUT_EXPO }}
-                    >collective healing.</motion.span>
+                      transition={{ duration: 0.75, delay: 0.15, ease: EASE_OUT_EXPO }}
+                    >collective</motion.span>
+                  </span>
+
+                  {/* Hero line 2: "healing." — staggered, biggest weight */}
+                  <span className="block overflow-hidden" style={{ lineHeight: 0.95 }}>
+                    <motion.span
+                      className="block italic"
+                      style={{ fontSize: 'clamp(2.6rem, 3.8vw, 5.2rem)', color: '#1a3530' }}
+                      initial={{ y: '112%' }}
+                      animate={galleryInView ? { y: '0%' } : {}}
+                      transition={{ duration: 0.80, delay: 0.24, ease: EASE_OUT_EXPO }}
+                    >healing.</motion.span>
                   </span>
 
                 </h2>
@@ -1007,7 +1019,7 @@ const Landing: React.FC = () => {
                 />
                 {/* Ken Burns — slow zoom from 100% → 105%, 24s cycle, reverses back */}
                 <motion.img
-                  src="/images/asset3.png"
+                  src={`${import.meta.env.BASE_URL}images/asset3.png`}
                   alt="A diverse group of young people sitting together in a community circle"
                   className="w-full h-auto block origin-bottom"
                   style={{ mixBlendMode: 'multiply', opacity: 0.96 }}

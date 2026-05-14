@@ -302,7 +302,7 @@ const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ 
                 >
                     {/* Murmuration photo */}
                     <img
-                        src="/images/promise/murmuration-nick-fewings.jpg"
+                        src={`${import.meta.env.BASE_URL}images/promise/murmuration-nick-fewings.jpg`}
                         alt=""
                         aria-hidden="true"
                         className="absolute inset-0 w-full h-full object-cover object-center scale-105"

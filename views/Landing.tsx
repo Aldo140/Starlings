@@ -505,7 +505,7 @@ const Landing: React.FC = () => {
 
               {/* Illustration */}
               <motion.img
-                src="/images/asset-qna.png"
+                src={`${import.meta.env.BASE_URL}images/asset-qna.png`}
                 alt=""
                 className="w-full h-auto relative z-[1]"
                 animate={{ y: [0, -12, 0] }}
@@ -820,20 +820,20 @@ const Landing: React.FC = () => {
                     stroke="#f4f1e8" strokeWidth="2.0" opacity="0.30" strokeLinecap="round" fill="none"/>
                   {/* ── Vein pairs, alternating, opacity fades toward base ── */}
                   {/* ~20% along midrib: roughly (330, 62) */}
-                  <path d="M 330 62 C 342 46, 356 38" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round"/>
-                  <path d="M 330 62 C 316 76, 302 82" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round"/>
+                  <path d="M 330 62 Q 342 46, 356 38" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round" fill="none"/>
+                  <path d="M 330 62 Q 316 76, 302 82" stroke="#f4f1e8" strokeWidth="1.1" opacity="0.22" strokeLinecap="round" fill="none"/>
                   {/* ~35% along midrib: roughly (278, 104) */}
-                  <path d="M 278 104 C 292 92, 308 86" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round"/>
-                  <path d="M 278 104 C 264 116, 248 120" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round"/>
+                  <path d="M 278 104 Q 292 92, 308 86" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round" fill="none"/>
+                  <path d="M 278 104 Q 264 116, 248 120" stroke="#f4f1e8" strokeWidth="1.0" opacity="0.19" strokeLinecap="round" fill="none"/>
                   {/* ~50% along midrib: roughly (228, 146) */}
-                  <path d="M 228 146 C 244 136, 260 132" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round"/>
-                  <path d="M 228 146 C 212 156, 196 160" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round"/>
+                  <path d="M 228 146 Q 244 136, 260 132" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round" fill="none"/>
+                  <path d="M 228 146 Q 212 156, 196 160" stroke="#f4f1e8" strokeWidth="0.9" opacity="0.16" strokeLinecap="round" fill="none"/>
                   {/* ~65% along midrib: roughly (168, 192) */}
-                  <path d="M 168 192 C 182 182, 196 178" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round"/>
-                  <path d="M 168 192 C 154 202, 138 206" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round"/>
+                  <path d="M 168 192 Q 182 182, 196 178" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round" fill="none"/>
+                  <path d="M 168 192 Q 154 202, 138 206" stroke="#f4f1e8" strokeWidth="0.8" opacity="0.13" strokeLinecap="round" fill="none"/>
                   {/* ~80% along midrib: roughly (108, 234) */}
-                  <path d="M 108 234 C 120 226, 132 222" stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round"/>
-                  <path d="M 108 234 C 96 242, 82 246"  stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round"/>
+                  <path d="M 108 234 Q 120 226, 132 222" stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round" fill="none"/>
+                  <path d="M 108 234 Q 96 242, 82 246"  stroke="#f4f1e8" strokeWidth="0.7" opacity="0.10" strokeLinecap="round" fill="none"/>
                 </svg>
               </motion.div>
 
@@ -1242,7 +1242,7 @@ const Landing: React.FC = () => {
         >
           {/* Illustration — blends white bg into card */}
           <img
-            src="/images/asset3.png"
+            src={`${import.meta.env.BASE_URL}images/asset3.png`}
             alt="A diverse community of young people sitting together outdoors in Calgary"
             className="absolute inset-0 w-full h-full object-contain object-bottom"
             style={{ mixBlendMode: 'multiply' }}

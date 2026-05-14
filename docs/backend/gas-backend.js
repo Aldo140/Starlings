@@ -44,15 +44,22 @@ function doGet(e) {
 
         const sheet = doc.getSheetByName(sheetName);
 
-        if (!sheet || sheet.getLastRow() < (action === "getFlaggedWords" ? 1 : 2)) {
+        if (!sheet || sheet.getLastRow() < 2) {
             return responseJSON([]);
         }
 
         const data = sheet.getDataRange().getValues();
 
-        // Special simple parsing for Flagged Words (just an array of strings)
+        // Flagged_Words has a header row in row 1 — skip it, return rich objects
+        // { term, category, severity (1-3) } so the frontend can route by severity.
         if (action === "getFlaggedWords") {
-            const words = data.map(row => row[0]).filter(word => word && typeof word === 'string');
+            const words = data.slice(1) // skip header row
+                .map(row => ({
+                    term:     String(row[0] || '').trim(),
+                    category: String(row[1] || '').trim(),
+                    severity: Number(row[2]) || 2,
+                }))
+                .filter(w => w.term.length > 0);
             return responseJSON(words);
         }
 

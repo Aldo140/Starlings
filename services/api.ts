@@ -53,13 +53,50 @@ let inFlightRequest: Promise<Post[]> | null = null;
 // ── Dynamic flagged-word list (sheet-sourced) ────────────────────────────────
 // Populated once on app boot via apiService.getFlaggedWords().
 // Checked synchronously on every submission alongside the static BANNED_PATTERNS.
-let dynamicFlaggedWords: string[] = [];
 
-const matchesDynamicWord = (text: string): boolean => {
-  if (dynamicFlaggedWords.length === 0) return false;
+interface FlaggedWordEntry {
+  term: string;
+  category: string; // e.g. "Crisis Escalation", "Personal Identifier"
+  severity: number; // 1 = soft flag, 2 = standard review, 3 = urgent/crisis
+}
+
+let dynamicFlaggedWords: FlaggedWordEntry[] = [];
+
+const findDynamicMatch = (text: string): FlaggedWordEntry | null => {
+  if (dynamicFlaggedWords.length === 0) return null;
   const lower = text.toLowerCase();
-  return dynamicFlaggedWords.some(word => lower.includes(word.toLowerCase()));
+  return dynamicFlaggedWords.find(entry => lower.includes(entry.term.toLowerCase())) ?? null;
 };
+
+// Normalise raw API response (new object format OR old string format) into
+// FlaggedWordEntry[]. Strips column-header values that the sheet includes in
+// row 1 so they don't create false positives.
+const HEADER_VALUES = new Set(['term', 'word', 'phrase', 'flagged_word']);
+
+const normalizeWordEntries = (raw: unknown[]): FlaggedWordEntry[] =>
+  raw
+    .map((w): FlaggedWordEntry | null => {
+      if (typeof w === 'string') {
+        // Old string format — no severity info yet, default severity 2
+        const t = w.trim();
+        return t.length > 0 && !HEADER_VALUES.has(t.toLowerCase())
+          ? { term: t, category: '', severity: 2 }
+          : null;
+      }
+      if (w && typeof w === 'object') {
+        const obj = w as Record<string, unknown>;
+        const t = String(obj.term ?? '').trim();
+        return t.length > 0 && !HEADER_VALUES.has(t.toLowerCase())
+          ? {
+              term: t,
+              category: String(obj.category ?? '').trim(),
+              severity: Number(obj.severity) || 2,
+            }
+          : null;
+      }
+      return null;
+    })
+    .filter((e): e is FlaggedWordEntry => e !== null);
 
 const matchesBannedPattern = (text: string): boolean => {
   // 1. Static regex patterns (always-on, crisis/PII/phone)
@@ -68,7 +105,26 @@ const matchesBannedPattern = (text: string): boolean => {
     return pattern.test(text);
   })) return true;
   // 2. Dynamic sheet-sourced word list
-  return matchesDynamicWord(text);
+  return findDynamicMatch(text) !== null;
+};
+
+/**
+ * Returns match metadata for a submission — severity (0 = no match,
+ * 1–3 from sheet, 3 implied for static regex hits) and the category label.
+ * Use this to include flagging context in submission payloads.
+ */
+const getBannedMatchInfo = (text: string): { severity: number; category: string } | null => {
+  // Static patterns always imply severity 3 (crisis / PII / phone)
+  const staticHit = BANNED_PATTERNS.some(pattern => {
+    pattern.lastIndex = 0;
+    return pattern.test(text);
+  });
+  if (staticHit) return { severity: 3, category: 'Static Pattern' };
+
+  const dynamic = findDynamicMatch(text);
+  if (dynamic) return { severity: dynamic.severity, category: dynamic.category };
+
+  return null;
 };
 
 const normalizeResource = (resource: any): Resource => {
@@ -262,7 +318,8 @@ export const apiService = {
     }
 
     const combinedText = postData.message || '';
-    const flagged = matchesBannedPattern(combinedText);
+    const matchInfo = getBannedMatchInfo(combinedText);
+    const flagged = matchInfo !== null;
 
     const newPost: Post = {
       id: Math.random().toString(36).substring(7),
@@ -279,7 +336,11 @@ export const apiService = {
     } as Post;
 
     try {
-      const payload = { ...newPost, action: "addStory" };
+      const payload = {
+        ...newPost,
+        action: "addStory",
+        ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
+      };
       const res = await fetch(GAS_URL, {
         method: 'POST',
         redirect: 'follow',
@@ -465,7 +526,8 @@ export const apiService = {
       return { success: true, flagged: false };
     }
 
-    const flagged = matchesBannedPattern(question);
+    const matchInfo = getBannedMatchInfo(question);
+    const flagged = matchInfo !== null;
 
     const payload = {
       action: "addQA",
@@ -473,7 +535,8 @@ export const apiService = {
       timestamp: new Date().toISOString(),
       status: "PENDING",
       question,
-      flagged
+      flagged,
+      ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
     };
 
     try {
@@ -519,7 +582,8 @@ export const apiService = {
     }
 
     const cleanReflection = reflection.trim();
-    const flagged = matchesBannedPattern(cleanReflection);
+    const matchInfo = getBannedMatchInfo(cleanReflection);
+    const flagged = matchInfo !== null;
 
     if (flagged) {
       return { success: false, flagged: true };
@@ -533,7 +597,8 @@ export const apiService = {
         status: PostStatus.PENDING,
         resourceId,
         reflection: cleanReflection,
-        flagged
+        flagged,
+        ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
       };
       const res = await fetch(GAS_URL, {
         method: 'POST',
@@ -551,6 +616,17 @@ export const apiService = {
 
   hasBannedContent(text: string): boolean {
     return matchesBannedPattern(text);
+  },
+
+  /**
+   * Returns severity (1–3) and category of the first matched banned term,
+   * or null if nothing matched. Use this to include flagging context in
+   * submission payloads and to decide whether to show the crisis modal.
+   * Severity 3 = urgent (crisis language or static pattern) → show modal.
+   * Severity 1–2 = flag for review but no modal needed.
+   */
+  getBannedMatchInfo(text: string) {
+    return getBannedMatchInfo(text);
   },
 
   /**
@@ -573,14 +649,8 @@ export const apiService = {
           Array.isArray(parsed.data) &&
           parsed.data.length > 0
         ) {
-          // Re-apply header filter in case an older cache was written before this fix
-          const HEADER_VALUES = new Set(['term', 'word', 'phrase', 'flagged_word']);
-          dynamicFlaggedWords = parsed.data.filter(
-            (w: unknown) =>
-              typeof w === 'string' &&
-              !HEADER_VALUES.has((w as string).trim().toLowerCase())
-          );
-          return dynamicFlaggedWords;
+          dynamicFlaggedWords = normalizeWordEntries(parsed.data);
+          if (dynamicFlaggedWords.length > 0) return dynamicFlaggedWords;
         }
         localStorage.removeItem(FLAGGED_WORDS_CACHE_KEY);
       }
@@ -591,16 +661,7 @@ export const apiService = {
       const res = await fetch(`${GAS_URL}?action=getFlaggedWords`);
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        // The Flagged_Words sheet has a "Term" header in row 1 that the backend
-        // returns as the first entry. Strip it (and any other header-like value)
-        // so it doesn't generate false positives on the word "term".
-        const HEADER_VALUES = new Set(['term', 'word', 'phrase', 'flagged_word']);
-        dynamicFlaggedWords = data.filter(
-          (w: unknown) =>
-            typeof w === 'string' &&
-            w.trim().length > 0 &&
-            !HEADER_VALUES.has(w.trim().toLowerCase())
-        );
+        dynamicFlaggedWords = normalizeWordEntries(data);
         try {
           localStorage.setItem(
             FLAGGED_WORDS_CACHE_KEY,

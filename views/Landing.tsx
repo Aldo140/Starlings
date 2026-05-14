@@ -32,7 +32,7 @@ const Landing: React.FC = () => {
   const qaInView = useInView(qaRef, { once: true, margin: '-60px' });
 
   const galleryRef = useRef<HTMLElement>(null);
-  const galleryInView = useInView(galleryRef, { once: true, margin: '-80px' });
+  const galleryInView = useInView(galleryRef, { once: true, amount: 0.05 });
   const { scrollYProgress: galleryScrollProgress } = useScroll({ target: galleryRef, offset: ['start start', 'end end'] });
   // Desktop: col A fast, col B slow. Both climb up — speed contrast = depth.
   const col1YRawDesk = useTransform(galleryScrollProgress, [0, 1], [160, -700]);
@@ -749,7 +749,7 @@ const Landing: React.FC = () => {
         className="relative z-10"
         style={{ height: 'calc(100vh + 900px)' }}
       >
-        <div className="sticky top-0 h-screen" style={{ background: '#f4f1e8', overflow: 'clip' }}>
+        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#f4f1e8' }}>
 
           {/* Static soft glow — teal; no animation to avoid continuous compositing */}
           <div className="absolute top-1/2 left-1/4 w-[50vw] h-[50vw] max-w-[420px] rounded-full pointer-events-none -translate-y-1/2"
@@ -760,8 +760,7 @@ const Landing: React.FC = () => {
 
             {/* LEFT: editorial anchor — headline dominant, illustration as environment */}
             <div
-              className="w-[44%] h-full flex-shrink-0 relative flex flex-col"
-              style={{ overflow: 'clip' }}
+              className="w-[44%] h-full flex-shrink-0 relative flex flex-col overflow-hidden"
             >
 
               {/* ─── Environment ──────────────────────────────────────────── */}
@@ -845,14 +844,14 @@ const Landing: React.FC = () => {
                 style={{ background: 'linear-gradient(to right, transparent 0%, rgba(244,241,232,0.55) 100%)' }}
               />
 
-              {/* ─── Content — z-20, no overflow-hidden so content can bleed over illustration if needed ── */}
+              {/* ─── Content — z-20, flex-shrink-0 so illustration can fill remaining height ── */}
               <div
-                className="relative z-20 flex-grow flex flex-col justify-start"
+                className="relative z-20 flex-shrink-0 flex flex-col justify-start"
                 style={{
                   paddingLeft: 'clamp(2.5rem, 4.2vw, 5.5rem)',
                   paddingRight: 'clamp(1.5rem, 2.4vw, 3rem)',
                   paddingTop: 'min(3.5rem, 5vh)',
-                  paddingBottom: '1.5rem',
+                  paddingBottom: '1rem',
                 }}
               >
 
@@ -1005,10 +1004,10 @@ const Landing: React.FC = () => {
 
               </div>
 
-              {/* ─── ILLUSTRATION — Ken Burns slow zoom, never crops people ──── */}
-              {/* Outer entrance wrapper; inner overflow-hidden contains the scale. */}
+              {/* ─── ILLUSTRATION — fills all remaining panel height after text content ── */}
+              {/* flex-1 min-h-0 expands to whatever space the text content leaves.       */}
               <motion.div
-                className="relative z-10 w-full flex-shrink-0 overflow-hidden"
+                className="relative z-10 w-full flex-1 min-h-0 overflow-hidden"
                 initial={{ opacity: 0, y: 20 }}
                 animate={galleryInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 1.2, delay: 0.48, ease: EASE_OUT_EXPO }}
@@ -1017,12 +1016,12 @@ const Landing: React.FC = () => {
                 <div className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
                   style={{ height: '3.5rem', background: 'linear-gradient(to bottom, #f4f1e8 0%, transparent 100%)' }}
                 />
-                {/* Ken Burns — slow zoom from 100% → 105%, 24s cycle, reverses back */}
+                {/* Ken Burns — image fills the available flex space, anchored to top */}
                 <motion.img
                   src={`${import.meta.env.BASE_URL}images/asset3.png`}
                   alt="A diverse group of young people sitting together in a community circle"
-                  className="w-full h-auto block origin-bottom"
-                  style={{ mixBlendMode: 'multiply', opacity: 0.96 }}
+                  className="w-full h-full object-cover object-top block"
+                  style={{ mixBlendMode: 'multiply', opacity: 0.96, transformOrigin: 'bottom center' }}
                   animate={galleryInView ? { scale: [1, 1.045, 1] } : {}}
                   transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
                 />

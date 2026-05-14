@@ -976,11 +976,11 @@ const Landing: React.FC = () => {
                 >
 
                   {/* Lead-in: small, pulled back — creates anticipation */}
-                  <span className="block overflow-hidden pt-2 pb-1" style={{ lineHeight: 1.45 }}>
+                  <span className="block overflow-hidden pt-4 pb-1" style={{ lineHeight: 1.45, minHeight: '1.75rem' }}>
                     <motion.span
                       className="block"
                       style={{ fontSize: 'clamp(1rem, min(1.35vw, 2.8vh), 1.55rem)', fontWeight: 700, color: 'rgba(26,53,48,0.58)' }}
-                      initial={{ y: '125%' }}
+                      initial={{ y: '110%' }}
                       animate={galleryInView ? { y: '0%' } : {}}
                       transition={{ duration: 0.62, delay: 0.08, ease: EASE_OUT_EXPO }}
                     >A canvas for</motion.span>
@@ -1141,6 +1141,7 @@ const Landing: React.FC = () => {
                     mixBlendMode: 'multiply',
                     opacity: 0.96,
                     transformOrigin: 'bottom center',
+                    borderBottomRightRadius: '2rem',
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.45) 18%, #000 34%, #000 100%)',
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.45) 18%, #000 34%, #000 100%)',
                   }}

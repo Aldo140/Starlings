@@ -13,7 +13,7 @@ const cardItemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.65, ease },
+    transition: { duration: 0.65, ease: EASE_OUT_EXPO },
   },
 };
 
@@ -360,8 +360,16 @@ const CrisisIcon: React.FC = () => (
   </svg>
 );
 
+const HERO_PARTICLES = [
+  { cx: '12%', cy: '22%', delay: 0, dur: 5 },
+  { cx: '85%', cy: '15%', delay: 1.2, dur: 7 },
+  { cx: '65%', cy: '70%', delay: 2, dur: 6 },
+  { cx: '30%', cy: '80%', delay: 0.5, dur: 8 },
+  { cx: '90%', cy: '55%', delay: 3, dur: 5.5 },
+];
+
 // ─── Hero background ──────────────────────────────────────────────────────────
-const HeroBackground: React.FC<{ prefersReduced: boolean }> = ({ prefersReduced }) => (
+const HeroBackground: React.FC<{ prefersReduced: boolean }> = React.memo(({ prefersReduced }) => (
   <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
     {/* Unsplash photo */}
     <img
@@ -382,13 +390,7 @@ const HeroBackground: React.FC<{ prefersReduced: boolean }> = ({ prefersReduced 
     />
 
     {/* Floating ambient particles */}
-    {!prefersReduced && [
-      { cx: '12%', cy: '22%', delay: 0, dur: 5 },
-      { cx: '85%', cy: '15%', delay: 1.2, dur: 7 },
-      { cx: '65%', cy: '70%', delay: 2, dur: 6 },
-      { cx: '30%', cy: '80%', delay: 0.5, dur: 8 },
-      { cx: '90%', cy: '55%', delay: 3, dur: 5.5 },
-    ].map((p, i) => (
+    {!prefersReduced && HERO_PARTICLES.map((p, i) => (
       <motion.div
         key={i}
         className="absolute w-1.5 h-1.5 rounded-full bg-white/25"
@@ -440,7 +442,7 @@ const HeroBackground: React.FC<{ prefersReduced: boolean }> = ({ prefersReduced 
       ))}
     </svg>
   </div>
-);
+));
 
 // ─── Page component ───────────────────────────────────────────────────────────
 const Guidelines: React.FC = () => {

@@ -1,5 +1,47 @@
 import { describe, it, expect } from 'vitest';
 import { BANNED_PATTERNS } from '../constants.tsx';
+import { normalizeResource } from '../services/api.ts';
+
+const baseRaw = {
+  id: 'test-id',
+  timestamp: '2024-01-01T00:00:00.000Z',
+  status: 'APPROVED',
+  resource_type: 'WEBSITE',
+  title: 'Test Resource',
+  url: 'https://example.com',
+  description: 'A test resource',
+  exploring_count: 0,
+};
+
+describe('normalizeResource', () => {
+  it('parses string lat/lng to numbers when valid coords are present', () => {
+    const raw = { ...baseRaw, lat: '51.0447', lng: '-114.0719', city: 'Calgary', country: 'Canada' };
+    const result = normalizeResource(raw);
+    expect(result.lat).toBe(51.0447);
+    expect(result.lng).toBe(-114.0719);
+    expect(result.city).toBe('Calgary');
+    expect(result.country).toBe('Canada');
+  });
+
+  it('returns lat: undefined and lng: undefined when coords are missing or empty', () => {
+    const raw = { ...baseRaw, lat: '', lng: '' };
+    const result = normalizeResource(raw);
+    expect(result.lat).toBeUndefined();
+    expect(result.lng).toBeUndefined();
+  });
+
+  it('treats city "Unknown" as absent and returns undefined', () => {
+    const raw = { ...baseRaw, city: 'Unknown' };
+    const result = normalizeResource(raw);
+    expect(result.city).toBeUndefined();
+  });
+
+  it('treats city "" (empty string) as absent and returns undefined', () => {
+    const raw = { ...baseRaw, city: '' };
+    const result = normalizeResource(raw);
+    expect(result.city).toBeUndefined();
+  });
+});
 
 describe('Content Moderation BANNED_PATTERNS', () => {
     const checkMessage = (message: string): boolean => {

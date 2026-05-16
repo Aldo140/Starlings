@@ -128,7 +128,7 @@ const getBannedMatchInfo = (text: string): { severity: number; category: string 
   return null;
 };
 
-const normalizeResource = (resource: any): Resource => {
+export const normalizeResource = (resource: any): Resource => {
   const rawCategory = (resource.category || '').toLowerCase().trim();
   const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
   return {
@@ -140,6 +140,10 @@ const normalizeResource = (resource: any): Resource => {
     helpful_count: Number(resource.helpful_count || 0),
     supportive_count: Number(resource.supportive_count || 0),
     exploring_count: Number(resource.exploring_count || 0),
+    city: resource.city && resource.city !== 'Unknown' ? String(resource.city) : undefined,
+    country: resource.country || undefined,
+    lat: resource.lat ? Number(resource.lat) : undefined,
+    lng: resource.lng ? Number(resource.lng) : undefined,
   };
 };
 
@@ -562,7 +566,10 @@ export const apiService = {
       category: resourceData.category || 'community',
       location: resourceData.location || '',
       image_url: resourceData.imageUrl || '',
-      city: 'Unknown'
+      city: resourceData.city || '',
+      country: resourceData.country || '',
+      lat: resourceData.lat ?? '',
+      lng: resourceData.lng ?? '',
     };
 
     try {

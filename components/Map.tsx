@@ -176,18 +176,25 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     return simClusters.length;
   };
 
-  // Find the first zoom level where the OVERALL cluster count increases.
-  // Using all `groups` (not just cluster.groups) means the simulation matches
-  // buildMarkerClusters exactly — same input, same centroid-based algorithm.
+  // Find the first zoom level where EVERY group in this specific cluster
+  // forms its own individual cluster — no two groups merge anymore.
+  //
+  // WHY cluster.groups (not all groups): the old approach used the GLOBAL group
+  // list to find the first zoom where any global split occurred. That meant a
+  // Vancouver–Calgary split (global) was returned even though Calgary+Edmonton
+  // remained merged, requiring multiple clicks to drill down. Now we solve for
+  // THIS cluster's groups specifically: one click separates them all into
+  // individual city pins.
   const getClusterBreakoutZoom = (cluster: MarkerCluster): number => {
     const map = mapInstance.current;
     if (!map || cluster.groups.length <= 1) return getFocusZoom();
 
-    const currentZoom = map.getZoom();
-    const baseCount = countClustersAtZoom(groups, Math.round(currentZoom));
+    const snappedZoom = Math.round(map.getZoom());
 
-    for (let zoom = Math.ceil(currentZoom) + 1; zoom <= 18; zoom += 1) {
-      if (countClustersAtZoom(groups, zoom) > baseCount) return zoom;
+    for (let zoom = snappedZoom + 1; zoom <= 18; zoom += 1) {
+      if (countClustersAtZoom(cluster.groups, zoom) >= cluster.groups.length) {
+        return zoom;
+      }
     }
 
     return 18;
@@ -212,9 +219,10 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     if (!mapInstance.current) return;
 
     if (shouldSelect) onMarkerClick(group);
+    mapInstance.current.stop();
     mapInstance.current.flyTo([group.lat, group.lng], getGroupFocusZoom(group), {
       animate: true,
-      duration: 1.05,
+      duration: 0.42,
     });
   };
 
@@ -222,7 +230,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     if (!mapInstance.current) return;
 
     const now = Date.now();
-    const wasJustClicked = lastClusterClick.current?.id === cluster.id && now - lastClusterClick.current.clickedAt < 900;
+    const wasJustClicked = lastClusterClick.current?.id === cluster.id && now - lastClusterClick.current.clickedAt < 550;
     lastClusterClick.current = { id: cluster.id, clickedAt: now };
 
     // Find the zoom level where this cluster first splits into distinguishable sub-clusters.
@@ -251,9 +259,10 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     // buildMarkerClusters will produce multiple visible pins.
     const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
     const center = bounds.getCenter();
+    mapInstance.current.stop();
     mapInstance.current.flyTo([center.lat, center.lng], breakoutZoom, {
       animate: true,
-      duration: 1,
+      duration: 0.4,
     });
   };
 
@@ -316,9 +325,10 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     }
 
     if (flyToLocation) {
+      mapInstance.current.stop();
       mapInstance.current.flyTo([flyToLocation.lat, flyToLocation.lng], getFocusZoom(), {
         animate: true,
-        duration: 1.5
+        duration: 0.65,
       });
     }
   }, [flyToLocation, selectedGroupId, groups]);

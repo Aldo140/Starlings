@@ -122,6 +122,27 @@ You can add a resource directly to `Live_Resources` without going through the su
 
 The website will pick it up within a few minutes.
 
+### Location-tagged resources (showing on the map)
+
+Resources can now optionally appear on the Support Map if they have location coordinates. This is useful for **local** resources like in-person support groups, clinics, or community centres.
+
+**Required columns** — add these to both `Pending_Resources` and `Live_Resources` if they don't already exist:
+
+| Column | Format | Example |
+|--------|--------|---------|
+| `city` | Plain text city name | `Calgary` |
+| `country` | Plain text country name | `Canada` |
+| `lat` | Decimal degrees (number) | `51.0447` |
+| `lng` | Decimal degrees (number) | `-114.0719` |
+
+**Rules:**
+- Leave all four columns **blank** for national/global resources (websites, apps, videos). They will still appear on the Resources page — just not on the map.
+- For local resources, fill in all four columns. The pin will appear on the map alongside stories from the same city.
+- A city value of `Unknown` is treated the same as blank — it will not appear on the map.
+- Submitted resources that include a location (entered via the "Where is this resource based?" field on the site) will populate these columns automatically.
+
+> **One-time setup:** If `city`, `country`, `lat`, and `lng` columns do not yet exist in your spreadsheet, add them now by inserting four new column headers after the existing columns in both `Pending_Resources` and `Live_Resources`. The site reads columns by header name, so the column order doesn't matter — only the header text.
+
 ---
 
 ## Flagged_Words Tab — How to Use It

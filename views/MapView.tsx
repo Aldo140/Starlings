@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SupportMap from '../components/Map.tsx';
 import PostCard from '../components/PostCard.tsx';
+import ResourceMapCard from '../components/ResourceMapCard.tsx';
 import { apiService, calculateDistance, CANADIAN_HUBS } from '../services/api.ts';
-import { Post } from '../types.ts';
+import { Post, MapItem, Resource } from '../types.ts';
 import { ICONS } from '../constants.tsx';
 import { Drawer } from 'vaul';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,7 +46,7 @@ interface CityGroup {
   lat: number;
   lng: number;
   count: number;
-  posts: Post[];
+  items: MapItem[];
   topTags: string[];
 }
 
@@ -58,34 +59,25 @@ const getCityCoordinates = (city: string, fallbackLat: number, fallbackLng: numb
     : { lat: fallbackLat, lng: fallbackLng };
 };
 
-const getPostPreview = (post: Post) => {
-  const isResource = post.message.startsWith('[RESOURCE');
-  const cleanBody = (value: string) => value.replace(/^[\s,"']+/, '').trim();
-
-  if (!isResource) {
+const getItemPreview = (item: MapItem) => {
+  if (item.kind === 'resource') {
     return {
-      type: 'Story',
-      title: post.alias || 'Anonymous',
-      body: cleanBody(post.message),
+      type: item.data.type,
+      title: item.data.title,
+      body: item.data.description || 'Community resource',
     };
   }
-
-  const typeMatch = post.message.match(/^\[RESOURCE - (.*?)\]/);
-  const resourceType = typeMatch?.[1] || 'Resource';
-  const lines = post.message.split('\n\n');
-  const header = lines[0] || '';
-  const headerWithoutTag = header.replace(/^\[RESOURCE - .*?\]\s*/, '');
-  const [resourceTitle] = headerWithoutTag.split(' | Link: ');
-
+  const cleanBody = (v: string) => v.replace(/^[\s,"']+/, '').trim();
   return {
-    type: resourceType,
-    title: resourceTitle || 'Community resource',
-    body: cleanBody(lines.slice(1).join('\n\n') || post.message),
+    type: 'Story',
+    title: item.data.alias || 'Anonymous',
+    body: cleanBody(item.data.message),
   };
 };
 
 const MapView: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [mappableResources, setMappableResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,8 +103,13 @@ const MapView: React.FC = () => {
       // Fetch real data in background
       setRefreshing(true);
       try {
-        const realData = await apiService.getApprovedPosts();
-        setPosts(realData);
+        const [realPosts, realResources] = await Promise.all([
+          apiService.getApprovedPosts(),
+          apiService.getApprovedResources(),
+        ]);
+        setPosts(realPosts);
+        const withCoords = realResources.filter(r => r.lat && r.lng);
+        setMappableResources(withCoords);
       } catch (error) {
         console.error('Fetch failed:', error);
       } finally {
@@ -155,70 +152,101 @@ const MapView: React.FC = () => {
     }
   };
 
-  const groupedPosts = useMemo<CityGroup[]>(() => {
-    const groups = new globalThis.Map<string, CityGroup>();
-    posts.forEach((post) => {
-      const key = `${post.city}||${post.country}`;
-      const existing = groups.get(key);
-      if (!existing) {
+  const groupedItems = useMemo<CityGroup[]>(() => {
+    const map = new globalThis.Map<string, CityGroup>();
+
+    // First pass: posts
+    posts.forEach(post => {
+      const key = post.city || post.country || 'Unknown';
+      if (!map.has(key)) {
         const coords = getCityCoordinates(post.city, post.lat, post.lng);
-        groups.set(key, {
+        map.set(key, {
           id: key,
-          city: post.city,
-          country: post.country,
+          city: post.city || '',
+          country: post.country || '',
           lat: coords.lat,
           lng: coords.lng,
-          count: 1,
-          posts: [post],
-          topTags: []
+          count: 0,
+          items: [],
+          topTags: [],
         });
-      } else {
-        existing.count += 1;
-        existing.posts.push(post);
       }
+      const group = map.get(key)!;
+      group.items.push({ kind: 'post', data: post });
+      group.count = group.items.length;
     });
 
-    groups.forEach((group) => {
-      const tagCounts = new globalThis.Map<string, number>();
-      group.posts.forEach((post) => {
-        const tags = Array.isArray(post.what_helped) ? post.what_helped : [];
-        tags.forEach((tag) => {
-          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+    // Second pass: resources (already filtered to those with lat/lng)
+    mappableResources.forEach(resource => {
+      const key = resource.city || resource.country || 'Unknown';
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          city: resource.city || '',
+          country: resource.country || '',
+          lat: resource.lat!,
+          lng: resource.lng!,
+          count: 0,
+          items: [],
+          topTags: [],
         });
+      }
+      const group = map.get(key)!;
+      group.items.push({ kind: 'resource', data: resource });
+      group.count = group.items.length;
+    });
+
+    // Compute topTags from post items only
+    const result = Array.from(map.values());
+    result.forEach(group => {
+      const tagCounts: Record<string, number> = {};
+      group.items.forEach(item => {
+        if (item.kind === 'post') {
+          item.data.what_helped.forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
+        }
       });
-      group.topTags = Array.from(tagCounts.entries())
+      group.topTags = Object.entries(tagCounts)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([tag]) => tag);
     });
 
-    return Array.from(groups.values());
-  }, [posts]);
+    return result;
+  }, [posts, mappableResources]);
 
   const filteredGroups = useMemo(() => {
-    let result = groupedPosts.map(group => {
-      // Filter the posts inside the group directly based on filterMode
-      let filteredPosts = group.posts;
+    let result = groupedItems.map((group: CityGroup): CityGroup => {
+      let filteredItems: MapItem[] = group.items;
       if (filterMode === 'stories') {
-        filteredPosts = group.posts.filter((p: any) => p.message && !p.message.startsWith('[RESOURCE'));
+        filteredItems = group.items.filter((i: MapItem) => i.kind === 'post');
       } else if (filterMode === 'resources') {
-        filteredPosts = group.posts.filter((p: any) => p.message && p.message.startsWith('[RESOURCE'));
+        filteredItems = group.items.filter((i: MapItem) => i.kind === 'resource');
       }
 
       return {
         ...group,
-        posts: filteredPosts,
-        count: filteredPosts.length
+        items: filteredItems,
+        count: filteredItems.length,
       };
-    }).filter(group => {
+    }).filter((group: CityGroup) => {
       const normalizedSearch = searchTerm.trim().toLowerCase();
       const matchesSearch = normalizedSearch.length === 0 ||
         group.city.toLowerCase().includes(normalizedSearch) ||
         group.country.toLowerCase().includes(normalizedSearch) ||
-        group.posts.some(post =>
-          (post.alias && post.alias.toLowerCase().includes(normalizedSearch)) ||
-          (Array.isArray(post.what_helped) && post.what_helped.some(tag => tag.toLowerCase().includes(normalizedSearch)))
-        );
+        group.items.some((item: MapItem) => {
+          if (item.kind === 'post') {
+            return (
+              (item.data.alias && item.data.alias.toLowerCase().includes(normalizedSearch)) ||
+              (Array.isArray(item.data.what_helped) && item.data.what_helped.some((tag: string) => tag.toLowerCase().includes(normalizedSearch)))
+            );
+          }
+          return (
+            item.data.title.toLowerCase().includes(normalizedSearch) ||
+            (item.data.description && item.data.description.toLowerCase().includes(normalizedSearch))
+          );
+        });
 
       return matchesSearch && group.count > 0;
     });
@@ -234,7 +262,7 @@ const MapView: React.FC = () => {
     }
 
     return result;
-  }, [groupedPosts, searchTerm, userLocation, filterMode]);
+  }, [groupedItems, searchTerm, userLocation, filterMode]);
 
   const hasActiveSearch = searchTerm.trim().length > 0;
   const visiblePostCount = filteredGroups.reduce((sum, group) => sum + group.count, 0);
@@ -263,26 +291,26 @@ const MapView: React.FC = () => {
       return;
     }
 
-    const hasSelectedPost = selectedGroup.posts.some((post) => post.id === selectedPostId);
-    if (!hasSelectedPost) {
+    const hasSelectedItem = selectedGroup.items.some((item: MapItem) => item.data.id === selectedPostId);
+    if (!hasSelectedItem) {
       setSelectedPostId(null);
       setIsDesktopPreviewVisible(false);
     }
   }, [selectedGroup, selectedPostId]);
 
-  const selectedPost = useMemo(() => {
+  const selectedItem = useMemo((): MapItem | null => {
     if (!selectedGroup || !selectedPostId) return null;
-    return selectedGroup.posts.find((post) => post.id === selectedPostId) || null;
+    return selectedGroup.items.find((item: MapItem) => item.data.id === selectedPostId) || null;
   }, [selectedGroup, selectedPostId]);
 
-  const selectedPostIndex = selectedGroup && selectedPost
-    ? selectedGroup.posts.findIndex((post) => post.id === selectedPost.id)
+  const selectedItemIndex = selectedGroup && selectedItem
+    ? selectedGroup.items.findIndex((item: MapItem) => item.data.id === selectedItem.data.id)
     : -1;
 
-  const selectAdjacentPost = (direction: 1 | -1) => {
-    if (!selectedGroup || selectedPostIndex < 0) return;
-    const nextIndex = (selectedPostIndex + direction + selectedGroup.posts.length) % selectedGroup.posts.length;
-    setSelectedPostId(selectedGroup.posts[nextIndex]?.id || null);
+  const selectAdjacentItem = (direction: 1 | -1) => {
+    if (!selectedGroup || selectedItemIndex < 0) return;
+    const nextIndex = (selectedItemIndex + direction + selectedGroup.items.length) % selectedGroup.items.length;
+    setSelectedPostId(selectedGroup.items[nextIndex]?.data.id || null);
     setIsDesktopPreviewVisible(true);
   };
 
@@ -546,30 +574,41 @@ const MapView: React.FC = () => {
                 </div>
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#1e3a34]/8 pt-3">
                   <span className="text-[10px] font-black uppercase tracking-widest text-[#1e3a34]/62">
-                    Select a note to preview on the map
+                    Select an item to preview on the map
                   </span>
-                  <span className="rounded-full bg-[#e8f3f1] px-2.5 py-1 text-[10px] font-black text-[#448a7d]">{selectedGroup.posts.length}</span>
+                  <span className="rounded-full bg-[#e8f3f1] px-2.5 py-1 text-[10px] font-black text-[#448a7d]">{selectedGroup.items.length}</span>
                 </div>
               </div>
               <div className="min-h-0 flex-grow overflow-y-auto p-4 space-y-3 bg-gray-50/30">
                 <AnimatePresence mode="popLayout">
-                  {selectedGroup.posts.map((post, idx) => (
+                  {selectedGroup.items.map((item: MapItem, idx: number) => (
                     <motion.div
                       layout
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.3, delay: idx * 0.05 }}
-                      key={`${post.id}`}
+                      key={item.data.id}
                     >
-                      <PostCard
-                        post={post}
-                        selected={selectedPostId === post.id}
-                        onClick={() => {
-                          setSelectedPostId(post.id);
-                          setIsDesktopPreviewVisible(true);
-                        }}
-                      />
+                      {item.kind === 'post' ? (
+                        <PostCard
+                          post={item.data}
+                          selected={selectedPostId === item.data.id}
+                          onClick={() => {
+                            setSelectedPostId(item.data.id);
+                            setIsDesktopPreviewVisible(true);
+                          }}
+                        />
+                      ) : (
+                        <ResourceMapCard
+                          resource={item.data}
+                          selected={selectedPostId === item.data.id}
+                          onClick={() => {
+                            setSelectedPostId(item.data.id);
+                            setIsDesktopPreviewVisible(true);
+                          }}
+                        />
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -694,9 +733,9 @@ const MapView: React.FC = () => {
         />
 
         <AnimatePresence>
-          {selectedGroup && selectedPost && isDesktopPreviewVisible && (
+          {selectedGroup && selectedItem && isDesktopPreviewVisible && (
             <motion.div
-              key={selectedPost.id}
+              key={selectedItem.data.id}
               className="pointer-events-none absolute right-5 top-5 z-[1500] hidden md:flex justify-end"
               initial={{ opacity: 0, y: -18, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -704,8 +743,10 @@ const MapView: React.FC = () => {
               transition={{ type: 'spring', stiffness: 360, damping: 32 }}
             >
               {(() => {
-                const preview = getPostPreview(selectedPost);
-                const isResource = selectedPost.message.startsWith('[RESOURCE');
+                const preview = getItemPreview(selectedItem!);
+                const isResource = selectedItem!.kind === 'resource';
+                const tags = isResource ? [] : (selectedItem!.data as Post).what_helped || [];
+                const timestamp = selectedItem!.data.timestamp;
 
                 return (
                   <div className="pointer-events-auto w-[min(38rem,calc(100vw-2.5rem))] overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/92 shadow-[0_24px_70px_-34px_rgba(30,58,52,0.62)] backdrop-blur-xl">
@@ -725,7 +766,7 @@ const MapView: React.FC = () => {
                               {selectedGroup.city}
                             </span>
                             <span className="text-[8px] font-black uppercase tracking-[0.16em] text-[#1e3a34]/38">
-                              {selectedPostIndex + 1} of {selectedGroup.posts.length}
+                              {selectedItemIndex + 1} of {selectedGroup.items.length}
                             </span>
                           </div>
                           <h3 className="text-base font-black leading-snug tracking-tight text-[#1e3a34]">
@@ -738,18 +779,18 @@ const MapView: React.FC = () => {
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <button
-                          onClick={() => selectAdjacentPost(-1)}
+                          onClick={() => selectAdjacentItem(-1)}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f4f1e8] text-[#1e3a34] transition-colors hover:bg-[#e8f3f1]"
-                          aria-label="Previous note"
+                          aria-label="Previous item"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
                           </svg>
                         </button>
                         <button
-                          onClick={() => selectAdjacentPost(1)}
+                          onClick={() => selectAdjacentItem(1)}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e3a34] text-white transition-colors hover:bg-[#2d5a52]"
-                          aria-label="Next note"
+                          aria-label="Next item"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
@@ -758,7 +799,7 @@ const MapView: React.FC = () => {
                         <button
                           onClick={() => setIsDesktopPreviewVisible(false)}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e3a34] text-white ring-1 ring-[#1e3a34]/10 transition-colors hover:bg-[#2d5a52]"
-                          aria-label="Hide note preview"
+                          aria-label="Hide preview"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -768,14 +809,14 @@ const MapView: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between gap-4 px-5 py-3">
                       <div className="flex min-w-0 flex-wrap gap-1.5">
-                        {(selectedPost.what_helped || []).slice(0, 3).map((tag, idx) => (
+                        {tags.slice(0, 3).map((tag, idx) => (
                           <span key={`${tag}-${idx}`} className="rounded-full border border-[#448a7d]/10 bg-[#f9fbfa] px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#448a7d]">
                             {tag}
                           </span>
                         ))}
                       </div>
                       <span className="shrink-0 text-[8px] font-black uppercase tracking-[0.16em] text-[#1e3a34]/52">
-                        {new Date(selectedPost.timestamp).toLocaleDateString()}
+                        {new Date(timestamp).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -822,16 +863,18 @@ const MapView: React.FC = () => {
           {/* Scrollable List */}
           <div className="flex-grow overflow-y-auto px-4 pt-6 pb-28 space-y-4 relative z-10 no-scrollbar">
             <AnimatePresence mode="popLayout">
-              {selectedGroup.posts.map((post, idx) => (
+              {selectedGroup.items.map((item: MapItem, idx: number) => (
                 <motion.div
                   layout
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3, delay: idx * 0.05 }}
-                  key={`${post.id}`}
+                  key={item.data.id}
                 >
-                  <PostCard post={post} />
+                  {item.kind === 'post'
+                    ? <PostCard post={item.data} />
+                    : <ResourceMapCard resource={item.data} />}
                 </motion.div>
               ))}
             </AnimatePresence>

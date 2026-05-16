@@ -71,6 +71,11 @@ export interface Resource {
   helpful_count?: number;
   supportive_count?: number;
   exploring_count?: number;
+  // Optional map placement fields — only set when a resource is location-specific
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface QAItem {
@@ -81,3 +86,12 @@ export interface QAItem {
   answer?: string;
   flagged?: boolean;
 }
+
+/**
+ * Discriminated union for items rendered on the Support Map.
+ * Posts come from Live_Stories; Resources come from Live_Resources
+ * (only those with lat/lng are included).
+ */
+export type MapItem =
+  | { kind: 'post'; data: Post }
+  | { kind: 'resource'; data: Resource };

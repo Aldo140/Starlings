@@ -231,15 +231,18 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       return;
     }
 
-    // flyToBounds automatically computes the right center AND zoom to frame every pin in
-    // the viewport with padding. maxZoom caps it at breakoutZoom so we don't over-zoom
-    // past the point where the cluster visually splits. This handles both Canada-wide
-    // clusters (zoom out to show all sub-clusters) and dense regional clusters (zoom in
-    // just enough to separate nearby pins).
+    // Fly exactly to breakoutZoom centred on the cluster's geographic centre.
+    //
+    // WHY NOT flyToBounds: flyToBounds(bounds, { maxZoom: breakoutZoom }) treats maxZoom as
+    // an UPPER BOUND — if the bounds span a large area (e.g. all of Canada), Leaflet picks a
+    // LOWER zoom to fit the bounds in the viewport.  That lower zoom is below breakoutZoom,
+    // so buildMarkerClusters runs at the lower zoom, all groups are still within threshold,
+    // and the cluster never splits.  flyTo(center, breakoutZoom) guarantees we land at the
+    // exact zoom where countClustersAtZoom first returns > 1, which is the same zoom at which
+    // buildMarkerClusters will produce multiple visible pins.
     const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
-    mapInstance.current.flyToBounds(bounds, {
-      padding: [80, 80],
-      maxZoom: breakoutZoom,
+    const center = bounds.getCenter();
+    mapInstance.current.flyTo([center.lat, center.lng], breakoutZoom, {
       animate: true,
       duration: 1,
     });

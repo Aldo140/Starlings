@@ -391,7 +391,7 @@ export const apiService = {
       lng: postData.lng || 0,
       message: combinedText,
       what_helped: postData.what_helped || [],
-      alias: apiService.generateAlias(),
+      alias: postData.alias && String(postData.alias).trim() ? String(postData.alias).trim() : apiService.generateAlias(),
       flagged: flagged,
     } as Post;
 

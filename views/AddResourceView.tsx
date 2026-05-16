@@ -23,6 +23,7 @@ const AddResourceView: React.FC = () => {
         type: defaultType,
         description: '',
         alias: '',
+        anonymous: false,
         submitterEmail: '',
         qualifications: '',
         agreeToTerms: false
@@ -44,16 +45,17 @@ const AddResourceView: React.FC = () => {
 
         setIsSubmitting(true);
         // In a real app we would pass alias and qualifications as well or map them to the comment
+        const aliasValue = formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined;
         const combinedDesc = mode === 'apply'
             ? `[APPLICATION] Qualifications: ${formData.qualifications} | Desc: ${formData.description}`
-            : `${formData.description} (Recommended by ${formData.alias || 'Anonymous'})`;
+            : `${formData.description} (Recommended by ${aliasValue || 'Anonymous'})`;
 
         const result = await apiService.submitResource({
             title: formData.title,
             url: formData.url,
             type: formData.type,
             description: combinedDesc,
-            alias: mode === 'recommend' ? formData.alias : undefined,
+            alias: aliasValue,
             submitterEmail: mode === 'apply' ? formData.submitterEmail : undefined,
             qualifications: mode === 'apply' ? formData.qualifications : undefined,
             category: mode === 'apply' ? 'partner' : 'community',
@@ -198,7 +200,17 @@ const AddResourceView: React.FC = () => {
                         </div>
                     </div>
 
-                    {mode === 'recommend' && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <input
+                                id="anonymous"
+                                type="checkbox"
+                                checked={formData.anonymous}
+                                onChange={(e) => setFormData({ ...formData, anonymous: e.target.checked })}
+                                className="h-4 w-4 text-[#448a7d] border-gray-300 rounded"
+                            />
+                            <label htmlFor="anonymous" className="text-sm text-gray-600">Post anonymously as <span className="font-black">Anonymous</span></label>
+                        </div>
                         <div className="space-y-4">
                             <div className="flex justify-between items-baseline">
                                 <label htmlFor="alias" className="block text-[#1e3a34] font-black text-xl italic">Your Alias</label>
@@ -208,13 +220,14 @@ const AddResourceView: React.FC = () => {
                                 id="alias"
                                 type="text"
                                 placeholder="Stay anonymous, or provide a nickname"
-                                className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                                disabled={formData.anonymous}
+                                className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50 disabled:cursor-not-allowed disabled:bg-gray-100"
                                 value={formData.alias}
                                 onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
                             />
-                            <p className="text-sm text-gray-500">We do not collect email addresses for recommendations.</p>
+                            <p className="text-sm text-gray-500">If you don't provide an alias, one will be generated.</p>
                         </div>
-                    )}
+                    </div>
 
                     {mode === 'apply' && (
                         <>

@@ -42,6 +42,8 @@ const ShareView: React.FC = () => {
     promptA: '',
     promptB: '',
     promptC: '',
+    alias: '',
+    anonymous: false,
     what_helped: [] as string[],
 
     // Resource fields
@@ -51,6 +53,7 @@ const ShareView: React.FC = () => {
     resourceType: ResourceType.WEBSITE,
     resourceDescription: '',
     resourceAlias: '',
+    resourceAnonymous: false,
 
     citySearch: '',
     selectedLocation: null as LocationSearchResult | null,
@@ -161,14 +164,16 @@ const ShareView: React.FC = () => {
         lat: parseFloat(formData.selectedLocation!.lat),
         lng: parseFloat(formData.selectedLocation!.lon),
         message: combinedMessage,
-        what_helped: formData.what_helped
+        what_helped: formData.what_helped,
+        alias: formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined
       });
     } else {
       // Resource flow
       if (formData.selectedLocation) {
         // Map-based resource
         const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
-        const combinedMessage = `[RESOURCE - ${formData.resourceType}] ${formData.resourceTitle}${authorInfo} | Link: ${formData.resourceUrl}\n\n${formData.resourceDescription}\n\nRecommended by: ${formData.resourceAlias || 'Anonymous'}`;
+        const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
+        const combinedMessage = `[RESOURCE - ${formData.resourceType}] ${formData.resourceTitle}${authorInfo} | Link: ${formData.resourceUrl}\n\n${formData.resourceDescription}\n\nRecommended by: ${recommendedBy}`;
 
         result = await apiService.submitPost({
           city: formData.selectedLocation.address.city ||
@@ -178,18 +183,20 @@ const ShareView: React.FC = () => {
           lat: parseFloat(formData.selectedLocation.lat),
           lng: parseFloat(formData.selectedLocation.lon),
           message: combinedMessage,
-          what_helped: [] // Not heavily relevant for resources
+          what_helped: [],
+          alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined
         });
       } else {
         // Global resource
         const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
-        const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${formData.resourceAlias || 'Anonymous'})`;
+        const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
+        const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${recommendedBy})`;
         result = await apiService.submitResource({
           title: formData.resourceTitle,
           url: formData.resourceUrl,
           type: formData.resourceType,
           description: combinedDesc,
-          alias: formData.resourceAlias || 'Anonymous',
+          alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
           category: 'community'
         });
       }
@@ -351,6 +358,35 @@ const ShareView: React.FC = () => {
               </section>
 
               <section className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    id="anonymous"
+                    type="checkbox"
+                    checked={formData.anonymous}
+                    onChange={(e) => setFormData(prev => ({ ...prev, anonymous: e.target.checked }))}
+                    className="h-4 w-4 text-[#448a7d] border-gray-300 rounded"
+                  />
+                  <label htmlFor="anonymous" className="text-sm text-gray-600">Post anonymously as <span className="font-black">Anonymous</span></label>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-baseline">
+                    <label htmlFor="alias" className="block text-[#1e3a34] font-black text-xl italic">Your Alias</label>
+                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
+                  </div>
+                  <input
+                    id="alias"
+                    type="text"
+                    placeholder="Stay anonymous or use a nickname"
+                    disabled={formData.anonymous}
+                    className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50 disabled:cursor-not-allowed disabled:bg-gray-100"
+                    value={formData.alias}
+                    onChange={(e) => setFormData(prev => ({ ...prev, alias: e.target.value }))}
+                  />
+                  <p className="text-sm text-gray-500">If you don't provide an alias, one will be generated.</p>
+                </div>
+              </section>
+
+              <section className="space-y-4">
                 <div className="flex items-baseline justify-between">
                   <label htmlFor="promptA" className="block text-[#1e3a34] font-black text-xl italic">What helped?</label>
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
@@ -477,11 +513,22 @@ const ShareView: React.FC = () => {
                   <label htmlFor="resourceAlias" className="block text-[#1e3a34] font-black text-xl italic">Your Alias</label>
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
                 </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="resourceAnonymous"
+                    type="checkbox"
+                    checked={formData.resourceAnonymous}
+                    onChange={(e) => setFormData(prev => ({ ...prev, resourceAnonymous: e.target.checked }))}
+                    className="h-4 w-4 text-[#448a7d] border-gray-300 rounded"
+                  />
+                  <label htmlFor="resourceAnonymous" className="text-sm text-gray-600">Post anonymously as <span className="font-black">Anonymous</span></label>
+                </div>
                 <input
                   id="resourceAlias"
                   type="text"
                   placeholder="Stay anonymous, or provide a nickname"
-                  className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                  disabled={formData.resourceAnonymous}
+                  className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50 disabled:cursor-not-allowed disabled:bg-gray-100"
                   value={formData.resourceAlias}
                   onChange={(e) => setFormData(prev => ({ ...prev, resourceAlias: e.target.value }))}
                 />

@@ -145,40 +145,44 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     return 18;
   };
 
-  const countClustersAtZoom = (clusterGroups: CityGroup[], zoom: number) => {
+  // Fixed-seed cluster simulation.
+  // IMPORTANT: seeds never move after placement. Centroid drift (chaining) causes
+  // intermediate cities to drag neighbouring seeds together, making countClustersAtZoom
+  // disagree with buildMarkerClusters. By fixing the seed at the first group's position
+  // new groups join the nearest seed but do not shift it, giving stable, predictable
+  // results that exactly mirror what buildMarkerClusters produces at the same zoom.
+  const countClustersAtZoom = (targetGroups: CityGroup[], zoom: number): number => {
     const map = mapInstance.current;
     if (!map) return 1;
 
     const threshold = getClusterThresholdForZoom(zoom);
-    const projectedClusters: { point: any; count: number }[] = [];
+    const seeds: { x: number; y: number }[] = [];
 
-    clusterGroups.forEach((group) => {
-      const point = map.project([group.lat, group.lng], zoom);
-      const matchingCluster = projectedClusters.find((cluster) => cluster.point.distanceTo(point) <= threshold);
+    for (const group of targetGroups) {
+      const pt = map.project([group.lat, group.lng], zoom);
+      const hit = seeds.find(s => {
+        const dx = s.x - pt.x;
+        const dy = s.y - pt.y;
+        return Math.sqrt(dx * dx + dy * dy) <= threshold;
+      });
+      if (!hit) seeds.push({ x: pt.x, y: pt.y });
+    }
 
-      if (!matchingCluster) {
-        projectedClusters.push({ point, count: 1 });
-        return;
-      }
-
-      const nextCount = matchingCluster.count + 1;
-      matchingCluster.point = L.point(
-        (matchingCluster.point.x * matchingCluster.count + point.x) / nextCount,
-        (matchingCluster.point.y * matchingCluster.count + point.y) / nextCount
-      );
-      matchingCluster.count = nextCount;
-    });
-
-    return projectedClusters.length;
+    return seeds.length;
   };
 
-  const getClusterBreakoutZoom = (clusterGroups: CityGroup[]) => {
+  // Find the first zoom level where the OVERALL cluster count increases.
+  // Using all `groups` (not just cluster.groups) means the simulation matches
+  // buildMarkerClusters exactly — same input, same fixed-seed algorithm.
+  const getClusterBreakoutZoom = (cluster: MarkerCluster): number => {
     const map = mapInstance.current;
-    if (!map || clusterGroups.length <= 1) return getFocusZoom();
+    if (!map || cluster.groups.length <= 1) return getFocusZoom();
 
     const currentZoom = map.getZoom();
+    const baseCount = countClustersAtZoom(groups, Math.round(currentZoom));
+
     for (let zoom = Math.ceil(currentZoom) + 1; zoom <= 18; zoom += 1) {
-      if (countClustersAtZoom(clusterGroups, zoom) > 1) return zoom;
+      if (countClustersAtZoom(groups, zoom) > baseCount) return zoom;
     }
 
     return 18;
@@ -220,7 +224,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     // We do NOT use getReadableSeparationZoom here — that forces 220px separation for every
     // pair, which drives targetZoom to 11+ for any cluster containing nearby cities (e.g.
     // Toronto–Hamilton), then flyTo(boundsCenter, 11) scrolls most of those cities offscreen.
-    const breakoutZoom = getClusterBreakoutZoom(cluster.groups);
+    const breakoutZoom = getClusterBreakoutZoom(cluster);
     const currentZoom = mapInstance.current.getZoom();
 
     // If all pins are co-located (identical coords) or the user double-clicked while already
@@ -253,41 +257,49 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     if (!map) return [];
 
     const threshold = getClusterThreshold();
-    const clusters: MarkerCluster[] = [];
 
-    groups.forEach((group) => {
+    // Each entry holds an immovable SEED point (used for comparison) and a
+    // mutable visual centroid (used for marker placement). Keeping the seed
+    // fixed means cities can only join a cluster they are close to the SEED,
+    // not to a centroid that has drifted toward a neighbour — no chaining.
+    const slots: { seed: { x: number; y: number }; mc: MarkerCluster }[] = [];
+
+    for (const group of groups) {
       const point = map.latLngToLayerPoint([group.lat, group.lng]);
-      const matchingCluster = clusters.find((cluster) => {
-        const dx = cluster.point.x - point.x;
-        const dy = cluster.point.y - point.y;
+
+      const hit = slots.find(s => {
+        const dx = s.seed.x - point.x;
+        const dy = s.seed.y - point.y;
         return Math.sqrt(dx * dx + dy * dy) <= threshold;
       });
 
-      if (!matchingCluster) {
-        clusters.push({
-          id: group.id,
-          groups: [group],
-          lat: group.lat,
-          lng: group.lng,
-          point,
-          postCount: group.count,
+      if (!hit) {
+        slots.push({
+          seed: { x: point.x, y: point.y },
+          mc: {
+            id: group.id,
+            groups: [group],
+            lat: group.lat,
+            lng: group.lng,
+            point: { x: point.x, y: point.y },
+            postCount: group.count,
+          },
         });
-        return;
+        continue;
       }
 
-      const nextTotal = matchingCluster.groups.length + 1;
-      matchingCluster.groups.push(group);
-      matchingCluster.postCount += group.count;
-      matchingCluster.point = {
-        x: (matchingCluster.point.x * (nextTotal - 1) + point.x) / nextTotal,
-        y: (matchingCluster.point.y * (nextTotal - 1) + point.y) / nextTotal,
-      };
-      matchingCluster.lat = (matchingCluster.lat * (nextTotal - 1) + group.lat) / nextTotal;
-      matchingCluster.lng = (matchingCluster.lng * (nextTotal - 1) + group.lng) / nextTotal;
-      matchingCluster.id = matchingCluster.groups.map((item) => item.id).join('__');
-    });
+      // Group joins this slot — update visual centroid but NOT the seed.
+      const mc = hit.mc;
+      const n = mc.groups.length + 1;
+      mc.groups.push(group);
+      mc.postCount += group.count;
+      mc.lat = (mc.lat * (n - 1) + group.lat) / n;
+      mc.lng = (mc.lng * (n - 1) + group.lng) / n;
+      mc.point = { x: (mc.point.x * (n - 1) + point.x) / n, y: (mc.point.y * (n - 1) + point.y) / n };
+      mc.id = mc.groups.map(g => g.id).join('__');
+    }
 
-    return clusters;
+    return slots.map(s => s.mc);
   };
 
   useEffect(() => {

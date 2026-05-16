@@ -145,35 +145,40 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     return 18;
   };
 
-  // Fixed-seed cluster simulation.
-  // IMPORTANT: seeds never move after placement. Centroid drift (chaining) causes
-  // intermediate cities to drag neighbouring seeds together, making countClustersAtZoom
-  // disagree with buildMarkerClusters. By fixing the seed at the first group's position
-  // new groups join the nearest seed but do not shift it, giving stable, predictable
-  // results that exactly mirror what buildMarkerClusters produces at the same zoom.
+  // Centroid-based cluster simulation — mirrors buildMarkerClusters exactly.
+  // When a group joins a cluster the centroid shifts toward the new point (chaining).
+  // This is required for zoom-out clumping: as you zoom out, nearby cities drift into
+  // the same cluster and the centroid moves, absorbing further neighbours naturally.
   const countClustersAtZoom = (targetGroups: CityGroup[], zoom: number): number => {
     const map = mapInstance.current;
     if (!map) return 1;
 
     const threshold = getClusterThresholdForZoom(zoom);
-    const seeds: { x: number; y: number }[] = [];
+    const simClusters: { x: number; y: number; count: number }[] = [];
 
     for (const group of targetGroups) {
       const pt = map.project([group.lat, group.lng], zoom);
-      const hit = seeds.find(s => {
-        const dx = s.x - pt.x;
-        const dy = s.y - pt.y;
+      const hit = simClusters.find(c => {
+        const dx = c.x - pt.x;
+        const dy = c.y - pt.y;
         return Math.sqrt(dx * dx + dy * dy) <= threshold;
       });
-      if (!hit) seeds.push({ x: pt.x, y: pt.y });
+      if (!hit) {
+        simClusters.push({ x: pt.x, y: pt.y, count: 1 });
+      } else {
+        const n = hit.count + 1;
+        hit.x = (hit.x * hit.count + pt.x) / n;
+        hit.y = (hit.y * hit.count + pt.y) / n;
+        hit.count = n;
+      }
     }
 
-    return seeds.length;
+    return simClusters.length;
   };
 
   // Find the first zoom level where the OVERALL cluster count increases.
   // Using all `groups` (not just cluster.groups) means the simulation matches
-  // buildMarkerClusters exactly — same input, same fixed-seed algorithm.
+  // buildMarkerClusters exactly — same input, same centroid-based algorithm.
   const getClusterBreakoutZoom = (cluster: MarkerCluster): number => {
     const map = mapInstance.current;
     if (!map || cluster.groups.length <= 1) return getFocusZoom();
@@ -257,49 +262,45 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     if (!map) return [];
 
     const threshold = getClusterThreshold();
+    const clusters: MarkerCluster[] = [];
 
-    // Each entry holds an immovable SEED point (used for comparison) and a
-    // mutable visual centroid (used for marker placement). Keeping the seed
-    // fixed means cities can only join a cluster they are close to the SEED,
-    // not to a centroid that has drifted toward a neighbour — no chaining.
-    const slots: { seed: { x: number; y: number }; mc: MarkerCluster }[] = [];
-
-    for (const group of groups) {
+    groups.forEach((group) => {
       const point = map.latLngToLayerPoint([group.lat, group.lng]);
 
-      const hit = slots.find(s => {
-        const dx = s.seed.x - point.x;
-        const dy = s.seed.y - point.y;
+      // Find the nearest cluster whose CENTROID is within threshold.
+      // Centroid updates on each addition (chaining) — this is what allows
+      // groups to merge into one big cluster as you zoom out.
+      const matchingCluster = clusters.find((cluster) => {
+        const dx = cluster.point.x - point.x;
+        const dy = cluster.point.y - point.y;
         return Math.sqrt(dx * dx + dy * dy) <= threshold;
       });
 
-      if (!hit) {
-        slots.push({
-          seed: { x: point.x, y: point.y },
-          mc: {
-            id: group.id,
-            groups: [group],
-            lat: group.lat,
-            lng: group.lng,
-            point: { x: point.x, y: point.y },
-            postCount: group.count,
-          },
+      if (!matchingCluster) {
+        clusters.push({
+          id: group.id,
+          groups: [group],
+          lat: group.lat,
+          lng: group.lng,
+          point,
+          postCount: group.count,
         });
-        continue;
+        return;
       }
 
-      // Group joins this slot — update visual centroid but NOT the seed.
-      const mc = hit.mc;
-      const n = mc.groups.length + 1;
-      mc.groups.push(group);
-      mc.postCount += group.count;
-      mc.lat = (mc.lat * (n - 1) + group.lat) / n;
-      mc.lng = (mc.lng * (n - 1) + group.lng) / n;
-      mc.point = { x: (mc.point.x * (n - 1) + point.x) / n, y: (mc.point.y * (n - 1) + point.y) / n };
-      mc.id = mc.groups.map(g => g.id).join('__');
-    }
+      const nextTotal = matchingCluster.groups.length + 1;
+      matchingCluster.groups.push(group);
+      matchingCluster.postCount += group.count;
+      matchingCluster.point = {
+        x: (matchingCluster.point.x * (nextTotal - 1) + point.x) / nextTotal,
+        y: (matchingCluster.point.y * (nextTotal - 1) + point.y) / nextTotal,
+      };
+      matchingCluster.lat = (matchingCluster.lat * (nextTotal - 1) + group.lat) / nextTotal;
+      matchingCluster.lng = (matchingCluster.lng * (nextTotal - 1) + group.lng) / nextTotal;
+      matchingCluster.id = matchingCluster.groups.map((g) => g.id).join('__');
+    });
 
-    return slots.map(s => s.mc);
+    return clusters;
   };
 
   useEffect(() => {

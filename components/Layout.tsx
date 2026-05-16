@@ -259,7 +259,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </header>
 
-      <main className={`flex-grow relative flex flex-col ${location.pathname === '/map' ? 'overflow-hidden' : ''}`}>
+      <main className={`relative flex min-h-0 flex-grow flex-col ${location.pathname === '/map' ? 'overflow-hidden' : ''}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -267,7 +267,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.004 }}
             transition={{ duration: 0.34, ease: EASE_OUT_EXPO }}
-            className="flex-grow flex flex-col"
+            className="flex min-h-0 flex-grow flex-col"
           >
             {children}
           </motion.div>

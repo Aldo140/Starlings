@@ -20,11 +20,38 @@ interface MapProps {
   flyToLocation?: { lat: number, lng: number };
 }
 
+interface MarkerCluster {
+  id: string;
+  groups: CityGroup[];
+  lat: number;
+  lng: number;
+  point: { x: number; y: number };
+  postCount: number;
+}
+
+interface ClusterClickState {
+  id: string;
+  clickedAt: number;
+}
+
+const PIN_READABLE_DISTANCE = 220;
+const PIN_SELECTED_DISTANCE = 240;
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
 const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId, flyToLocation }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const markersLayer = useRef<any>(null);
+  const lastClusterClick = useRef<ClusterClickState | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapRenderKey, setMapRenderKey] = useState(0);
 
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
@@ -51,16 +78,36 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         map.invalidateSize();
       });
 
+      const refreshMarkers = () => setMapRenderKey((key) => key + 1);
+      map.on('zoomend moveend resize', refreshMarkers);
+
       const resizeObserver = new ResizeObserver(() => {
-        if (mapInstance.current) mapInstance.current.invalidateSize();
+        if (mapInstance.current) {
+          mapInstance.current.invalidateSize();
+          refreshMarkers();
+        }
       });
       resizeObserver.observe(mapContainer.current);
 
-      return () => resizeObserver.disconnect();
+      return () => {
+        map.off('zoomend moveend resize', refreshMarkers);
+        resizeObserver.disconnect();
+      };
     } catch (err) {
       console.error("Map load error:", err);
     }
   }, []);
+
+  const getClusterThresholdForZoom = (zoom: number) => {
+    if (zoom < 5) return 104;
+    if (zoom < 7) return 92;
+    if (zoom < 9) return 78;
+    if (zoom < 11) return 66;
+    if (zoom < 13) return 54;
+    return 42;
+  };
+
+  const getClusterThreshold = () => getClusterThresholdForZoom(mapInstance.current?.getZoom?.() ?? 4);
 
   const getFocusZoom = () => {
     if (typeof window === 'undefined') return 10;
@@ -69,42 +116,317 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     return 10.5;
   };
 
+  const getReadableSeparationZoom = (clusterGroups: CityGroup[], minDistance = 84) => {
+    const map = mapInstance.current;
+    if (!map || clusterGroups.length <= 1) return getFocusZoom();
+
+    const getNearestDistanceAtZoom = (zoom: number) => {
+      let nearestDistance = Infinity;
+
+      clusterGroups.forEach((group, index) => {
+        const pointA = map.project([group.lat, group.lng], zoom);
+        clusterGroups.slice(index + 1).forEach((other) => {
+          const pointB = map.project([other.lat, other.lng], zoom);
+          nearestDistance = Math.min(nearestDistance, pointA.distanceTo(pointB));
+        });
+      });
+
+      return nearestDistance;
+    };
+
+    const currentZoom = map.getZoom();
+    if (getNearestDistanceAtZoom(currentZoom) >= minDistance) return currentZoom;
+
+    for (let zoom = Math.ceil(currentZoom) + 1; zoom <= 18; zoom += 1) {
+      if (getNearestDistanceAtZoom(zoom) >= minDistance) return zoom;
+    }
+
+    return 18;
+  };
+
+  const countClustersAtZoom = (clusterGroups: CityGroup[], zoom: number) => {
+    const map = mapInstance.current;
+    if (!map) return 1;
+
+    const threshold = getClusterThresholdForZoom(zoom);
+    const projectedClusters: { point: any; count: number }[] = [];
+
+    clusterGroups.forEach((group) => {
+      const point = map.project([group.lat, group.lng], zoom);
+      const matchingCluster = projectedClusters.find((cluster) => cluster.point.distanceTo(point) <= threshold);
+
+      if (!matchingCluster) {
+        projectedClusters.push({ point, count: 1 });
+        return;
+      }
+
+      const nextCount = matchingCluster.count + 1;
+      matchingCluster.point = L.point(
+        (matchingCluster.point.x * matchingCluster.count + point.x) / nextCount,
+        (matchingCluster.point.y * matchingCluster.count + point.y) / nextCount
+      );
+      matchingCluster.count = nextCount;
+    });
+
+    return projectedClusters.length;
+  };
+
+  const getClusterBreakoutZoom = (clusterGroups: CityGroup[]) => {
+    const map = mapInstance.current;
+    if (!map || clusterGroups.length <= 1) return getFocusZoom();
+
+    const currentZoom = map.getZoom();
+    for (let zoom = Math.ceil(currentZoom) + 1; zoom <= 18; zoom += 1) {
+      if (countClustersAtZoom(clusterGroups, zoom) > 1) return zoom;
+    }
+
+    return 18;
+  };
+
+  const getGroupFocusZoom = (group: CityGroup) => {
+    const map = mapInstance.current;
+    if (!map) return getFocusZoom();
+
+    const nearbyGroups = groups.filter((candidate) => {
+      if (candidate.id === group.id) return true;
+
+      const candidatePoint = map.project([candidate.lat, candidate.lng], map.getZoom());
+      const groupPoint = map.project([group.lat, group.lng], map.getZoom());
+      return candidatePoint.distanceTo(groupPoint) <= getClusterThreshold() * 1.25;
+    });
+
+    return Math.max(getFocusZoom(), getReadableSeparationZoom(nearbyGroups, PIN_SELECTED_DISTANCE));
+  };
+
+  const focusGroup = (group: CityGroup, shouldSelect = true) => {
+    if (!mapInstance.current) return;
+
+    if (shouldSelect) onMarkerClick(group);
+    mapInstance.current.flyTo([group.lat, group.lng], getGroupFocusZoom(group), {
+      animate: true,
+      duration: 1.05,
+    });
+  };
+
+  const focusCluster = (cluster: MarkerCluster) => {
+    if (!mapInstance.current) return;
+
+    const now = Date.now();
+    const wasJustClicked = lastClusterClick.current?.id === cluster.id && now - lastClusterClick.current.clickedAt < 900;
+    lastClusterClick.current = { id: cluster.id, clickedAt: now };
+
+    // Find the zoom level where this cluster first splits into distinguishable sub-clusters.
+    // We do NOT use getReadableSeparationZoom here — that forces 220px separation for every
+    // pair, which drives targetZoom to 11+ for any cluster containing nearby cities (e.g.
+    // Toronto–Hamilton), then flyTo(boundsCenter, 11) scrolls most of those cities offscreen.
+    const breakoutZoom = getClusterBreakoutZoom(cluster.groups);
+    const currentZoom = mapInstance.current.getZoom();
+
+    // If all pins are co-located (identical coords) or the user double-clicked while already
+    // at the breakout zoom, fall through to selecting the group with the most posts.
+    if (breakoutZoom >= 18 || (wasJustClicked && currentZoom >= breakoutZoom - 0.35)) {
+      const primaryGroup = [...cluster.groups].sort((a, b) => b.count - a.count)[0];
+      focusGroup(primaryGroup);
+      return;
+    }
+
+    // flyToBounds automatically computes the right center AND zoom to frame every pin in
+    // the viewport with padding. maxZoom caps it at breakoutZoom so we don't over-zoom
+    // past the point where the cluster visually splits. This handles both Canada-wide
+    // clusters (zoom out to show all sub-clusters) and dense regional clusters (zoom in
+    // just enough to separate nearby pins).
+    const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
+    mapInstance.current.flyToBounds(bounds, {
+      padding: [80, 80],
+      maxZoom: breakoutZoom,
+      animate: true,
+      duration: 1,
+    });
+  };
+
+  const buildMarkerClusters = (): MarkerCluster[] => {
+    const map = mapInstance.current;
+    if (!map) return [];
+
+    const threshold = getClusterThreshold();
+    const clusters: MarkerCluster[] = [];
+
+    groups.forEach((group) => {
+      const point = map.latLngToLayerPoint([group.lat, group.lng]);
+      const matchingCluster = clusters.find((cluster) => {
+        const dx = cluster.point.x - point.x;
+        const dy = cluster.point.y - point.y;
+        return Math.sqrt(dx * dx + dy * dy) <= threshold;
+      });
+
+      if (!matchingCluster) {
+        clusters.push({
+          id: group.id,
+          groups: [group],
+          lat: group.lat,
+          lng: group.lng,
+          point,
+          postCount: group.count,
+        });
+        return;
+      }
+
+      const nextTotal = matchingCluster.groups.length + 1;
+      matchingCluster.groups.push(group);
+      matchingCluster.postCount += group.count;
+      matchingCluster.point = {
+        x: (matchingCluster.point.x * (nextTotal - 1) + point.x) / nextTotal,
+        y: (matchingCluster.point.y * (nextTotal - 1) + point.y) / nextTotal,
+      };
+      matchingCluster.lat = (matchingCluster.lat * (nextTotal - 1) + group.lat) / nextTotal;
+      matchingCluster.lng = (matchingCluster.lng * (nextTotal - 1) + group.lng) / nextTotal;
+      matchingCluster.id = matchingCluster.groups.map((item) => item.id).join('__');
+    });
+
+    return clusters;
+  };
+
   useEffect(() => {
-    if (mapInstance.current && flyToLocation) {
+    if (!mapInstance.current) return;
+
+    const selectedGroup = selectedGroupId
+      ? groups.find((group) => group.id === selectedGroupId)
+      : null;
+
+    if (selectedGroup) {
+      focusGroup(selectedGroup, false);
+      return;
+    }
+
+    if (flyToLocation) {
       mapInstance.current.flyTo([flyToLocation.lat, flyToLocation.lng], getFocusZoom(), {
         animate: true,
         duration: 1.5
       });
     }
-  }, [flyToLocation]);
+  }, [flyToLocation, selectedGroupId, groups]);
 
   useEffect(() => {
     if (!mapInstance.current || !markersLayer.current) return;
 
     markersLayer.current.clearLayers();
 
-    const positionCounts = new Map<string, number>();
-    const positionIndex = new Map<string, number>();
-
-    groups.forEach(group => {
-      const key = `${group.lat},${group.lng}`;
-      positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
-    });
-
-    groups.forEach(group => {
-      const key = `${group.lat},${group.lng}`;
-      const index = positionIndex.get(key) || 0;
-      positionIndex.set(key, index + 1);
-      const total = positionCounts.get(key) || 1;
-      const spreadRadius = 0.02;
-      const angle = total > 1 ? (index / total) * Math.PI * 2 : 0;
-      const lat = total > 1 ? group.lat + Math.sin(angle) * spreadRadius : group.lat;
-      const lng = total > 1 ? group.lng + Math.cos(angle) * spreadRadius : group.lng;
+    buildMarkerClusters().forEach(cluster => {
+      const isCluster = cluster.groups.length > 1;
+      const group = cluster.groups[0];
       const isSelected = group.id === selectedGroupId;
+
+      if (isCluster) {
+        const hasSelectedGroup = cluster.groups.some((clusterGroup) => clusterGroup.id === selectedGroupId);
+        const label = cluster.groups
+          .slice(0, 3)
+          .map((clusterGroup) => escapeHtml(clusterGroup.city))
+          .join(' + ');
+
+        const iconSize = hasSelectedGroup ? 78 : 68;
+        const icon = L.divIcon({
+          className: 'custom-marker-wrapper',
+          html: `
+            <div style="position: relative; width: ${iconSize}px; height: ${iconSize}px; display: flex; align-items: center; justify-content: center;">
+              <div style="
+                position: absolute;
+                inset: 5px;
+                border-radius: 44% 56% 54% 46% / 52% 42% 58% 48%;
+                background: linear-gradient(135deg, ${COLORS.teal500}, ${COLORS.coral400});
+                opacity: 0.2;
+                animation: ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+              "></div>
+              <div style="
+                position: absolute;
+                top: 8px;
+                right: 9px;
+                width: 10px;
+                height: 10px;
+                border-radius: 999px;
+                background: ${COLORS.coral400};
+                border: 2px solid white;
+                box-shadow: 0 8px 16px rgba(30,58,52,0.18);
+              "></div>
+              <div style="
+                position: absolute;
+                bottom: 11px;
+                left: 7px;
+                width: 8px;
+                height: 8px;
+                border-radius: 999px;
+                background: ${COLORS.teal500};
+                border: 2px solid white;
+                box-shadow: 0 8px 16px rgba(30,58,52,0.18);
+              "></div>
+              <div style="
+                position: absolute;
+                bottom: 5px;
+                right: 15px;
+                width: 7px;
+                height: 7px;
+                border-radius: 999px;
+                background: ${COLORS.teal900};
+                border: 2px solid white;
+                box-shadow: 0 8px 16px rgba(30,58,52,0.18);
+              "></div>
+              <div role="button" tabindex="0" aria-label="${cluster.groups.length} grouped pins containing ${cluster.postCount} posts" style="
+                width: ${iconSize - 14}px;
+                height: ${iconSize - 14}px;
+                border-radius: 44% 56% 54% 46% / 52% 42% 58% 48%;
+                background: linear-gradient(135deg, ${COLORS.teal500} 0%, ${COLORS.teal500} 48%, ${COLORS.coral400} 49%, ${COLORS.coral400} 100%);
+                border: 3px solid white;
+                color: white;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 18px 34px rgba(30,58,52,0.24);
+                cursor: pointer;
+                position: relative;
+              " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+                <span style="font-weight: 900; font-size: ${hasSelectedGroup ? '18px' : '16px'}; line-height: 1;">${cluster.groups.length}</span>
+                <span style="font-weight: 900; font-size: 7px; line-height: 1; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.9; margin-top: 3px;">pins</span>
+              </div>
+              <div style="
+                position: absolute;
+                bottom: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255,255,255,0.96);
+                color: ${COLORS.teal900};
+                font-weight: 900;
+                font-size: 8px;
+                padding: 4px 9px;
+                border-radius: 999px;
+                box-shadow: 0 8px 16px rgba(15,23,42,0.12);
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                white-space: nowrap;
+              ">${cluster.postCount} posts · ${label}${cluster.groups.length > 3 ? ' +' : ''}</div>
+            </div>
+          `,
+          iconSize: [iconSize, iconSize],
+          iconAnchor: [iconSize / 2, iconSize / 2]
+        });
+
+        const marker = L.marker([cluster.lat, cluster.lng], { icon })
+          .on('click', (e: any) => {
+            L.DomEvent.stopPropagation(e);
+            focusCluster(cluster);
+          });
+
+        markersLayer.current.addLayer(marker);
+        return;
+      }
 
       // Intelligent Marker Coloring
       const resourceCount = group.posts.filter((p: any) => typeof p.message === 'string' && p.message.startsWith('[RESOURCE')).length;
       const storyCount = group.posts.length - resourceCount;
+      const markerKindLabel = resourceCount > 0 && storyCount > 0
+        ? 'Mixed'
+        : resourceCount > 0
+          ? `${resourceCount} ${resourceCount === 1 ? 'Resource' : 'Resources'}`
+          : `${storyCount} ${storyCount === 1 ? 'Story' : 'Stories'}`;
 
       let backgroundStyle = `background-color: ${COLORS.teal500};`;
       if (resourceCount > 0 && storyCount === 0) {
@@ -122,7 +444,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
             <div style="
               position: absolute;
               inset: 0;
-              border-radius: 50%;
+              border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%;
               ${backgroundStyle}
               opacity: 0.4;
               animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -139,7 +461,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
               height: ${isSelected ? '56px' : '46px'};
               ${backgroundStyle}
               border: 3px solid white;
-              border-radius: 50%;
+              border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -150,9 +472,18 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
               cursor: pointer;
             " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
               <div style="
+                position: absolute;
+                top: 8px;
+                right: 9px;
+                width: 7px;
+                height: 7px;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.45);
+              "></div>
+              <div style="
                 width: ${isSelected ? '30px' : '24px'};
                 height: ${isSelected ? '30px' : '24px'};
-                border-radius: 10px;
+                border-radius: 40% 60% 52% 48% / 48% 42% 58% 52%;
                 background: rgba(255,255,255,0.25);
                 backdrop-filter: blur(4px);
                 display: flex;
@@ -181,25 +512,24 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
                 letter-spacing: 0.12em;
                 white-space: nowrap;
               ">
-                ${resourceCount > 0 && storyCount > 0 ? 'Mixed' : (resourceCount > 0 ? 'Resources' : 'Stories')}
+                ${markerKindLabel}
               </div>
             </div>
           </div>
         `,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0]
+        iconSize: [isSelected ? 64 : 54, isSelected ? 64 : 54],
+        iconAnchor: [isSelected ? 32 : 27, isSelected ? 32 : 27]
       });
 
-      const marker = L.marker([lat, lng], { icon })
+      const marker = L.marker([group.lat, group.lng], { icon })
         .on('click', (e: any) => {
           L.DomEvent.stopPropagation(e);
-          onMarkerClick(group);
-          mapInstance.current.setView([lat, lng], getFocusZoom(), { animate: true });
+          focusGroup(group);
         });
 
       markersLayer.current.addLayer(marker);
     });
-  }, [groups, selectedGroupId, onMarkerClick]);
+  }, [groups, selectedGroupId, onMarkerClick, mapRenderKey]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-[#f0f4f3] overflow-hidden">

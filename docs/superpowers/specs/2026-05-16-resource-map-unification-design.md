@@ -213,7 +213,7 @@ Where the sidebar currently renders `<PostCard post={post} />`, split on item ki
 - `kind === 'post'` → `<PostCard post={item.data} />`
 - `kind === 'resource'` → inline `<ResourceMapCard resource={item.data} />` (new small component defined in `MapView.tsx` or extracted to `components/`)
 
-### `ResourceMapCard` (new, small)
+### `ResourceMapCard` (new, small — lives in `components/ResourceMapCard.tsx`)
 
 Renders: resource type badge, title, optional description snippet, "Open Resource →" link. Styled to match PostCard visually (same `rounded-[1.75rem]`, same shadow, same teal accent) but simpler — no `what_helped` tags, no alias.
 

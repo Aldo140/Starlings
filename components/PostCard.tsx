@@ -63,7 +63,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
               <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{resourceType}</span>
             </div>
           </div>
-          <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
+          <span className="text-[10px] text-[#1e3a34]/46 font-bold uppercase tracking-widest">
             {new Date(post.timestamp).toLocaleDateString()}
           </span>
         </div>
@@ -123,7 +123,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
             <span className="font-black text-sm block tracking-tight">{post.alias || 'Anonymous'}</span>
           </div>
         </div>
-        <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
+      <span className="text-[10px] text-[#1e3a34]/46 font-bold uppercase tracking-widest">
           {new Date(post.timestamp).toLocaleDateString()}
         </span>
       </div>

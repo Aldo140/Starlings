@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useInView, useScroll, useTransform, useSpring, useMotionValueEvent } from 'framer-motion';
+import { BookOpen, CheckCircle2, MapPin, MessageCircleQuestion } from 'lucide-react';
 import { apiService } from '../services/api.ts';
 import { ICONS, EASE_OUT_EXPO } from '../constants.tsx';
 import { QAItem } from '../types.ts';
@@ -1624,37 +1625,60 @@ const Landing: React.FC = () => {
                   );
                 }
 
+                const PostIcon = item.post.type === 'Resource'
+                  ? BookOpen
+                  : item.post.type === 'Answer'
+                    ? MessageCircleQuestion
+                    : MapPin;
+
                 return (
                   <article
                     key={`${row.key}-note-${item.post.city}-${idx}`}
-                    className="relative flex h-[clamp(142px,43vw,196px)] w-[60vw] max-w-[244px] shrink-0 flex-col justify-between overflow-hidden rounded-[1rem] border border-[#448a7d]/16 bg-[#fffaf0] p-3.5 shadow-[0_12px_30px_-25px_rgba(30,58,52,0.34)]"
+                    className="relative flex h-[clamp(142px,43vw,196px)] w-[60vw] max-w-[244px] shrink-0 flex-col justify-between overflow-hidden rounded-[1rem] border border-[#1e3a34]/10 bg-[#fffdf7] p-3.5 shadow-[0_18px_38px_-28px_rgba(30,58,52,0.48)]"
                     style={{ backfaceVisibility: 'hidden' }}
                   >
-                    <div className="absolute left-0 top-0 h-full w-1 bg-[#448a7d]/70" />
-                    <span className="absolute -right-2 -top-4 font-cabinet text-[3.8rem] font-black leading-none text-[#448a7d]/[0.055]" aria-hidden="true">
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-                    <div>
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-[7px] font-black uppercase tracking-[0.18em] text-[#448a7d]">
-                          <span className="flex h-3 w-3 items-center justify-center rounded-full bg-[#e57c6e]/14">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#e57c6e]" />
+                    <div
+                      className="absolute inset-0 opacity-[0.08]"
+                      style={{
+                        backgroundImage: [
+                          'linear-gradient(rgba(68,138,125,0.5) 1px, transparent 1px)',
+                          'linear-gradient(90deg, rgba(68,138,125,0.5) 1px, transparent 1px)',
+                        ].join(', '),
+                        backgroundSize: '28px 28px',
+                      }}
+                    />
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#e57c6e] via-[#448a7d] to-[#1e3a34]/35" />
+                    <div className="relative z-10">
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e3a34] text-[#fffaf0] shadow-[0_8px_18px_-12px_rgba(30,58,52,0.65)]">
+                            <PostIcon size={14} strokeWidth={2.2} />
                           </span>
-                          {item.post.city}
-                        </span>
-                        <span className="rounded-full border border-[#448a7d]/12 bg-[#448a7d]/8 px-2 py-0.5 text-[6.5px] font-black uppercase tracking-[0.12em] text-[#448a7d]">
-                          {item.post.type}
+                          <span className="min-w-0">
+                            <span className="block truncate text-[7px] font-black uppercase tracking-[0.18em] text-[#448a7d]">
+                              {item.post.type}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[10px] font-black leading-none text-[#1e3a34]">
+                              {item.post.city}
+                            </span>
+                          </span>
+                        </div>
+                        <span className="shrink-0 rounded-full border border-[#e57c6e]/18 bg-[#e57c6e]/8 px-2 py-1 text-[6.5px] font-black uppercase tracking-[0.12em] text-[#a85240]">
+                          Map note
                         </span>
                       </div>
-                      <p className="relative z-10 text-[10.5px] font-semibold leading-snug text-[#1e3a34]/80">
+                      <p className="text-[10.5px] font-semibold leading-snug text-[#1e3a34]/82">
                         {item.post.text}
                       </p>
                     </div>
-                    <div className="relative z-10 mt-2 flex items-center justify-between gap-2">
-                      <span className="inline-flex w-fit rounded-full bg-[#e57c6e]/10 px-2 py-1 text-[7px] font-black uppercase tracking-[0.14em] text-[#a85240]">
+                    <div className="relative z-10 mt-2 flex items-center justify-between gap-2 border-t border-[#1e3a34]/8 pt-2">
+                      <span className="min-w-0 truncate text-[7px] font-black uppercase tracking-[0.16em] text-[#a85240]">
                         {item.post.tag}
                       </span>
-                      <span className="text-[6.5px] font-black uppercase tracking-[0.18em] text-[#1e3a34]/28">Map pin</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[6.5px] font-black uppercase tracking-[0.14em] text-[#448a7d]/75">
+                        <CheckCircle2 size={10} strokeWidth={2.4} />
+                        Reviewed
+                      </span>
                     </div>
                   </article>
                 );

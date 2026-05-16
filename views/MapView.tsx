@@ -397,7 +397,7 @@ const MapView: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-black text-[#1e3a34] tracking-tight italic leading-none mb-2">Support Map.</h2>
                 <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
-                  <span>{groupedPosts.length} Cities</span>
+                  <span>{groupedItems.length} Cities</span>
                   <span className="text-[#1e3a34]/20">•</span>
                   <span>{posts.length} Stories & Resources</span>
                   {refreshing && posts.length > 0 && (

@@ -99,16 +99,23 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     }
   }, []);
 
+  // Threshold = "how close (in screen pixels) must two pin centres be to merge?"
+  // Single pins are 46px wide. Two pins "visually touch" when centres ≈ 46px apart.
+  // We add ~25px buffer so pins that are close but not quite touching still cluster.
+  // Lower thresholds than before: the old values (92–104) were causing Calgary–Edmonton
+  // (49px apart at zoom 4) to be right on the boundary and BREAK the split at zoom 5.
   const getClusterThresholdForZoom = (zoom: number) => {
-    if (zoom < 5) return 104;
-    if (zoom < 7) return 92;
-    if (zoom < 9) return 78;
-    if (zoom < 11) return 66;
-    if (zoom < 13) return 54;
-    return 42;
+    if (zoom < 5) return 72;   // cluster when pins would visually overlap at this zoom
+    if (zoom < 7) return 62;
+    if (zoom < 9) return 52;
+    if (zoom < 11) return 44;
+    if (zoom < 13) return 38;
+    return 32;
   };
 
-  const getClusterThreshold = () => getClusterThresholdForZoom(mapInstance.current?.getZoom?.() ?? 4);
+  // Round zoom to nearest integer so fractional zoom values (e.g. 4.9999 from flyTo)
+  // don't land in the wrong threshold bucket and cause render/simulation mismatches.
+  const getClusterThreshold = () => getClusterThresholdForZoom(Math.round(mapInstance.current?.getZoom?.() ?? 4));
 
   const getFocusZoom = () => {
     if (typeof window === 'undefined') return 10;
@@ -145,60 +152,6 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     return 18;
   };
 
-  // Centroid-based cluster simulation — mirrors buildMarkerClusters exactly.
-  // When a group joins a cluster the centroid shifts toward the new point (chaining).
-  // This is required for zoom-out clumping: as you zoom out, nearby cities drift into
-  // the same cluster and the centroid moves, absorbing further neighbours naturally.
-  const countClustersAtZoom = (targetGroups: CityGroup[], zoom: number): number => {
-    const map = mapInstance.current;
-    if (!map) return 1;
-
-    const threshold = getClusterThresholdForZoom(zoom);
-    const simClusters: { x: number; y: number; count: number }[] = [];
-
-    for (const group of targetGroups) {
-      const pt = map.project([group.lat, group.lng], zoom);
-      const hit = simClusters.find(c => {
-        const dx = c.x - pt.x;
-        const dy = c.y - pt.y;
-        return Math.sqrt(dx * dx + dy * dy) <= threshold;
-      });
-      if (!hit) {
-        simClusters.push({ x: pt.x, y: pt.y, count: 1 });
-      } else {
-        const n = hit.count + 1;
-        hit.x = (hit.x * hit.count + pt.x) / n;
-        hit.y = (hit.y * hit.count + pt.y) / n;
-        hit.count = n;
-      }
-    }
-
-    return simClusters.length;
-  };
-
-  // Find the first zoom level where EVERY group in this specific cluster
-  // forms its own individual cluster — no two groups merge anymore.
-  //
-  // WHY cluster.groups (not all groups): the old approach used the GLOBAL group
-  // list to find the first zoom where any global split occurred. That meant a
-  // Vancouver–Calgary split (global) was returned even though Calgary+Edmonton
-  // remained merged, requiring multiple clicks to drill down. Now we solve for
-  // THIS cluster's groups specifically: one click separates them all into
-  // individual city pins.
-  const getClusterBreakoutZoom = (cluster: MarkerCluster): number => {
-    const map = mapInstance.current;
-    if (!map || cluster.groups.length <= 1) return getFocusZoom();
-
-    const snappedZoom = Math.round(map.getZoom());
-
-    for (let zoom = snappedZoom + 1; zoom <= 18; zoom += 1) {
-      if (countClustersAtZoom(cluster.groups, zoom) >= cluster.groups.length) {
-        return zoom;
-      }
-    }
-
-    return 18;
-  };
 
   const getGroupFocusZoom = (group: CityGroup) => {
     const map = mapInstance.current;
@@ -233,36 +186,33 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
     const wasJustClicked = lastClusterClick.current?.id === cluster.id && now - lastClusterClick.current.clickedAt < 550;
     lastClusterClick.current = { id: cluster.id, clickedAt: now };
 
-    // Find the zoom level where this cluster first splits into distinguishable sub-clusters.
-    // We do NOT use getReadableSeparationZoom here — that forces 220px separation for every
-    // pair, which drives targetZoom to 11+ for any cluster containing nearby cities (e.g.
-    // Toronto–Hamilton), then flyTo(boundsCenter, 11) scrolls most of those cities offscreen.
-    const breakoutZoom = getClusterBreakoutZoom(cluster);
-    const currentZoom = mapInstance.current.getZoom();
-
-    // If all pins are co-located (identical coords) or the user double-clicked while already
-    // at the breakout zoom, fall through to selecting the group with the most posts.
-    if (breakoutZoom >= 18 || (wasJustClicked && currentZoom >= breakoutZoom - 0.35)) {
-      const primaryGroup = [...cluster.groups].sort((a, b) => b.count - a.count)[0];
-      focusGroup(primaryGroup);
+    // Double-click: select the group with the most posts directly.
+    if (wasJustClicked || cluster.groups.length <= 1) {
+      focusGroup([...cluster.groups].sort((a, b) => b.count - a.count)[0]);
       return;
     }
 
-    // Fly exactly to breakoutZoom centred on the cluster's geographic centre.
-    //
-    // WHY NOT flyToBounds: flyToBounds(bounds, { maxZoom: breakoutZoom }) treats maxZoom as
-    // an UPPER BOUND — if the bounds span a large area (e.g. all of Canada), Leaflet picks a
-    // LOWER zoom to fit the bounds in the viewport.  That lower zoom is below breakoutZoom,
-    // so buildMarkerClusters runs at the lower zoom, all groups are still within threshold,
-    // and the cluster never splits.  flyTo(center, breakoutZoom) guarantees we land at the
-    // exact zoom where countClustersAtZoom first returns > 1, which is the same zoom at which
-    // buildMarkerClusters will produce multiple visible pins.
     const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
-    const center = bounds.getCenter();
+
+    // If all groups sit at the exact same point (identical coords), select directly.
+    const spanDeg = (bounds.getNorth() - bounds.getSouth()) + (bounds.getEast() - bounds.getWest());
+    if (spanDeg < 0.001) {
+      focusGroup([...cluster.groups].sort((a, b) => b.count - a.count)[0]);
+      return;
+    }
+
+    // flyToBounds — let Leaflet pick the zoom that fits these cities in the viewport.
+    // The zoom it picks is ALWAYS high enough that the cities' pixel distances exceed
+    // the clustering threshold (because at the chosen zoom, the bounds fill the viewport,
+    // meaning cities are hundreds of pixels apart — well above any threshold value).
+    // No simulation needed: the geography guarantees separation.
     mapInstance.current.stop();
-    mapInstance.current.flyTo([center.lat, center.lng], breakoutZoom, {
+    mapInstance.current.flyToBounds(bounds, {
+      paddingTopLeft: [60, 40],
+      paddingBottomRight: [60, 60],
       animate: true,
       duration: 0.4,
+      maxZoom: 12,
     });
   };
 

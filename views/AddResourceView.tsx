@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
-import { ResourceType } from '../types.ts';
+import { LocationSearchResult, ResourceType } from '../types.ts';
 import { ICONS } from '../constants.tsx';
 
 const AddResourceView: React.FC = () => {
@@ -16,6 +16,9 @@ const AddResourceView: React.FC = () => {
     const [mode, setMode] = useState<'recommend' | 'apply'>(defaultMode);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const citySearchRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -26,10 +29,53 @@ const AddResourceView: React.FC = () => {
         anonymous: false,
         submitterEmail: '',
         qualifications: '',
-        agreeToTerms: false
+        agreeToTerms: false,
+        citySearch: '',
+        selectedLocation: null as LocationSearchResult | null,
     });
 
     const wordCount = formData.description.trim().split(/\s+/).filter(Boolean).length;
+
+    // Location search effect — mirrors ShareView pattern exactly
+    useEffect(() => {
+        const query = formData.citySearch;
+        if (query.length < 2 || formData.selectedLocation) {
+            if (!formData.selectedLocation) setLocationResults([]);
+            return;
+        }
+
+        const triggerSearch = async () => {
+            const local = await apiService.searchLocation(query);
+            if (!formData.selectedLocation) setLocationResults(local);
+        };
+        triggerSearch();
+
+        const delayDebounceFn = setTimeout(async () => {
+            if (query.length >= 3 && !formData.selectedLocation) {
+                setIsSearching(true);
+                const deep = await apiService.deepSearchLocation(query);
+                setLocationResults(prev => {
+                    const combined = [...prev];
+                    deep.forEach(d => {
+                        if (!combined.some(c => c.display_name === d.display_name)) combined.push(d);
+                    });
+                    return combined.slice(0, 6);
+                });
+                setIsSearching(false);
+            }
+        }, 600);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [formData.citySearch, formData.selectedLocation]);
+
+    const handleLocationSelect = (loc: LocationSearchResult) => {
+        setFormData(prev => ({
+            ...prev,
+            selectedLocation: loc,
+            citySearch: loc.display_name,
+        }));
+        setLocationResults([]);
+    };
 
     const isFormValid = () => {
         if (!formData.title.trim() || !formData.url.trim() || wordCount > 500) return false;
@@ -44,11 +90,19 @@ const AddResourceView: React.FC = () => {
         if (!isFormValid()) return;
 
         setIsSubmitting(true);
-        // In a real app we would pass alias and qualifications as well or map them to the comment
         const aliasValue = formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined;
         const combinedDesc = mode === 'apply'
             ? `[APPLICATION] Qualifications: ${formData.qualifications} | Desc: ${formData.description}`
             : `${formData.description} (Recommended by ${aliasValue || 'Anonymous'})`;
+
+        const locationPayload = formData.selectedLocation
+            ? {
+                city: formData.selectedLocation.address.city || formData.selectedLocation.address.town || formData.selectedLocation.address.village || '',
+                country: formData.selectedLocation.address.country || '',
+                lat: parseFloat(formData.selectedLocation.lat),
+                lng: parseFloat(formData.selectedLocation.lon),
+            }
+            : {};
 
         const result = await apiService.submitResource({
             title: formData.title,
@@ -59,6 +113,7 @@ const AddResourceView: React.FC = () => {
             submitterEmail: mode === 'apply' ? formData.submitterEmail : undefined,
             qualifications: mode === 'apply' ? formData.qualifications : undefined,
             category: mode === 'apply' ? 'partner' : 'community',
+            ...locationPayload,
         });
 
         if (result.success) {
@@ -171,6 +226,67 @@ const AddResourceView: React.FC = () => {
                                 <option value={ResourceType.MEME}>Meme / Image</option>
                             </select>
                         </div>
+                    </div>
+
+                    {/* Location picker — optional, for local resources */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-baseline">
+                            <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">
+                                Where is this resource based?
+                            </label>
+                            <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                            Only needed if this is a local resource like a support group or clinic. Leave blank for global resources.
+                        </p>
+
+                        {formData.selectedLocation ? (
+                            <div className="flex items-center gap-3">
+                                <span className="inline-flex items-center gap-2 px-5 py-3 bg-teal-50 border border-[#448a7d]/30 rounded-full text-sm font-bold text-[#1e3a34]">
+                                    {formData.selectedLocation.address.city || formData.selectedLocation.address.town || formData.selectedLocation.address.village || formData.selectedLocation.display_name}
+                                    <button
+                                        type="button"
+                                        aria-label="Clear location"
+                                        onClick={() => setFormData(prev => ({ ...prev, selectedLocation: null, citySearch: '' }))}
+                                        className="ml-1 text-[#448a7d] hover:text-[#1e3a34] transition-colors font-black leading-none"
+                                    >
+                                        ✕
+                                    </button>
+                                </span>
+                            </div>
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    id="citySearch"
+                                    ref={citySearchRef}
+                                    type="text"
+                                    autoComplete="off"
+                                    placeholder="City name..."
+                                    className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                                    value={formData.citySearch}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, citySearch: e.target.value, selectedLocation: null }))}
+                                />
+                                {isSearching && (
+                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                        Searching...
+                                    </span>
+                                )}
+                                {locationResults.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 mt-3 rounded-[1.5rem] shadow-2xl z-30 overflow-hidden divide-y divide-gray-50">
+                                        {locationResults.map((loc, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                className="w-full text-left px-6 py-5 hover:bg-teal-50 border-b border-gray-50 last:border-0 text-sm font-medium text-[#1e3a34]"
+                                                onClick={() => handleLocationSelect(loc)}
+                                            >
+                                                {loc.display_name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-4">

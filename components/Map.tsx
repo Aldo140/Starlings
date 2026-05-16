@@ -10,7 +10,8 @@ interface CityGroup {
   lat: number;
   lng: number;
   count: number;
-  posts: any[]; // Or Post[] if imported
+  items: { kind: 'post' | 'resource'; data: any }[];
+  topTags: string[];
 }
 
 interface MapProps {
@@ -420,8 +421,8 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       }
 
       // Intelligent Marker Coloring
-      const resourceCount = group.posts.filter((p: any) => typeof p.message === 'string' && p.message.startsWith('[RESOURCE')).length;
-      const storyCount = group.posts.length - resourceCount;
+      const resourceCount = group.items.filter((i) => i.kind === 'resource').length;
+      const storyCount = group.items.filter((i) => i.kind === 'post').length;
       const markerKindLabel = resourceCount > 0 && storyCount > 0
         ? 'Mixed'
         : resourceCount > 0

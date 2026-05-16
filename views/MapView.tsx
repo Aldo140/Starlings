@@ -196,13 +196,15 @@ const MapView: React.FC = () => {
       group.count = group.items.length;
     });
 
-    // Compute topTags from post items only
+    // Compute topTags from post items only.
+    // Also refine coordinates for non-hub cities: average all post lat/lngs
+    // instead of using only the first post's location.
     const result = Array.from(map.values());
     result.forEach(group => {
       const tagCounts: Record<string, number> = {};
       group.items.forEach(item => {
         if (item.kind === 'post') {
-          item.data.what_helped.forEach(tag => {
+          item.data.what_helped.forEach((tag: string) => {
             tagCounts[tag] = (tagCounts[tag] || 0) + 1;
           });
         }
@@ -211,9 +213,26 @@ const MapView: React.FC = () => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([tag]) => tag);
+
+      // For cities not in CANADIAN_HUBS, the first post's coords were used.
+      // Average across all posts with real coords for a better city centre.
+      const isHubCity = CANADIAN_HUBS.some(
+        hub => hub.name.toLowerCase() === group.city.trim().toLowerCase()
+      );
+      if (!isHubCity) {
+        const validCoords = group.items
+          .filter(item => item.kind === 'post')
+          .map(item => ({ lat: Number(item.data.lat), lng: Number(item.data.lng) }))
+          .filter(c => (c.lat !== 0 || c.lng !== 0) && !isNaN(c.lat) && !isNaN(c.lng));
+        if (validCoords.length > 0) {
+          group.lat = validCoords.reduce((s, c) => s + c.lat, 0) / validCoords.length;
+          group.lng = validCoords.reduce((s, c) => s + c.lng, 0) / validCoords.length;
+        }
+      }
     });
 
-    return result;
+    // Drop groups whose coordinates are still (0, 0) — no real location data.
+    return result.filter(group => group.lat !== 0 || group.lng !== 0);
   }, [posts, mappableResources]);
 
   const filteredGroups = useMemo(() => {

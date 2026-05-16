@@ -91,8 +91,20 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       resizeObserver.observe(mapContainer.current);
 
       return () => {
+        // Remove listeners first so they don't fire during teardown.
         map.off('zoomend moveend resize', refreshMarkers);
         resizeObserver.disconnect();
+        // Destroy the Leaflet instance and null the refs so that React
+        // StrictMode's second effect run (which re-invokes this effect after
+        // the cleanup) can safely recreate the map from scratch — including
+        // re-registering the zoomend/moveend listeners that drive dynamic
+        // pin clustering.  Without this, StrictMode removes the listeners in
+        // the cleanup then short-circuits the second run (mapInstance.current
+        // is still set), leaving the map alive but unresponsive to zoom events.
+        map.remove();
+        mapInstance.current = null;
+        markersLayer.current = null;
+        setMapReady(false);
       };
     } catch (err) {
       console.error("Map load error:", err);

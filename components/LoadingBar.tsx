@@ -85,39 +85,75 @@ const LoadingBar: React.FC<LoadingBarProps> = ({
   if (!mounted) return null;
 
   return (
-    <div
-      className={`h-[3px] overflow-hidden pointer-events-none ${className}`}
-      style={{ transition: 'opacity 0.45s ease', opacity: fading ? 0 : 1 }}
-      aria-hidden="true"
-    >
-      {/* Gradient progress track — scaleX is GPU-accelerated */}
-      <motion.div
-        className="h-full w-full origin-left"
-        animate={{ scaleX: progress }}
-        transition={{ duration: 0.32, ease: EASE_OUT_EXPO }}
-        style={{
-          background: 'linear-gradient(90deg, #448a7d 0%, #5ba898 52%, #e57c6e 100%)',
-        }}
-      />
-
-      {/* Moving shimmer highlight that sweeps across the filled portion */}
-      {isLoading && (
+    <>
+      {/* ── Thin YouTube-style progress bar at the top ── */}
+      <div
+        className={`h-[3px] overflow-hidden pointer-events-none ${className}`}
+        style={{ transition: 'opacity 0.45s ease', opacity: fading ? 0 : 1 }}
+        aria-hidden="true"
+      >
+        {/* Gradient progress track — scaleX is GPU-accelerated */}
         <motion.div
-          className="absolute top-0 bottom-0 w-20 pointer-events-none"
+          className="h-full w-full origin-left"
+          animate={{ scaleX: progress }}
+          transition={{ duration: 0.32, ease: EASE_OUT_EXPO }}
           style={{
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)',
-          }}
-          animate={{ x: ['-80px', '100vw'] }}
-          transition={{
-            duration: 1.8,
-            repeat: Infinity,
-            ease: 'linear',
-            repeatDelay: 0.4,
+            background: 'linear-gradient(90deg, #448a7d 0%, #5ba898 52%, #e57c6e 100%)',
           }}
         />
-      )}
-    </div>
+
+        {/* Moving shimmer highlight that sweeps across the filled portion */}
+        {isLoading && (
+          <motion.div
+            className="absolute top-0 bottom-0 w-20 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)',
+            }}
+            animate={{ x: ['-80px', '100vw'] }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: 'linear',
+              repeatDelay: 0.4,
+            }}
+          />
+        )}
+      </div>
+
+      {/* ── Bouncing cube floating pill — bottom-right corner (alexruix) ── */}
+      <motion.div
+        className="fixed bottom-5 right-5 z-[5002] pointer-events-none"
+        initial={{ opacity: 0, y: 12, scale: 0.9 }}
+        animate={{ opacity: fading ? 0 : 1, y: fading ? 8 : 0, scale: fading ? 0.92 : 1 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        aria-hidden="true"
+      >
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 rounded-full"
+          style={{
+            background: '#1e3a34',
+            border: '1px solid rgba(68,138,125,0.25)',
+            boxShadow: '0 8px 28px -6px rgba(30,58,52,0.55)',
+          }}
+        >
+          {/* Bouncing cube (alexruix/Uiverse) */}
+          <span className="cp-cube-loader" style={{ marginTop: '2px', marginBottom: '10px' }} />
+          <span
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 900,
+              fontSize: '9px',
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.6)',
+            }}
+          >
+            Loading
+          </span>
+        </div>
+      </motion.div>
+    </>
   );
 };
 

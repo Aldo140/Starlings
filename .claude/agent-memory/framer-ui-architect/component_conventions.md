@@ -218,5 +218,41 @@ Footer trust indicators use a pill badge pattern instead of plain text:
 ### Textarea refined style (form card)
 Premium feel: `bg-[#f8faf9] border border-[#e8f3f1]` with `focus:border-[#448a7d]/40 rounded-[1.5rem]` and box-shadow `inset 0 2px 8px rgba(30,58,52,0.04)`. Focus ring: `0 0 0 3px rgba(68,138,125,0.10)`.
 
+### Uiverse.io Animation CSS — Naming Conventions (added 2026-05-17)
+
+All Uiverse.io CSS animations live in the `<style>` block of `index.html`. They are namespaced with a two-letter prefix to avoid collision with Tailwind and Framer Motion:
+
+| Prefix | Area | Origin |
+|---|---|---|
+| `cp-flashlight` | Community Partners flashlight panel | Cobp/Uiverse |
+| `cp-badge` / `cp-badge-loader` / `cp-badge-words` / `cp-badge-word` | Spinning-word verified badge | kennyotsu/Uiverse |
+| `cp-svg-spinner-dash` / `cp-svg-spinner-spin` | SVG circle spinner eyebrow badge in MurmurationSyncBanner | SelfMadeSystem/Uiverse |
+| `cp-cube-loader` | Bouncing cube — CR header "Syncing" label + LoadingBar.tsx floating pill | alexruix/Uiverse |
+| `cr-book-loader` | Book/page-flip primary visual in MurmurationSyncBanner | Nawsome/Uiverse |
+| `cp-words-slot` / `cp-words-word` | Large cycling heading variant — reuses `cp_word_cycle` keyframe at heading scale | kennyotsu (extended) |
+| `cp-3d-parent` / `cp-3d-card` / `cp-3d-glass` / `cp-3d-logo` / `cp-3d-circle` / `cp-3d-c1–5` / `cp-3d-social-btn` | Desktop Community Partners card grid (one card per partner) | Smit-Prajapati/Uiverse |
+
+**Color remapping rule:** All Uiverse animations remap their original colors to the Starlings palette:
+- Dark backgrounds → `#0f172a` (ink900) or `#1e3a34` (teal900)
+- Primary accent → `#448a7d` (teal500)
+- Highlight/CTA → `#e57c6e` (coral400)
+- Soft highlight → `#fbd6d1` (coral200) or `#e8f3f1` (mint)
+- Hover darken → `#d46a5c` (coral hover) or `#2d5a52` (teal700)
+
+**FINAL Semantic Placement Map (v2, 2026-05-17):**
+- **Flashlight** → Full-width atmospheric header for Community Partners section. `cp-flashlight` fills the entire panel (absolute inset-0). Dark gradient overlay makes text legible. The animation IS the design, not a decoration.
+- **Spinning words badge** → Eyebrow inside the flashlight panel (`cp-badge` / `cp-badge-words` / `cp-badge-word`). Reads "Verified [cycling descriptor]".
+- **Large cycling words** → H2 inside the flashlight panel (`cp-words-slot` / `cp-words-word`). Reads "Starlings-trained [cycling org type]". Font: Cabinet Grotesk, size `clamp(2rem,5.5vw,4.25rem)`.
+- **SVG circle spinner** → MurmurationSyncBanner eyebrow badge (18px). Communicates live-data loading, not a progress spinner.
+- **Book loader** → MurmurationSyncBanner primary visual (left side, `hidden sm:block`). Page-flip = resources being gathered. Banner bg: `#1e3a34`, no photo.
+- **Bouncing cube** → Community Resources header "Syncing" label inline + `LoadingBar.tsx` fixed bottom-right floating pill (z-[5002]).
+- **3D cards** → Desktop Community Partners grid (`hidden md:grid md:grid-cols-2 lg:grid-cols-3`). Each partner = one `cp-3d-parent` card. Height 270px per card.
+
+**Key design lesson recorded (user feedback 2026-05-17):** Don't graft animations onto existing sections as decorations. Each animation must be the DEFINING visual identity of its section — design the section around the animation's character, not the other way around.
+
+**Responsiveness rule for Uiverse decorations:** Heavy decorative panels are `hidden md:block` or `hidden lg:block`. Spinning-word badge and inline loaders show at all breakpoints. Book loader in MurmurationSyncBanner: `hidden sm:block`.
+
+**Keyframe naming:** All keyframes use the same prefix as their CSS class (e.g. `@keyframes cp_word_cycle`, `@keyframes cp_flashlight_scan`). Always namespace keyframes — global keyframe names collide across browsers.
+
 **Why:** Knowing these patterns prevents inconsistency and avoids introducing styles or z-index values that conflict with existing layers.
 **How to apply:** When adding a new component, follow the card border/shadow/padding conventions above. When adding new icons, update `constants.tsx` ICONS export. When writing animations, start from the `ease = [0.16, 1, 0.3, 1]` constant and spring configs documented here.

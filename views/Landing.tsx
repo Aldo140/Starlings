@@ -2078,6 +2078,159 @@ const Landing: React.FC = () => {
 
       {questionSection}
 
+      {/* ── Resources Discovery Section ── */}
+      <section className="relative overflow-hidden bg-white py-14 md:py-28">
+        {/* Subtle dot texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-40"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6">
+
+          {/* Mobile: stacked; Desktop: two-panel grid */}
+          <div className="grid md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr] gap-4 md:gap-5 items-stretch">
+
+            {/* ── LEFT: dark editorial card — heading + CTA ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.72, ease: EASE_OUT_EXPO }}
+              className="flex flex-col justify-between rounded-[2.5rem] md:rounded-[3rem] overflow-hidden"
+              style={{ background: '#1e3a34', minHeight: 'clamp(280px, 40vw, 480px)' }}
+            >
+              <div className="p-7 md:p-12">
+                <p className="text-[9px] font-black uppercase tracking-[0.42em] text-[#448a7d] mb-5 md:mb-7">
+                  Support Resources
+                </p>
+                <h2 className="font-cabinet font-black text-white leading-[0.95] tracking-tight mb-4 md:mb-5"
+                  style={{ fontSize: 'clamp(2.1rem, 4vw, 3.75rem)' }}>
+                  Everything you<br />need,{' '}
+                  <span className="text-[#e57c6e] italic">in one place.</span>
+                </h2>
+                <p className="text-white/40 text-[13px] font-medium leading-relaxed max-w-[28ch]">
+                  Vetted partners, crisis lines, peer resources, and community guides — organized for young people navigating family substance use.
+                </p>
+              </div>
+              <div className="p-7 md:p-12 pt-2 md:pt-0">
+                <Link
+                  to="/resources"
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full font-black text-[11px] uppercase tracking-[0.2em] text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                  style={{
+                    background: 'linear-gradient(135deg, #e57c6e 0%, #d46a5c 100%)',
+                    boxShadow: '0 14px 36px -10px rgba(229,124,110,0.6)',
+                  }}
+                >
+                  Browse Resources
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* ── RIGHT: mint card — animated resource category rows ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.72, delay: 0.1, ease: EASE_OUT_EXPO }}
+              className="rounded-[2.5rem] md:rounded-[3rem] overflow-hidden flex flex-col"
+              style={{ background: '#e8f3f1' }}
+            >
+              {([
+                {
+                  label: 'Care Partners',
+                  desc: 'Vetted local organizations',
+                  color: '#1e3a34',
+                  bg: 'rgba(30,58,52,0.08)',
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Crisis Lines',
+                  desc: '24/7 immediate support',
+                  color: '#e57c6e',
+                  bg: 'rgba(229,124,110,0.10)',
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Peer Resources',
+                  desc: 'Community-shared tools',
+                  color: '#448a7d',
+                  bg: 'rgba(68,138,125,0.10)',
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Community Guides',
+                  desc: 'Step-by-step reading',
+                  color: '#1e3a34',
+                  bg: 'rgba(30,58,52,0.08)',
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: 'Youth Services',
+                  desc: 'Support for young people',
+                  color: '#448a7d',
+                  bg: 'rgba(68,138,125,0.10)',
+                  icon: (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  ),
+                },
+              ] as const).map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.18 + i * 0.07, ease: EASE_OUT_EXPO }}
+                  className={i < 4 ? 'border-b border-[#c8dedd]/50' : ''}
+                >
+                  <Link
+                    to="/resources"
+                    className="flex items-center gap-4 px-6 md:px-9 py-4 md:py-5 group hover:bg-white/50 transition-colors duration-200"
+                  >
+                    <div
+                      className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
+                      style={{ background: item.bg, color: item.color }}
+                    >
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[#1e3a34] font-black text-[13px] leading-none mb-0.5">{item.label}</p>
+                      <p className="text-[#1e3a34]/40 text-[11px] font-medium">{item.desc}</p>
+                    </div>
+                    <svg
+                      className="w-4 h-4 text-[#448a7d]/30 group-hover:text-[#448a7d] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="bg-[#1e3a34] py-16 md:py-40 max-[400px]:py-12 text-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-20 pointer-events-none">

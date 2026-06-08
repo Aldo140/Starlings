@@ -50,13 +50,51 @@ interface CityGroup {
   topTags: string[];
 }
 
-const getCityCoordinates = (city: string, fallbackLat: number, fallbackLng: number) => {
-  const normalizedCity = city.trim().toLowerCase();
-  const hub = CANADIAN_HUBS.find((place) => place.name.toLowerCase() === normalizedCity);
+/**
+ * Resolves a post's display city and canonical coordinates.
+ *
+ * Three cases:
+ *  1. Known hub city name → use hub's canonical coords (no guessing needed).
+ *  2. City is "Unknown" / empty → always snap to nearest CANADIAN_HUBS hub so
+ *     we never display the string "Unknown" on the map.
+ *  3. Named non-hub city → snap to nearest hub only if the stored lat/lng is
+ *     within 30 km of that hub (catches sheet data errors where the city name
+ *     and coordinates belong to different places, e.g. "Kelowna" with Calgary
+ *     coords). Otherwise keep the original city name and coordinates.
+ */
+const resolveCity = (
+  city: string,
+  lat: number,
+  lng: number,
+): { city: string; lat: number; lng: number } => {
+  const normalizedCity = (city || '').trim().toLowerCase();
 
-  return hub
-    ? { lat: hub.lat, lng: hub.lng }
-    : { lat: fallbackLat, lng: fallbackLng };
+  // Case 1: already a known hub city
+  const knownHub = CANADIAN_HUBS.find(h => h.name.toLowerCase() === normalizedCity);
+  if (knownHub) return { city: knownHub.name, lat: knownHub.lat, lng: knownHub.lng };
+
+  // Find nearest hub (needed for cases 2 & 3)
+  let nearestHub = CANADIAN_HUBS[0];
+  let nearestDist = Infinity;
+  if (lat !== 0 || lng !== 0) {
+    for (const hub of CANADIAN_HUBS) {
+      const dist = calculateDistance(lat, lng, hub.lat, hub.lng);
+      if (dist < nearestDist) { nearestDist = dist; nearestHub = hub; }
+    }
+  }
+
+  // Case 2: unknown / empty city — always snap to nearest hub
+  if (!normalizedCity || normalizedCity === 'unknown') {
+    return { city: nearestHub.name, lat: nearestHub.lat, lng: nearestHub.lng };
+  }
+
+  // Case 3: named non-hub city — snap only when coords closely match a hub
+  if (nearestDist <= 30) {
+    return { city: nearestHub.name, lat: nearestHub.lat, lng: nearestHub.lng };
+  }
+
+  // Otherwise keep the stored city name and coordinates
+  return { city: city.trim(), lat, lng };
 };
 
 const getItemPreview = (item: MapItem) => {
@@ -157,15 +195,15 @@ const MapView: React.FC = () => {
 
     // First pass: posts
     posts.forEach(post => {
-      const key = post.city || post.country || 'Unknown';
+      const resolved = resolveCity(post.city, post.lat, post.lng);
+      const key = resolved.city || post.country || 'Unknown';
       if (!map.has(key)) {
-        const coords = getCityCoordinates(post.city, post.lat, post.lng);
         map.set(key, {
           id: key,
-          city: post.city || '',
+          city: resolved.city,
           country: post.country || '',
-          lat: coords.lat,
-          lng: coords.lng,
+          lat: resolved.lat,
+          lng: resolved.lng,
           count: 0,
           items: [],
           topTags: [],

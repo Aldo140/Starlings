@@ -331,7 +331,13 @@ export const apiService = {
         const data = await res.json();
 
         const approvedPosts = Array.isArray(data) ? data : [];
-        const normalizedApproved = approvedPosts.map(p => {
+        // Filter out empty / incomplete rows before any further processing.
+        // The sheet can have rows with no id or message (e.g. partially filled
+        // admin rows, blank approval rows). These must never reach the map.
+        const validRaw = approvedPosts.filter((p: any) =>
+          p && String(p.id ?? '').trim() !== '' && String(p.message ?? '').trim() !== ''
+        );
+        const normalizedApproved = validRaw.map((p: any) => {
           const post = apiService.ensureAlias(p) as Post;
           // Protect against users typing plaintext strings into the 'what_helped' tags column
           const rawTags: unknown = post.what_helped;

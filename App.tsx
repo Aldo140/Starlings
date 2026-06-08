@@ -11,6 +11,7 @@ const ShareView = React.lazy(() => import('./views/ShareView.tsx'));
 const Guidelines = React.lazy(() => import('./views/Guidelines.tsx'));
 const ResourcesView = React.lazy(() => import('./views/ResourcesView.tsx'));
 const AddResourceView = React.lazy(() => import('./views/AddResourceView.tsx'));
+const AboutMap = React.lazy(() => import('./views/AboutMap.tsx'));
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/about" element={<AboutMap />} />
             <Route path="/map" element={<MapView />} />
             <Route path="/resources" element={<ResourcesView />} />
             <Route path="/add-resource" element={<AddResourceView />} />

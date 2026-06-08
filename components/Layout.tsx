@@ -26,6 +26,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       ),
     },
     {
+      name: 'About the Map', path: '/about',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4M12 8h.01" />
+        </svg>
+      ),
+      desc: 'How Starlings works',
+      illustration: (
+        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <circle cx="24" cy="24" r="18" stroke="#448a7d" strokeWidth="1.5" opacity="0.4" />
+          <path d="M24 32v-8M24 18h.01" stroke="#448a7d" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
       name: 'Resources', path: '/resources',
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
       desc: 'Peer & community resources',

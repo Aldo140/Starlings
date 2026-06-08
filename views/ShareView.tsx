@@ -167,38 +167,33 @@ const ShareView: React.FC = () => {
         alias: formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined
       });
     } else {
-      // Resource flow
-      if (formData.selectedLocation) {
-        // Map-based resource
-        const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
-        const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
-        const combinedMessage = `[RESOURCE - ${formData.resourceType}] ${formData.resourceTitle}${authorInfo} | Link: ${formData.resourceUrl}\n\n${formData.resourceDescription}\n\nRecommended by: ${recommendedBy}`;
+      // Resource flow — always writes to Live_Resources via submitResource().
+      // Location is optional: if the user picked a city (e.g. a local clinic or
+      // drop-in), the city/lat/lng go into the structured resource fields so the
+      // moderator can approve it as a map pin. We never pack resource fields into
+      // a message string or call submitPost() — that caused URL flagging and
+      // placed records in the wrong sheet.
+      const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
+      const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
+      const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${recommendedBy})`.trim();
 
-        result = await apiService.submitPost({
+      result = await apiService.submitResource({
+        title: formData.resourceTitle,
+        url: formData.resourceUrl,
+        type: formData.resourceType,
+        description: combinedDesc,
+        alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
+        category: 'community',
+        // Only include location when the user explicitly selected one
+        ...(formData.selectedLocation && {
           city: formData.selectedLocation.address.city ||
             formData.selectedLocation.address.town ||
-            formData.selectedLocation.address.village || 'Unknown',
+            formData.selectedLocation.address.village || '',
           country: formData.selectedLocation.address.country,
           lat: parseFloat(formData.selectedLocation.lat),
           lng: parseFloat(formData.selectedLocation.lon),
-          message: combinedMessage,
-          what_helped: [],
-          alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined
-        });
-      } else {
-        // Global resource
-        const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
-        const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
-        const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${recommendedBy})`;
-        result = await apiService.submitResource({
-          title: formData.resourceTitle,
-          url: formData.resourceUrl,
-          type: formData.resourceType,
-          description: combinedDesc,
-          alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
-          category: 'community'
-        });
-      }
+        }),
+      });
     }
 
     if (result.success) {

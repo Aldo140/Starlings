@@ -9,6 +9,21 @@ import { QASkeleton, QAThreadCard } from '../components/QAThread.tsx';
 
 /* ── Landing Page ───────────────────────────────────────────────────────── */
 
+const BestPracticesIcon: React.FC = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-[#448a7d]">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+      stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+  </svg>
+);
+
+const ChecklistIcon: React.FC = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-[#448a7d]">
+    <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M9 7h6M9 11h6M9 15h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M5 7l-2 2 1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const Landing: React.FC = () => {
   const [question, setQuestion] = useState('');
   const [isSubmittingQ, setIsSubmittingQ] = useState(false);
@@ -33,6 +48,9 @@ const Landing: React.FC = () => {
   const { scrollYProgress: mobileCommunityProgress } = useScroll({ target: mobileCommunityRef, offset: ['start 68%', 'end 18%'] });
   const communityRow1X = useSpring(useTransform(mobileCommunityProgress, [0, 1], [28, -760]), { stiffness: 120, damping: 24, restDelta: 0.001 });
   const communityRow2X = useSpring(useTransform(mobileCommunityProgress, [0, 1], [-760, 28]), { stiffness: 120, damping: 24, restDelta: 0.001 });
+
+  const quickRefRef = useRef<HTMLDivElement>(null);
+  const quickRefInView = useInView(quickRefRef, { once: true, margin: '-80px' });
 
   const openAnsweredQA = async () => {
     setShowAnsweredQA(true);
@@ -1140,6 +1158,132 @@ const Landing: React.FC = () => {
                   </Link>
                 </motion.div>
               ))}
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── Quick Reference ── */}
+      <section className="relative z-10 py-16 md:py-24 bg-white">
+        <div className="absolute inset-0 pointer-events-none opacity-30"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+        <div ref={quickRefRef} className="relative z-10 max-w-7xl mx-auto px-6 max-[400px]:px-4">
+          <motion.div
+            className="mb-10 md:mb-14"
+            initial={{ opacity: 0, y: 28 }}
+            animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+          >
+            <p className="text-[9px] font-black uppercase tracking-[0.34em] text-[#448a7d] mb-3">Before You Post</p>
+            <h2 className="font-cabinet text-3xl md:text-4xl font-black text-[#1e3a34] tracking-tight leading-tight">
+              Quick Reference
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Card 1 — Best Practices */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0 }}
+              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#fef8f0] to-white border border-amber-100/60
+                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
+                transition-all duration-300"
+            >
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <BestPracticesIcon />
+                </div>
+                <h3 className="font-black text-[#1e3a34] text-base">Best Practices</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  'Be specific, not graphic',
+                  'Focus on healing, not harm',
+                  'Respect others\' experiences',
+                  'No unsolicited advice',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-500 font-light">
+                    <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-[#e8f3f1] flex items-center justify-center">
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                        <path d="M1.5 4l1.8 1.8L6.5 2" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            {/* Card 2 — Quick Checklist */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0.1 }}
+              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#f0f4f9] to-white border border-gray-100/70
+                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
+                transition-all duration-300"
+            >
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-[#e8f3f1] flex items-center justify-center">
+                  <ChecklistIcon />
+                </div>
+                <h3 className="font-black text-[#1e3a34] text-base">Quick Checklist</h3>
+              </div>
+              <ul className="space-y-3.5">
+                {[
+                  'No personal details',
+                  'Safe for all ages',
+                  'Not triggering or graphic',
+                  'Respectful tone',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-[#d4ede9] bg-white" />
+                    <span className="text-sm text-gray-500 font-light">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            {/* Card 3 — How It Works */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0.2 }}
+              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#f4faf9] to-white border border-[#e8f3f1]
+                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
+                transition-all duration-300"
+            >
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-9 h-9 rounded-xl bg-[#e8f3f1] flex items-center justify-center text-[#448a7d]">
+                  {ICONS.ShieldCheck}
+                </div>
+                <h3 className="font-black text-[#1e3a34] text-base">How It Works</h3>
+              </div>
+              <div className="flex flex-col gap-0">
+                {[
+                  { num: '01', title: 'You submit', desc: 'Your note enters the queue anonymously — no account, no trace.' },
+                  { num: '02', title: 'We review', desc: 'A human moderator checks within 48–72 hours.' },
+                  { num: '03', title: "It's live", desc: 'Your note appears on the map for the community.' },
+                ].map((step, idx) => (
+                  <React.Fragment key={step.num}>
+                    <div className="flex items-start gap-3 py-3">
+                      <span className="text-[11px] font-black text-[#448a7d] tabular-nums mt-0.5 flex-shrink-0 w-6">
+                        {step.num}
+                      </span>
+                      <div>
+                        <p className="text-sm font-black text-[#1e3a34]">{step.title}</p>
+                        <p className="text-xs font-light text-gray-500 mt-0.5 leading-relaxed">{step.desc}</p>
+                      </div>
+                    </div>
+                    {idx < 2 && (
+                      <div className="ml-[22px] h-px bg-[#e8f3f1]" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
             </motion.div>
 
           </div>

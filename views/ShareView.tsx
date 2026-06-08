@@ -58,7 +58,6 @@ const ShareView: React.FC = () => {
     citySearch: '',
     selectedLocation: null as LocationSearchResult | null,
 
-    confirmAge: false,
     confirmNoDetails: false,
     confirmReviewed: false
   });
@@ -120,7 +119,7 @@ const ShareView: React.FC = () => {
   };
 
   const isFormValid = () => {
-    const baseValid = formData.confirmAge && formData.confirmNoDetails && formData.confirmReviewed;
+    const baseValid = formData.confirmNoDetails && formData.confirmReviewed;
     if (!baseValid) return false;
 
     if (shareType === 'note') {
@@ -545,13 +544,6 @@ const ShareView: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <CustomCheckbox
-                id="confirmAge"
-                label="I am 18 or older"
-                subtext={`You must be an adult to share a ${shareType} on the map.`}
-                checked={formData.confirmAge}
-                onChange={(e) => setFormData(prev => ({ ...prev, confirmAge: e.target.checked }))}
-              />
               <CustomCheckbox
                 id="confirmNoDetails"
                 label="No identifying details"

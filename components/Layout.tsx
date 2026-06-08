@@ -215,7 +215,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         )}
       </AnimatePresence>
 
-      <div className="bg-[#fbd6d1] border-b border-[#e57c6e]/20 py-3 px-4 flex-shrink-0 text-center z-50">
+      <div className="bg-[#e8f3f1] border-b border-[#448a7d]/20 py-3 px-4 flex-shrink-0 text-center z-50">
         <p className="text-xs md:text-sm font-semibold text-[#1e3a34]">
           Starlings is not crisis support. If you need support right now, you can find care options
           <a href="https://www.starlings.ca/community-crisis-lines" className="ml-1 underline hover:text-[#e57c6e] transition-colors">here</a>.

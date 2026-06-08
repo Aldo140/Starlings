@@ -216,7 +216,7 @@ const ShareView: React.FC = () => {
         </div>
         <h2 className="text-4xl font-black text-[#1e3a34] mb-4 italic tracking-tight">Submission Received.</h2>
         <p className="text-gray-500 font-medium md:text-lg mb-8 max-w-md mx-auto">
-          Thank you for sharing your light. To ensure our community remains a safe space, all submissions undergo a moderation review process. You can expect it to be reviewed within the next 48 hours.
+          Thank you for sharing your light. Your note has been received and will be treated with care. This community is stronger because you're in it.
         </p>
         <button
           onClick={() => navigate('/map')}

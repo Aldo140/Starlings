@@ -8,6 +8,7 @@ const AddResourceView: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const defaultMode = searchParams.get('mode') === 'apply' ? 'apply' : 'recommend';
+    const defaultMapBased = searchParams.get('mapBased') === '1';
     const requestedType = searchParams.get('type') as ResourceType | null;
     const defaultType = requestedType && Object.values(ResourceType).includes(requestedType)
         ? requestedType
@@ -30,16 +31,23 @@ const AddResourceView: React.FC = () => {
         submitterEmail: '',
         qualifications: '',
         agreeToTerms: false,
+        includeOnMap: defaultMapBased,
         citySearch: '',
         selectedLocation: null as LocationSearchResult | null,
     });
 
     const wordCount = formData.description.trim().split(/\s+/).filter(Boolean).length;
+    const selectedCity = formData.selectedLocation
+        ? formData.selectedLocation.address.city ||
+          formData.selectedLocation.address.town ||
+          formData.selectedLocation.address.village ||
+          ''
+        : '';
 
     // Location search effect — mirrors ShareView pattern exactly
     useEffect(() => {
         const query = formData.citySearch;
-        if (query.length < 2 || formData.selectedLocation) {
+        if (mode !== 'recommend' || !formData.includeOnMap || query.length < 2 || formData.selectedLocation) {
             if (!formData.selectedLocation) setLocationResults([]);
             return;
         }
@@ -66,7 +74,7 @@ const AddResourceView: React.FC = () => {
         }, 600);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [formData.citySearch, formData.selectedLocation]);
+    }, [formData.citySearch, formData.selectedLocation, formData.includeOnMap, mode]);
 
     const handleLocationSelect = (loc: LocationSearchResult) => {
         setFormData(prev => ({
@@ -79,6 +87,7 @@ const AddResourceView: React.FC = () => {
 
     const isFormValid = () => {
         if (!formData.title.trim() || !formData.url.trim() || wordCount > 500) return false;
+        if (mode === 'recommend' && formData.includeOnMap && (!formData.selectedLocation || !selectedCity)) return false;
         if (mode === 'apply') {
             return formData.submitterEmail.trim() && formData.qualifications.trim() && formData.agreeToTerms;
         }
@@ -95,9 +104,9 @@ const AddResourceView: React.FC = () => {
             ? `[APPLICATION] Qualifications: ${formData.qualifications} | Desc: ${formData.description}`
             : `${formData.description} (Recommended by ${aliasValue || 'Anonymous'})`;
 
-        const locationPayload = formData.selectedLocation
+        const locationPayload = mode === 'recommend' && formData.includeOnMap && formData.selectedLocation
             ? {
-                city: formData.selectedLocation.address.city || formData.selectedLocation.address.town || formData.selectedLocation.address.village || '',
+                city: selectedCity,
                 country: formData.selectedLocation.address.country || '',
                 lat: parseFloat(formData.selectedLocation.lat),
                 lng: parseFloat(formData.selectedLocation.lon),
@@ -228,66 +237,100 @@ const AddResourceView: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Location picker — optional, for local resources */}
+                    {/* Map placement is opt-in for community recommendations only. */}
+                    {mode === 'recommend' && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-baseline">
-                            <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">
-                                Where is this resource based?
-                            </label>
-                            <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
-                        </div>
-                        <p className="text-sm text-gray-500">
-                            Only needed if this is a local resource like a support group or clinic. Leave blank for global resources.
-                        </p>
-
-                        {formData.selectedLocation ? (
-                            <div className="flex items-center gap-3">
-                                <span className="inline-flex items-center gap-2 px-5 py-3 bg-teal-50 border border-[#448a7d]/30 rounded-full text-sm font-bold text-[#1e3a34]">
-                                    {formData.selectedLocation.address.city || formData.selectedLocation.address.town || formData.selectedLocation.address.village || formData.selectedLocation.display_name}
-                                    <button
-                                        type="button"
-                                        aria-label="Clear location"
-                                        onClick={() => setFormData(prev => ({ ...prev, selectedLocation: null, citySearch: '' }))}
-                                        className="ml-1 text-[#448a7d] hover:text-[#1e3a34] transition-colors font-black leading-none"
-                                    >
-                                        ✕
-                                    </button>
+                        <label
+                            htmlFor="includeOnMap"
+                            className={`flex items-start gap-4 p-5 rounded-[1.5rem] cursor-pointer border-2 transition-all ${
+                                formData.includeOnMap
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : 'bg-gray-50 border-transparent hover:border-gray-100'
+                            }`}
+                        >
+                            <input
+                                id="includeOnMap"
+                                type="checkbox"
+                                checked={formData.includeOnMap}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    includeOnMap: e.target.checked,
+                                    citySearch: e.target.checked ? prev.citySearch : '',
+                                    selectedLocation: e.target.checked ? prev.selectedLocation : null,
+                                }))}
+                                className="mt-1 h-5 w-5 rounded border-gray-300 text-[#448a7d]"
+                            />
+                            <span>
+                                <span className="block text-[#1e3a34] font-black text-lg italic">This is a local, map-based resource</span>
+                                <span className="block text-sm text-gray-500 mt-1">
+                                    Choose this only for a service tied to a real city, such as a clinic, support group, or community centre.
                                 </span>
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <input
-                                    id="citySearch"
-                                    ref={citySearchRef}
-                                    type="text"
-                                    autoComplete="off"
-                                    placeholder="City name..."
-                                    className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
-                                    value={formData.citySearch}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, citySearch: e.target.value, selectedLocation: null }))}
-                                />
-                                {isSearching && (
-                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase tracking-widest">
-                                        Searching...
-                                    </span>
-                                )}
-                                {locationResults.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 mt-3 rounded-[1.5rem] shadow-2xl z-30 overflow-hidden divide-y divide-gray-50">
-                                        {locationResults.map((loc, idx) => (
+                            </span>
+                        </label>
+
+                        {formData.includeOnMap && (
+                            <div className="space-y-4 pl-1">
+                                <div className="flex justify-between items-baseline">
+                                    <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">
+                                        Where is this resource based?
+                                    </label>
+                                    <span className="text-xs text-[#e57c6e] font-bold uppercase tracking-widest">Required for map</span>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                    The approved resource will appear in Map-Based Resources and on the Support Map.
+                                </p>
+
+                                {formData.selectedLocation ? (
+                                    <div className="flex items-center gap-3">
+                                        <span className="inline-flex items-center gap-2 px-5 py-3 bg-teal-50 border border-[#448a7d]/30 rounded-full text-sm font-bold text-[#1e3a34]">
+                                            {formData.selectedLocation.address.city || formData.selectedLocation.address.town || formData.selectedLocation.address.village || formData.selectedLocation.display_name}
                                             <button
-                                                key={idx}
                                                 type="button"
-                                                className="w-full text-left px-6 py-5 hover:bg-teal-50 border-b border-gray-50 last:border-0 text-sm font-medium text-[#1e3a34]"
-                                                onClick={() => handleLocationSelect(loc)}
+                                                aria-label="Clear location"
+                                                onClick={() => setFormData(prev => ({ ...prev, selectedLocation: null, citySearch: '' }))}
+                                                className="ml-1 text-[#448a7d] hover:text-[#1e3a34] transition-colors font-black leading-none"
                                             >
-                                                {loc.display_name}
+                                                ✕
                                             </button>
-                                        ))}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="relative">
+                                        <input
+                                            id="citySearch"
+                                            ref={citySearchRef}
+                                            type="text"
+                                            autoComplete="off"
+                                            placeholder="City name..."
+                                            className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                                            value={formData.citySearch}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, citySearch: e.target.value, selectedLocation: null }))}
+                                        />
+                                        {isSearching && (
+                                            <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                                Searching...
+                                            </span>
+                                        )}
+                                        {locationResults.length > 0 && (
+                                            <div className="absolute top-full left-0 right-0 bg-white border border-gray-100 mt-3 rounded-[1.5rem] shadow-2xl z-30 overflow-hidden divide-y divide-gray-50">
+                                                {locationResults.map((loc, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        className="w-full text-left px-6 py-5 hover:bg-teal-50 border-b border-gray-50 last:border-0 text-sm font-medium text-[#1e3a34]"
+                                                        onClick={() => handleLocationSelect(loc)}
+                                                    >
+                                                        {loc.display_name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
+                    )}
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-baseline">

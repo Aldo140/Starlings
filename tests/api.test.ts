@@ -41,6 +41,24 @@ describe('normalizeResource', () => {
     const result = normalizeResource(raw);
     expect(result.city).toBeUndefined();
   });
+
+  it('does not retain staff-only or unknown sheet fields in public resources', () => {
+    const raw = {
+      ...baseRaw,
+      submitter_email: 'private@example.com',
+      qualifications: 'Private application details',
+      flagged: true,
+      Approve: true,
+      internal_notes: 'Staff only',
+    };
+    const result = normalizeResource(raw) as Record<string, unknown>;
+    expect(result.submitter_email).toBeUndefined();
+    expect(result.submitterEmail).toBeUndefined();
+    expect(result.qualifications).toBeUndefined();
+    expect(result.flagged).toBeUndefined();
+    expect(result.Approve).toBeUndefined();
+    expect(result.internal_notes).toBeUndefined();
+  });
 });
 
 describe('Content Moderation BANNED_PATTERNS', () => {

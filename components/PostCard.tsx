@@ -77,7 +77,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
             onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
             className="text-[#448a7d] text-xs font-bold uppercase tracking-widest hover:underline mb-6 block"
           >
-            Read more
+            See more
           </button>
         )}
 
@@ -137,7 +137,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, selected }) => {
           onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
           className="text-[#448a7d] text-xs font-bold uppercase tracking-widest hover:underline mb-6 block"
         >
-          Read more
+          See more
         </button>
       )}
 

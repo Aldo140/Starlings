@@ -3,10 +3,35 @@ import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType } from '../types.ts';
 import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
-import { Book, Headphones, Music, Share2, Globe, Image as ImageIcon, MessageCircle } from 'lucide-react';
+import {
+    Book,
+    FileText,
+    Globe,
+    Headphones,
+    Image as ImageIcon,
+    MapPin,
+    MessageCircle,
+    Music,
+    Share2,
+    Video,
+    Wrench,
+    Shapes,
+} from 'lucide-react';
 import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import { useRef } from 'react';
 import LoadingBar from '../components/LoadingBar.tsx';
+
+const MAP_BASED_BUCKET_ID = 'map_based';
+const OTHER_BUCKET_ID = 'other';
+const KNOWN_RESOURCE_TYPES = new Set<string>(Object.values(ResourceType));
+
+const hasMapLocation = (resource: Resource): boolean =>
+    Boolean(
+        resource.city &&
+        Number.isFinite(resource.lat) &&
+        Number.isFinite(resource.lng) &&
+        (resource.lat !== 0 || resource.lng !== 0)
+    );
 
 
 const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
@@ -81,8 +106,14 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
 
             <h4 className="font-black text-2xl text-[#1e3a34] mb-2 leading-tight">{resource.title}</h4>
             {recommender && <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recommended by {recommender}</p>}
+            {hasMapLocation(resource) && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-4 bg-emerald-50 text-emerald-700 rounded-lg w-fit border border-emerald-100">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{resource.city}</span>
+                </div>
+            )}
             <p className="text-base font-medium text-gray-600 mb-6 flex-grow leading-relaxed">{cleanDescription}</p>
-            {resource.url && resource.type !== ResourceType.MEME && (
+            {resource.url && (resource.type !== ResourceType.MEME || !resource.imageUrl) && (
                 <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm font-black text-indigo-500 hover:text-indigo-600 hover:underline mb-6 inline-block uppercase tracking-widest">Explore Resource &rarr;</a>
             )}
 
@@ -455,12 +486,17 @@ const ResourcesView: React.FC = () => {
 
     // BUCKETS CONFIGURATION (Shared across Mobile, Tablet, and Desktop layouts)
     const COMMUNITY_BUCKETS = [
+        { id: MAP_BASED_BUCKET_ID, label: 'Map-Based Resources', icon: <MapPin className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-emerald-600', bg: 'bg-gradient-to-br from-emerald-400 to-teal-700 shadow-emerald-500/30' },
+        { id: ResourceType.VIDEO, label: 'Videos', icon: <Video className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-rose-500', bg: 'bg-gradient-to-br from-rose-400 to-red-600 shadow-rose-500/30' },
+        { id: ResourceType.PUBLICATION, label: 'Publications', icon: <FileText className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-indigo-500', bg: 'bg-gradient-to-br from-indigo-400 to-indigo-700 shadow-indigo-500/30' },
+        { id: ResourceType.TOOL, label: 'Tools', icon: <Wrench className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-cyan-600', bg: 'bg-gradient-to-br from-cyan-400 to-cyan-700 shadow-cyan-500/30' },
         { id: ResourceType.BOOK, label: 'Books', icon: <Book className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/30' },
         { id: ResourceType.PODCAST, label: 'Podcasts', icon: <Headphones className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-purple-500', bg: 'bg-gradient-to-br from-purple-500 to-purple-700 shadow-purple-500/30' },
         { id: ResourceType.SONG, label: 'Songs', icon: <Music className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-pink-500', bg: 'bg-gradient-to-br from-pink-400 to-pink-600 shadow-pink-500/30' },
         { id: ResourceType.SOCIAL_MEDIA, label: 'Social Media', icon: <Share2 className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-blue-500', bg: 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-blue-500/30' },
         { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
         { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
+        { id: OTHER_BUCKET_ID, label: 'Other Resources', icon: <Shapes className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-slate-500', bg: 'bg-gradient-to-br from-slate-400 to-slate-700 shadow-slate-500/30' },
     ];
 
     // MEMOIZED: Compute bucket resources only when resources array changes
@@ -468,7 +504,12 @@ const ResourcesView: React.FC = () => {
         const result: Record<string, Resource[]> = {};
         COMMUNITY_BUCKETS.forEach(bucket => {
             result[bucket.id] = resources
-                .filter(r => r.category === 'community' && r.type === bucket.id)
+                .filter(r => {
+                    if (r.category !== 'community') return false;
+                    if (bucket.id === MAP_BASED_BUCKET_ID) return hasMapLocation(r);
+                    if (bucket.id === OTHER_BUCKET_ID) return !hasMapLocation(r) && !KNOWN_RESOURCE_TYPES.has(String(r.type));
+                    return !hasMapLocation(r) && r.type === bucket.id;
+                })
                 .sort((a, b) => a.title.localeCompare(b.title));
         });
         return result;
@@ -1041,8 +1082,8 @@ const ResourcesView: React.FC = () => {
                             {/* MOBILE: Horizontal Pill Rail + Content Panel */}
                             <div className="md:hidden mt-6">
 
-                                {/* 3×2 chip grid — all 6 categories visible, no scroll */}
-                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                {/* Compact category grid — all categories visible without horizontal scrolling */}
+                                <div className="grid grid-cols-2 gap-2 mb-4">
                                     {COMMUNITY_BUCKETS.map((bucket) => {
                                         const count = communityBucketResources[bucket.id].length;
                                         const isActive = activeCommunityIndex === bucket.id;
@@ -1138,7 +1179,11 @@ const ResourcesView: React.FC = () => {
                                                         </div>
                                                         <p className="text-gray-400 font-bold text-base mb-3">No {activeBucket.label.toLowerCase()} yet.</p>
                                                         <Link
-                                                            to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`}
+                                                            to={activeCommunityIndex === MAP_BASED_BUCKET_ID
+                                                                ? '/add-resource?mode=recommend&mapBased=1'
+                                                                : activeCommunityIndex === OTHER_BUCKET_ID
+                                                                    ? '/add-resource?mode=recommend'
+                                                                : `/add-resource?mode=recommend&type=${activeCommunityIndex}`}
                                                             className="inline-flex px-6 py-2.5 rounded-full bg-[#e8f3f1] text-[#448a7d] font-black uppercase tracking-widest text-[10px] hover:bg-[#d5e8e4] transition-colors"
                                                         >
                                                             Recommend One
@@ -1290,7 +1335,11 @@ const ResourcesView: React.FC = () => {
                                                         </div>
                                                         <p className="text-gray-400 font-bold text-xl mb-4 tracking-tight">No {activeBucket.label.toLowerCase()} yet.</p>
                                                         <Link
-                                                            to={`/add-resource?mode=recommend&type=${activeCommunityIndex}`}
+                                                            to={activeCommunityIndex === MAP_BASED_BUCKET_ID
+                                                                ? '/add-resource?mode=recommend&mapBased=1'
+                                                                : activeCommunityIndex === OTHER_BUCKET_ID
+                                                                    ? '/add-resource?mode=recommend'
+                                                                : `/add-resource?mode=recommend&type=${activeCommunityIndex}`}
                                                             className="inline-flex px-8 py-3.5 rounded-full bg-[#e8f3f1] border border-[#448a7d]/20 text-[#448a7d] font-black tracking-widest uppercase text-xs hover:bg-[#d5e8e4] transition-all active:scale-95"
                                                         >
                                                             Recommend the First One
@@ -1414,7 +1463,7 @@ const ResourcesView: React.FC = () => {
 
                         {/* The Morphing App Store Card */}
                         {COMMUNITY_BUCKETS.filter(b => b.id === expandedCategory).map((bucket) => {
-                            const bucketResources = resources.filter(r => r.category === 'community' && r.type === bucket.id).sort((a, b) => a.title.localeCompare(b.title));
+                            const bucketResources = communityBucketResources[bucket.id] || [];
 
                             return (
                                 <div
@@ -1452,7 +1501,17 @@ const ResourcesView: React.FC = () => {
                                             <div className="text-center py-20 bg-white rounded-[3rem] shadow-sm border border-gray-100">
                                                 <div className="w-20 h-20 bg-gray-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-gray-300 transform rotate-3 shadow-inner"><div className="scale-150">{ICONS.Heart}</div></div>
                                                 <p className="text-gray-400 font-bold text-2xl mb-4 tracking-tight">No resources in this category yet.</p>
-                                                <Link to={`/add-resource?mode=recommend&type=${bucket.id}`} onClick={() => setExpandedCategory(null)} className="inline-flex px-10 py-4 mt-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95">Be the first to share</Link>
+                                                <Link
+                                                    to={bucket.id === MAP_BASED_BUCKET_ID
+                                                        ? '/add-resource?mode=recommend&mapBased=1'
+                                                        : bucket.id === OTHER_BUCKET_ID
+                                                            ? '/add-resource?mode=recommend'
+                                                        : `/add-resource?mode=recommend&type=${bucket.id}`}
+                                                    onClick={() => setExpandedCategory(null)}
+                                                    className="inline-flex px-10 py-4 mt-2 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 font-black tracking-widest uppercase hover:bg-indigo-100 hover:shadow-md transition-all active:scale-95"
+                                                >
+                                                    Be the first to share
+                                                </Link>
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-10">

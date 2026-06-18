@@ -15,9 +15,15 @@
 //    - Live_Reflections
 //    - Flagged_Words
 // 3. For the Flagged_Words tab, put terms in the "Term" column starting on row 2.
-// 4. In the menu, click Extensions > Apps Script
-// 5. Delete all old code, paste this entire file, and click "Deploy > Manage Deployments"
-// 6. Edit the existing deployment, select "New version", and click "Deploy".
+// 4. In the menu, click Extensions > Apps Script.
+// 5. Replace only the web-backend file that contains doGet/doPost. Do NOT
+//    delete ApprovalWorkflow.gs or other moderation/menu files.
+// 6. If another file already defines onEdit(e), keep only one onEdit handler
+//    and merge the header-based row-moving logic from the bottom of this file.
+// 7. Run setup() once. This adds missing resource location columns and
+//    reflection tabs safely.
+// 8. Click "Deploy > Manage Deployments".
+// 9. Edit the existing deployment, select "New version", and click "Deploy".
 // ==========================================
 
 const SCRIPT_PROP = PropertiesService.getScriptProperties();
@@ -84,9 +90,219 @@ function writePendingSubmission_(sheet, rowValues) {
     return targetRow;
 }
 
+function ensureHeaders_(sheet, requiredHeaders) {
+    if (!sheet) return;
+
+    const lastColumn = Math.max(sheet.getLastColumn(), 1);
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0]
+        .map(normalizeHeader_);
+    const missing = requiredHeaders.filter(function (header) {
+        return headers.indexOf(header) === -1;
+    });
+
+    if (missing.length === 0) return;
+
+    const startColumn = lastColumn + 1;
+    sheet.getRange(1, startColumn, 1, missing.length).setValues([missing]);
+}
+
+function ensureSheet_(doc, sheetName, headers) {
+    let sheet = doc.getSheetByName(sheetName);
+    if (!sheet) {
+        sheet = doc.insertSheet(sheetName);
+        sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+        sheet.setFrozenRows(1);
+    } else {
+        ensureHeaders_(sheet, headers);
+    }
+    return sheet;
+}
+
+function getPublicRow_(action, rowData) {
+    const allowedFields = {
+        getStories: [
+            "id", "timestamp", "status", "country", "city", "lat", "lng",
+            "message", "what_helped", "alias"
+        ],
+        getResources: [
+            "id", "timestamp", "status", "resource_type", "title", "url",
+            "description", "alias", "category", "image_url", "helpful_count",
+            "supportive_count", "exploring_count", "city", "country", "lat", "lng"
+        ],
+        getQA: ["id", "timestamp", "status", "question", "answer"]
+    };
+    const allowed = allowedFields[action];
+    if (!allowed) return rowData;
+
+    const publicRow = {};
+    allowed.forEach(function (field) {
+        if (Object.prototype.hasOwnProperty.call(rowData, field)) {
+            publicRow[field] = rowData[field];
+        }
+    });
+    return publicRow;
+}
+
 function setup() {
     const doc = SpreadsheetApp.getActiveSpreadsheet();
     SCRIPT_PROP.setProperty('key', doc.getId());
+    ensureHeaders_(doc.getSheetByName("Pending_Resources"), ["city", "country", "lat", "lng"]);
+    ensureHeaders_(doc.getSheetByName("Live_Resources"), ["city", "country", "lat", "lng"]);
+    ensureSheet_(doc, "Pending_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "flagged", "Approve"]);
+    ensureSheet_(doc, "Live_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "flagged"]);
+}
+
+function rowObject_(sheet, rowNumber) {
+    const columnCount = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, columnCount).getValues()[0].map(normalizeHeader_);
+    const values = sheet.getRange(rowNumber, 1, 1, columnCount).getValues()[0];
+    const row = {};
+    headers.forEach(function (header, index) {
+        if (header) row[header] = values[index];
+    });
+    return row;
+}
+
+function correctAuditedLiveStoryLocations_(doc) {
+    const live = doc.getSheetByName("Live_Stories");
+    if (!live) return 0;
+
+    const corrections = {
+        "d1ba9967-e3c8-4519-8ce2-f0baafb8a812": { city: "Kelowna", lat: 49.8880, lng: -119.4960 },
+        "3f7c1e78-c523-4306-a8b2-3119d0fdd850": { city: "Northern Ontario", lat: 50.000678, lng: -86.000977 },
+        "926b197d-d90c-451e-9266-22dc78c3fa52": { city: "Lesser Slave River Region", lat: 55.001251, lng: -115.002136 },
+        "17ce7a5e-9483-40dd-a75d-5564b93def24": { city: "Northern Ontario", lat: 50.000678, lng: -86.000977 },
+        "6ad4101f-aef5-4643-84e3-da03a432a17c": { city: "Stanley Parish Region", lat: 46.500283, lng: -66.750183 }
+    };
+    const headers = live.getRange(1, 1, 1, live.getLastColumn()).getValues()[0].map(normalizeHeader_);
+    const cityIndex = headers.indexOf("city");
+    const latIndex = headers.indexOf("lat");
+    const lngIndex = headers.indexOf("lng");
+    if (cityIndex === -1 || latIndex === -1 || lngIndex === -1) return 0;
+
+    let corrected = 0;
+    for (let rowNumber = 2; rowNumber <= live.getLastRow(); rowNumber++) {
+        const row = rowObject_(live, rowNumber);
+        const correction = corrections[String(row.id || '').trim()];
+        if (!correction) continue;
+
+        live.getRange(rowNumber, cityIndex + 1).setValue(correction.city);
+        live.getRange(rowNumber, latIndex + 1).setValue(correction.lat);
+        live.getRange(rowNumber, lngIndex + 1).setValue(correction.lng);
+        corrected++;
+    }
+    return corrected;
+}
+
+function deduplicateLiveResources_(doc) {
+    const sheet = doc.getSheetByName("Live_Resources");
+    if (!sheet || sheet.getLastRow() < 3) return 0;
+
+    const columnCount = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, columnCount).getValues()[0].map(normalizeHeader_);
+    const idIndex = headers.indexOf("id");
+    if (idIndex === -1) return 0;
+
+    const counterHeaders = ["helpful_count", "supportive_count", "exploring_count"];
+    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, columnCount).getValues();
+    const firstRowById = {};
+    const duplicateSheetRows = [];
+
+    rows.forEach(function (values, index) {
+        const sheetRow = index + 2;
+        const id = String(values[idIndex] || '').trim();
+        if (!id) return;
+
+        if (!firstRowById[id]) {
+            firstRowById[id] = { sheetRow, values };
+            return;
+        }
+
+        const kept = firstRowById[id];
+        counterHeaders.forEach(function (header) {
+            const counterIndex = headers.indexOf(header);
+            if (counterIndex === -1) return;
+            kept.values[counterIndex] = Math.max(
+                Number(kept.values[counterIndex]) || 0,
+                Number(values[counterIndex]) || 0
+            );
+        });
+        duplicateSheetRows.push(sheetRow);
+    });
+
+    Object.keys(firstRowById).forEach(function (id) {
+        const kept = firstRowById[id];
+        sheet.getRange(kept.sheetRow, 1, 1, columnCount).setValues([kept.values]);
+    });
+    duplicateSheetRows.sort(function (a, b) { return b - a; }).forEach(function (rowNumber) {
+        sheet.deleteRow(rowNumber);
+    });
+    return duplicateSheetRows.length;
+}
+
+function flagUnreachablePendingResourceUrls_(doc) {
+    const sheet = doc.getSheetByName("Pending_Resources");
+    if (!sheet || sheet.getLastRow() < 2) return 0;
+
+    const columnCount = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, columnCount).getValues()[0].map(normalizeHeader_);
+    const urlIndex = headers.indexOf("url");
+    const flaggedIndex = headers.indexOf("flagged");
+    const statusIndex = headers.indexOf("status");
+    if (urlIndex === -1 || flaggedIndex === -1) return 0;
+
+    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, columnCount).getValues();
+    let flaggedCount = 0;
+    rows.forEach(function (values, index) {
+        const status = statusIndex >= 0 ? String(values[statusIndex] || '').toUpperCase() : "";
+        const url = String(values[urlIndex] || '').trim();
+        if (status !== "PENDING" || !url) return;
+
+        try {
+            const response = UrlFetchApp.fetch(url, {
+                followRedirects: true,
+                muteHttpExceptions: true,
+                validateHttpsCertificates: true
+            });
+            const code = response.getResponseCode();
+            if (code >= 200 && code < 400) return;
+        } catch (error) { }
+
+        sheet.getRange(index + 2, flaggedIndex + 1).setValue(true);
+        flaggedCount++;
+    });
+    return flaggedCount;
+}
+
+/**
+ * One-time production repair for the 2026-06-18 workbook audit.
+ * Run manually from Apps Script as the workbook owner, review the returned
+ * report in the execution log, then deploy a new web-app version.
+ */
+function repairWorkbookData() {
+    const doc = getSpreadsheet_();
+    setup();
+
+    let sharingRestricted = false;
+    try {
+        DriveApp.getFileById(doc.getId()).setSharing(
+            DriveApp.Access.PRIVATE,
+            DriveApp.Permission.EDIT
+        );
+        sharingRestricted = true;
+    } catch (error) {
+        console.warn("Could not change workbook sharing automatically.", error);
+    }
+
+    const report = {
+        sharingRestricted,
+        duplicateResourcesRemoved: deduplicateLiveResources_(doc),
+        storyLocationsCorrected: correctAuditedLiveStoryLocations_(doc),
+        unreachablePendingResourcesFlagged: flagUnreachablePendingResourceUrls_(doc),
+        backendVersion: "2026-06-18-location-based-resources"
+    };
+    console.log(JSON.stringify(report));
+    return report;
 }
 
 // ------------------------------------------------------------------
@@ -116,7 +332,7 @@ function doGet(e) {
 
             return responseJSON({
                 success: true,
-                backendVersion: "2026-05-14-newest-pending-first",
+                backendVersion: "2026-06-18-location-based-resources",
                 spreadsheetId,
                 spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
                 expectedTabs,
@@ -167,7 +383,7 @@ function doGet(e) {
 
                 rowData[headers[c]] = val;
             }
-            rows.push(rowData);
+            rows.push(getPublicRow_(action, rowData));
         }
 
         return responseJSON(rows);
@@ -208,6 +424,10 @@ function doPost(e) {
 
         if (!sheet) {
             return responseError(new Error(`Sheet not found. Please create a tab named '${targetSheetName}'.`));
+        }
+
+        if (action === "addResource") {
+            ensureHeaders_(sheet, ["city", "country", "lat", "lng"]);
         }
 
         const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
@@ -349,17 +569,36 @@ function onEdit(e) {
         return;
     }
 
-    const numColumns = sheet.getLastColumn();
-    const rowData = sheet.getRange(rowNumber, 1, 1, numColumns).getValues();
+    if (sheetName === "Pending_Resources") {
+        ensureHeaders_(sheet, ["city", "country", "lat", "lng"]);
+        ensureHeaders_(liveSheet, ["city", "country", "lat", "lng"]);
+    }
+
+    const sourceColumnCount = sheet.getLastColumn();
+    const sourceHeaders = sheet.getRange(1, 1, 1, sourceColumnCount).getValues()[0]
+        .map(normalizeHeader_);
+    const sourceValues = sheet.getRange(rowNumber, 1, 1, sourceColumnCount).getValues()[0];
+    const sourceByHeader = {};
+    sourceHeaders.forEach(function (header, index) {
+        if (header) sourceByHeader[header] = sourceValues[index];
+    });
 
     try {
-        const headers = sheet.getRange(1, 1, 1, numColumns).getValues()[0];
-        const idIndex = headers.indexOf('id');
-        if (idIndex >= 0 && (!rowData[0][idIndex] || rowData[0][idIndex] === "")) {
-            rowData[0][idIndex] = Utilities.getUuid();
+        if (!sourceByHeader.id) {
+            sourceByHeader.id = Utilities.getUuid();
         }
     } catch (err) { }
 
-    liveSheet.getRange(liveSheet.getLastRow() + 1, 1, 1, numColumns).setValues(rowData);
+    const liveColumnCount = liveSheet.getLastColumn();
+    const liveHeaders = liveSheet.getRange(1, 1, 1, liveColumnCount).getValues()[0]
+        .map(normalizeHeader_);
+    const liveRow = liveHeaders.map(function (header) {
+        if (header === "status") return "APPROVED";
+        return Object.prototype.hasOwnProperty.call(sourceByHeader, header)
+            ? sourceByHeader[header]
+            : "";
+    });
+
+    liveSheet.getRange(liveSheet.getLastRow() + 1, 1, 1, liveColumnCount).setValues([liveRow]);
     sheet.deleteRow(rowNumber);
 }

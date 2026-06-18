@@ -118,6 +118,24 @@ Resources:
 - Public resources read from `Live_Resources`.
 - Seed resources are added in frontend if not already present.
 - Reaction counters are `helpful_count`, `supportive_count`, and `exploring_count`.
+- A community resource appears in the `Map-Based Resources` category only when
+  it has a city and valid `lat`/`lng` values.
+- The Support Map reads both `Live_Stories` and `Live_Resources`, but includes
+  only coordinate-bearing resources from `Live_Resources`.
+- Legacy `[RESOURCE ...]` rows in `Live_Stories` are excluded from the map.
+- Resources recommended from the map require a location. Resources recommended
+  from the Resources page are global by default and use an explicit map-based
+  opt-in before location can be entered.
+- Public API responses must never include `submitter_email`, `qualifications`,
+  moderation flags, approval controls, or other staff-only fields.
+
+## Workbook Privacy
+
+- The Google workbook must be restricted to named moderator accounts.
+- Do not publish the workbook or enable “Anyone with the link.”
+- The website reads public content through the Apps Script endpoint; it does not
+  require the spreadsheet itself to be public.
+- `Pending_Resources.submitter_email` is personally identifiable information.
 
 Q&A:
 
@@ -130,7 +148,8 @@ Q&A:
 - Keep the Apps Script deployment on the same deployment ID used by `services/api.ts`.
 - After editing Apps Script, deploy a new version; saving code is not enough.
 - Verify deployment with `?action=health`.
-- `backendVersion` should be `2026-05-14-newest-pending-first`.
+- After deploying the location-resource backend update, `backendVersion` should
+  be `2026-06-18-location-based-resources`.
 - Keep `Pending_QA` headers as: `id`, `timestamp`, `status`, `question`, `answer`, `flagged`, `Approve`.
 - Keep `Live_QA` headers as: `id`, `timestamp`, `status`, `question`, `answer`, `flagged`.
 - If using reflections, create `Pending_Reflections` and `Live_Reflections`.

@@ -39,7 +39,7 @@ const EXPECTED_SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
 
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
-const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v5';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v6';
 const QA_CACHE_KEY = 'starlings_approved_qa_v1';
 const FLAGGED_WORDS_CACHE_KEY = 'starlings_flagged_words_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -47,7 +47,13 @@ const FLAGGED_WORDS_TTL = 30 * 60 * 1000; // 30 minutes — word list changes ra
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 // One-time cleanup of stale cache keys from previous versions
-['starlings_approved_posts_v2', 'starlings_approved_resources_v2', 'starlings_approved_resources_v3', 'starlings_approved_resources_v4'].forEach(k => localStorage.removeItem(k));
+[
+  'starlings_approved_posts_v2',
+  'starlings_approved_resources_v2',
+  'starlings_approved_resources_v3',
+  'starlings_approved_resources_v4',
+  'starlings_approved_resources_v5',
+].forEach(k => localStorage.removeItem(k));
 
 let inFlightRequest: Promise<Post[]> | null = null;
 
@@ -131,12 +137,20 @@ const getBannedMatchInfo = (text: string): { severity: number; category: string 
 export const normalizeResource = (resource: any): Resource => {
   const rawCategory = (resource.category || '').toLowerCase().trim();
   const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
+  const rawType = resource.resource_type || resource.type || ResourceType.WEBSITE;
   return {
-    ...resource,
-    type: resource.resource_type || resource.type || ResourceType.WEBSITE,
+    id: String(resource.id || ''),
+    timestamp: String(resource.timestamp || ''),
+    status: resource.status || PostStatus.APPROVED,
+    type: String(rawType).toLowerCase() as ResourceType,
+    title: String(resource.title || ''),
+    url: String(resource.url || ''),
+    description: resource.description ? String(resource.description) : undefined,
+    alias: resource.alias ? String(resource.alias) : undefined,
     imageUrl: resource.image_url || resource.imageUrl,
-    submitterEmail: resource.submitter_email || resource.submitterEmail,
     category,
+    location: resource.location ? String(resource.location) : undefined,
+    isVerifiedPartner: resource.isVerifiedPartner === true,
     helpful_count: Number(resource.helpful_count || 0),
     supportive_count: Number(resource.supportive_count || 0),
     exploring_count: Number(resource.exploring_count || 0),
@@ -504,7 +518,13 @@ export const apiService = {
     if (q.length < 3) return [];
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&addressdetails=1&limit=5&countrycodes=ca&featuretype=settlement`);
-      return res.ok ? await res.json() : [];
+      if (!res.ok) return [];
+      const results: LocationSearchResult[] = await res.json();
+      // Province/country centroids previously entered the sheet as "Unknown"
+      // cities. Accept only results that identify an actual settlement.
+      return results.filter(result =>
+        Boolean(result.address?.city || result.address?.town || result.address?.village)
+      );
     } catch { return []; }
   },
 

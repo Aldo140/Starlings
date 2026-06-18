@@ -68,6 +68,12 @@ const ShareView: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSafetyModal, setShowSafetyModal] = useState(false);
+  const selectedCity = formData.selectedLocation
+    ? formData.selectedLocation.address.city ||
+      formData.selectedLocation.address.town ||
+      formData.selectedLocation.address.village ||
+      ''
+    : '';
 
   useEffect(() => {
     const query = formData.citySearch;
@@ -123,10 +129,14 @@ const ShareView: React.FC = () => {
     if (!baseValid) return false;
 
     if (shareType === 'note') {
-      return formData.selectedLocation !== null && (formData.promptA.trim() !== '' || formData.promptB.trim() !== '');
+      return formData.selectedLocation !== null &&
+        selectedCity !== '' &&
+        (formData.promptA.trim() !== '' || formData.promptB.trim() !== '');
     } else {
       return formData.resourceTitle.trim() !== '' &&
         formData.resourceUrl.trim() !== '' &&
+        formData.selectedLocation !== null &&
+        selectedCity !== '' &&
         formData.resourceDescription.trim().split(/\s+/).filter(Boolean).length <= 500;
     }
   };
@@ -156,9 +166,7 @@ const ShareView: React.FC = () => {
       ].filter(Boolean).join(' ');
 
       result = await apiService.submitPost({
-        city: formData.selectedLocation!.address.city ||
-          formData.selectedLocation!.address.town ||
-          formData.selectedLocation!.address.village || 'Unknown',
+        city: selectedCity,
         country: formData.selectedLocation!.address.country,
         lat: parseFloat(formData.selectedLocation!.lat),
         lng: parseFloat(formData.selectedLocation!.lon),
@@ -168,9 +176,10 @@ const ShareView: React.FC = () => {
       });
     } else {
       // Resource flow — always writes to Live_Resources via submitResource().
-      // Location is optional: if the user picked a city (e.g. a local clinic or
-      // drop-in), the city/lat/lng go into the structured resource fields so the
-      // moderator can approve it as a map pin. We never pack resource fields into
+      // Resources submitted from the map require a city. The city/lat/lng go
+      // into the structured resource fields so the moderator can approve one
+      // record that appears both on the map and in Map-Based Resources. We never
+      // pack resource fields into
       // a message string or call submitPost() — that caused URL flagging and
       // placed records in the wrong sheet.
       const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
@@ -184,11 +193,8 @@ const ShareView: React.FC = () => {
         description: combinedDesc,
         alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
         category: 'community',
-        // Only include location when the user explicitly selected one
         ...(formData.selectedLocation && {
-          city: formData.selectedLocation.address.city ||
-            formData.selectedLocation.address.town ||
-            formData.selectedLocation.address.village || '',
+          city: selectedCity,
           country: formData.selectedLocation.address.country,
           lat: parseFloat(formData.selectedLocation.lat),
           lng: parseFloat(formData.selectedLocation.lon),
@@ -294,10 +300,12 @@ const ShareView: React.FC = () => {
           <section className="space-y-4">
             <div className="flex justify-between items-baseline">
               <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">What City are you sharing from?</label>
-              <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{shareType === 'resource' ? 'Optional' : 'Required'}</span>
+              <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Required</span>
             </div>
             {shareType === 'resource' && (
-              <p className="text-sm text-gray-500">Only specify a city if this resource is tied to a specific local area (like a clinic or support group).</p>
+              <p className="text-sm text-gray-500">
+                Resources recommended from the map must serve a specific local area. Global websites, books, or media belong on the Resources page instead.
+              </p>
             )}
             <div className="relative">
               <input

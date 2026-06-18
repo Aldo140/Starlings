@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Resource } from '../types.ts';
 
 interface ResourceMapCardProps {
@@ -12,6 +12,10 @@ const ResourceMapCard: React.FC<ResourceMapCardProps> = ({
   selected,
   onClick,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const description = resource.description || '';
+  const isLong = description.length > 120;
+
   return (
     <div
       onClick={onClick}
@@ -63,10 +67,23 @@ const ResourceMapCard: React.FC<ResourceMapCardProps> = ({
       </div>
 
       {/* Description */}
-      {resource.description && (
-        <p className="text-gray-600 text-sm leading-relaxed font-medium mb-6 line-clamp-3">
-          {resource.description}
+      {description && (
+        <p className={`text-gray-600 text-sm leading-relaxed font-medium ${isExpanded ? 'mb-2' : (isLong ? 'mb-2 line-clamp-3' : 'mb-6')}`}>
+          {description}
         </p>
+      )}
+
+      {isLong && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsExpanded(value => !value);
+          }}
+          className="text-[#448a7d] text-xs font-bold uppercase tracking-widest hover:underline mb-6 block"
+        >
+          {isExpanded ? 'Show less' : 'See more'}
+        </button>
       )}
 
       {/* Footer */}

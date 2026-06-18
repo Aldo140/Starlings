@@ -51,49 +51,70 @@ interface CityGroup {
 }
 
 /**
+ * Audited corrections for legacy approved rows whose original geocoder result
+ * did not contain a usable city. Regional labels preserve every story on the
+ * map without claiming a more precise location than the stored coordinates.
+ */
+const STORY_LOCATION_CORRECTIONS: Record<string, { city: string; lat: number; lng: number }> = {
+  'd1ba9967-e3c8-4519-8ce2-f0baafb8a812': {
+    city: 'Kelowna',
+    lat: 49.8880,
+    lng: -119.4960,
+  },
+  '3f7c1e78-c523-4306-a8b2-3119d0fdd850': {
+    city: 'Northern Ontario',
+    lat: 50.000678,
+    lng: -86.000977,
+  },
+  '926b197d-d90c-451e-9266-22dc78c3fa52': {
+    city: 'Lesser Slave River Region',
+    lat: 55.001251,
+    lng: -115.002136,
+  },
+  '17ce7a5e-9483-40dd-a75d-5564b93def24': {
+    city: 'Northern Ontario',
+    lat: 50.000678,
+    lng: -86.000977,
+  },
+  '6ad4101f-aef5-4643-84e3-da03a432a17c': {
+    city: 'Stanley Parish Region',
+    lat: 46.500283,
+    lng: -66.750183,
+  },
+};
+
+/**
  * Resolves a post's display city and canonical coordinates.
  *
- * Three cases:
- *  1. Known hub city name → use hub's canonical coords (no guessing needed).
- *  2. City is "Unknown" / empty → always snap to nearest CANADIAN_HUBS hub so
- *     we never display the string "Unknown" on the map.
- *  3. Named non-hub city → snap to nearest hub only if the stored lat/lng is
- *     within 30 km of that hub (catches sheet data errors where the city name
- *     and coordinates belong to different places, e.g. "Kelowna" with Calgary
- *     coords). Otherwise keep the original city name and coordinates.
+ * Returns null rather than inventing a location when a row has no city or when
+ * its coordinates clearly belong to a different known hub. This keeps suspect
+ * moderation data off the public map until staff correct it in Google Sheets.
  */
 const resolveCity = (
   city: string,
   lat: number,
   lng: number,
-): { city: string; lat: number; lng: number } => {
+): { city: string; lat: number; lng: number } | null => {
   const normalizedCity = (city || '').trim().toLowerCase();
 
-  // Case 1: already a known hub city
+  if (!normalizedCity || normalizedCity === 'unknown') return null;
+
+  // Known hub city names use canonical coordinates.
   const knownHub = CANADIAN_HUBS.find(h => h.name.toLowerCase() === normalizedCity);
   if (knownHub) return { city: knownHub.name, lat: knownHub.lat, lng: knownHub.lng };
 
-  // Find nearest hub (needed for cases 2 & 3)
-  let nearestHub = CANADIAN_HUBS[0];
+  // A non-hub city carrying coordinates at the centre of a different hub is a
+  // strong mismatch (for example Kelowna with Calgary's exact coordinates).
   let nearestDist = Infinity;
   if (lat !== 0 || lng !== 0) {
     for (const hub of CANADIAN_HUBS) {
       const dist = calculateDistance(lat, lng, hub.lat, hub.lng);
-      if (dist < nearestDist) { nearestDist = dist; nearestHub = hub; }
+      if (dist < nearestDist) nearestDist = dist;
     }
   }
 
-  // Case 2: unknown / empty city — always snap to nearest hub
-  if (!normalizedCity || normalizedCity === 'unknown') {
-    return { city: nearestHub.name, lat: nearestHub.lat, lng: nearestHub.lng };
-  }
+  if (nearestDist <= 5) return null;
 
-  // Case 3: named non-hub city — snap only when coords closely match a hub
-  if (nearestDist <= 30) {
-    return { city: nearestHub.name, lat: nearestHub.lat, lng: nearestHub.lng };
-  }
-
-  // Otherwise keep the stored city name and coordinates
   return { city: city.trim(), lat, lng };
 };
 
@@ -113,6 +134,18 @@ const getItemPreview = (item: MapItem) => {
   };
 };
 
+const isLegacyResourcePost = (post: Post): boolean =>
+  post.message.trimStart().startsWith('[RESOURCE');
+
+const isMappableResource = (resource: Resource): boolean =>
+  Boolean(
+    resource.category === 'community' &&
+    resource.city &&
+    Number.isFinite(resource.lat) &&
+    Number.isFinite(resource.lng) &&
+    (resource.lat !== 0 || resource.lng !== 0)
+  );
+
 const MapView: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [mappableResources, setMappableResources] = useState<Resource[]>([]);
@@ -123,6 +156,7 @@ const MapView: React.FC = () => {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isDesktopPreviewVisible, setIsDesktopPreviewVisible] = useState(true);
+  const [isDesktopPreviewExpanded, setIsDesktopPreviewExpanded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
@@ -131,6 +165,7 @@ const MapView: React.FC = () => {
     setSelectedGroupId(groupId);
     setSelectedPostId(null);
     setIsDesktopPreviewVisible(false);
+    setIsDesktopPreviewExpanded(false);
   };
 
   useEffect(() => {
@@ -145,8 +180,8 @@ const MapView: React.FC = () => {
           apiService.getApprovedPosts(),
           apiService.getApprovedResources(),
         ]);
-        setPosts(realPosts);
-        const withCoords = realResources.filter(r => r.lat && r.lng);
+        setPosts(realPosts.filter(post => !isLegacyResourcePost(post)));
+        const withCoords = realResources.filter(isMappableResource);
         setMappableResources(withCoords);
       } catch (error) {
         console.error('Fetch failed:', error);
@@ -181,8 +216,12 @@ const MapView: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const freshData = await apiService.getApprovedPosts(true);
-      setPosts(freshData);
+      const [freshPosts, freshResources] = await Promise.all([
+        apiService.getApprovedPosts(true),
+        apiService.getApprovedResources(true),
+      ]);
+      setPosts(freshPosts.filter(post => !isLegacyResourcePost(post)));
+      setMappableResources(freshResources.filter(isMappableResource));
     } catch (error) {
       console.error('Refresh failed:', error);
     } finally {
@@ -195,7 +234,9 @@ const MapView: React.FC = () => {
 
     // First pass: posts
     posts.forEach(post => {
-      const resolved = resolveCity(post.city, post.lat, post.lng);
+      const correction = STORY_LOCATION_CORRECTIONS[post.id];
+      const resolved = correction || resolveCity(post.city, post.lat, post.lng);
+      if (!resolved) return;
       const key = resolved.city || post.country || 'Unknown';
       if (!map.has(key)) {
         map.set(key, {
@@ -216,14 +257,16 @@ const MapView: React.FC = () => {
 
     // Second pass: resources (already filtered to those with lat/lng)
     mappableResources.forEach(resource => {
-      const key = resource.city || resource.country || 'Unknown';
+      const resolved = resolveCity(resource.city || '', resource.lat!, resource.lng!);
+      if (!resolved) return;
+      const key = resolved.city || resource.country || 'Unknown';
       if (!map.has(key)) {
         map.set(key, {
           id: key,
-          city: resource.city || '',
+          city: resolved.city,
           country: resource.country || '',
-          lat: resource.lat!,
-          lng: resource.lng!,
+          lat: resolved.lat,
+          lng: resolved.lng,
           count: 0,
           items: [],
           topTags: [],
@@ -322,6 +365,7 @@ const MapView: React.FC = () => {
   }, [groupedItems, searchTerm, userLocation, filterMode]);
 
   const hasActiveSearch = searchTerm.trim().length > 0;
+  const totalMappedItems = groupedItems.reduce((sum, group) => sum + group.count, 0);
   const visiblePostCount = filteredGroups.reduce((sum, group) => sum + group.count, 0);
   const emptyStateTitle = filterMode === 'resources'
     ? 'No Resources Yet'
@@ -369,6 +413,7 @@ const MapView: React.FC = () => {
     const nextIndex = (selectedItemIndex + direction + selectedGroup.items.length) % selectedGroup.items.length;
     setSelectedPostId(selectedGroup.items[nextIndex]?.data.id || null);
     setIsDesktopPreviewVisible(true);
+    setIsDesktopPreviewExpanded(false);
   };
 
   const mapFocus = selectedGroup
@@ -456,7 +501,7 @@ const MapView: React.FC = () => {
                 <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
                   <span>{groupedItems.length} Cities</span>
                   <span className="text-[#1e3a34]/20">•</span>
-                  <span>{posts.length} Stories & Resources</span>
+                  <span>{totalMappedItems} Stories & Resources</span>
                   {refreshing && posts.length > 0 && (
                     <motion.span
                       className="w-1.5 h-1.5 rounded-full bg-[#448a7d] ml-0.5 shrink-0"
@@ -654,6 +699,7 @@ const MapView: React.FC = () => {
                           onClick={() => {
                             setSelectedPostId(item.data.id);
                             setIsDesktopPreviewVisible(true);
+                            setIsDesktopPreviewExpanded(false);
                           }}
                         />
                       ) : (
@@ -663,6 +709,7 @@ const MapView: React.FC = () => {
                           onClick={() => {
                             setSelectedPostId(item.data.id);
                             setIsDesktopPreviewVisible(true);
+                            setIsDesktopPreviewExpanded(false);
                           }}
                         />
                       )}
@@ -705,7 +752,7 @@ const MapView: React.FC = () => {
 
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-black text-xl text-[#1e3a34]">Explore</h3>
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{posts.length} Total</span>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{totalMappedItems} Total</span>
                 </div>
 
                 {/* Mobile Segmented Filter */}
@@ -804,6 +851,7 @@ const MapView: React.FC = () => {
                 const isResource = selectedItem!.kind === 'resource';
                 const tags = isResource ? [] : (selectedItem!.data as Post).what_helped || [];
                 const timestamp = selectedItem!.data.timestamp;
+                const canExpandPreview = preview.body.length > 110;
 
                 return (
                   <div className="pointer-events-auto w-[min(38rem,calc(100vw-2.5rem))] overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/92 shadow-[0_24px_70px_-34px_rgba(30,58,52,0.62)] backdrop-blur-xl">
@@ -829,7 +877,7 @@ const MapView: React.FC = () => {
                           <h3 className="text-base font-black leading-snug tracking-tight text-[#1e3a34]">
                             {preview.title}
                           </h3>
-                          <p className="mt-1 line-clamp-2 text-sm font-medium leading-relaxed text-[#1e3a34]/68">
+                          <p className={`mt-1 text-sm font-medium leading-relaxed text-[#1e3a34]/68 ${isDesktopPreviewExpanded ? '' : 'line-clamp-2'}`}>
                             {preview.body}
                           </p>
                         </div>
@@ -865,7 +913,16 @@ const MapView: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-4 px-5 py-3">
-                      <div className="flex min-w-0 flex-wrap gap-1.5">
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        {canExpandPreview && (
+                          <button
+                            type="button"
+                            onClick={() => setIsDesktopPreviewExpanded(value => !value)}
+                            className="mr-1 text-[9px] font-black uppercase tracking-widest text-[#448a7d] hover:underline"
+                          >
+                            {isDesktopPreviewExpanded ? 'Show less' : 'See more'}
+                          </button>
+                        )}
                         {tags.slice(0, 3).map((tag, idx) => (
                           <span key={`${tag}-${idx}`} className="rounded-full border border-[#448a7d]/10 bg-[#f9fbfa] px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-[#448a7d]">
                             {tag}

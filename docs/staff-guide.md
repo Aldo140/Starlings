@@ -10,6 +10,11 @@ This guide explains how the Google Sheets system works, what each tab does, and 
 
 When a young person submits a note, question, or resource through the Starlings website, it arrives in a **Pending** tab in this spreadsheet. It sits there until a staff member reviews it. Once you change the `status` cell to `APPROVED`, the row automatically moves to the matching **Live** tab — and the website picks it up within a few minutes.
 
+> **Privacy requirement:** This workbook must never be published to the web or
+> shared as “Anyone with the link.” Pending tabs may contain youth submissions,
+> and `Pending_Resources` may contain a submitter email address. Restrict access
+> to named moderator accounts only.
+
 Nothing goes public without human approval.
 
 ---
@@ -138,6 +143,7 @@ Resources can now optionally appear on the Support Map if they have location coo
 **Rules:**
 - Leave all four columns **blank** for national/global resources (websites, apps, videos). They will still appear on the Resources page — just not on the map.
 - For local resources, fill in all four columns. The pin will appear on the map alongside stories from the same city.
+- Location-tagged community resources also appear in the **Map-Based Resources** category under Community Suggested Resources. They are not duplicated in a second media-type category.
 - A city value of `Unknown` is treated the same as blank — it will not appear on the map.
 - Submitted resources that include a location (entered via the "Where is this resource based?" field on the site) will populate these columns automatically.
 

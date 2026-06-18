@@ -1064,7 +1064,7 @@ const ResourcesView: React.FC = () => {
                                             >
                                                 <div className="pointer-events-none">{bucket.bgIcon}</div>
                                                 <div className="relative z-10 p-5 rounded-2xl bg-black/30 shadow-inner border border-white/10">
-                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: "w-8 h-8 text-white" })}
+                                                    {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: "w-8 h-8 text-white" })}
                                                 </div>
                                                 <div className="relative z-10 w-full mt-auto text-left">
                                                     <h3 className="text-3xl font-black text-white drop-shadow-md tracking-tight leading-tight mb-2">{bucket.label}</h3>
@@ -1109,7 +1109,7 @@ const ResourcesView: React.FC = () => {
                                                     animate={{ y: [0, -8, 0], scale: [1, 1.15, 1] }}
                                                     transition={{ duration: 1.8, repeat: Infinity, ease: [0.45, 0, 0.55, 1], delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.22, repeatDelay: 0.6 }}
                                                 >
-                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-5 h-5' })}
+                                                    {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}
                                                 </motion.div>
                                                 <span className={`text-[10px] font-black leading-tight text-center px-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>
                                                     {bucket.label}
@@ -1134,7 +1134,7 @@ const ResourcesView: React.FC = () => {
                                                 <div className="flex gap-2 mb-4">
                                                     {COMMUNITY_BUCKETS.slice(0, 4).map((bucket) => (
                                                         <div key={bucket.id} className={`w-8 h-8 rounded-xl flex items-center justify-center ${bucket.bg} opacity-50`}>
-                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-3.5 h-3.5 text-white' })}
+                                                            {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-3.5 h-3.5 text-white' })}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1152,7 +1152,7 @@ const ResourcesView: React.FC = () => {
                                                 <div className="flex items-center justify-between mb-4 px-1">
                                                     <div className="flex items-center gap-2.5">
                                                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow ${activeBucket.bg}`}>
-                                                            {React.cloneElement(activeBucket.icon as React.ReactElement, { className: 'w-5 h-5 text-white' })}
+                                                            {React.cloneElement(activeBucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 text-white' })}
                                                         </div>
                                                         <div>
                                                             <h3 className="text-lg font-black text-[#1e3a34] italic leading-none">{activeBucket.label}</h3>
@@ -1242,7 +1242,7 @@ const ResourcesView: React.FC = () => {
                                                                     repeatDelay: 0.6,
                                                                 }}
                                                             >
-                                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                                {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-4 h-4' })}
                                                             </motion.div>
                                                         </div>
                                                         <span className={`text-sm font-black flex-grow leading-tight ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>
@@ -1319,7 +1319,7 @@ const ResourcesView: React.FC = () => {
                                                                             ease: [0.45, 0, 0.55, 1],
                                                                         }}
                                                                     >
-                                                                        {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-5 h-5 text-white' })}
+                                                                        {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5 text-white' })}
                                                                     </motion.div>
                                                                     <motion.div
                                                                         className="absolute left-1/2 top-full mt-3 h-1.5 w-7 -translate-x-1/2 rounded-full bg-[#1e3a34]/10 blur-[2px]"
@@ -1366,7 +1366,7 @@ const ResourcesView: React.FC = () => {
                                                 <div className="flex items-center justify-between mb-8">
                                                     <div className="flex items-center gap-4">
                                                         <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-lg ${activeBucket.bg}`}>
-                                                            {React.cloneElement(activeBucket.icon as React.ReactElement, { className: 'w-7 h-7 text-white' })}
+                                                            {React.cloneElement(activeBucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-7 h-7 text-white' })}
                                                         </div>
                                                         <div>
                                                             <h3 className="text-3xl font-black text-[#1e3a34] italic tracking-tight">{activeBucket.label}</h3>
@@ -1536,7 +1536,7 @@ const ResourcesView: React.FC = () => {
 
                                         <div className="relative z-10 max-w-4xl pr-12 md:pr-16 flex items-center gap-4 md:gap-5">
                                             <div className="p-3 md:p-4 rounded-xl md:rounded-2xl bg-black/40 shadow-inner border border-white/10 flex items-center justify-center shrink-0">
-                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: "w-6 h-6 md:w-8 md:h-8 text-white" })}
+                                                {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: "w-6 h-6 md:w-8 md:h-8 text-white" })}
                                             </div>
                                             <div>
                                                 <h3 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg tracking-tight leading-tight mb-0.5 md:mb-1">{bucket.label} Collection</h3>

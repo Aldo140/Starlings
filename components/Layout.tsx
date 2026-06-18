@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ICONS, COLORS, EASE_OUT_EXPO } from '../constants.tsx';
@@ -7,6 +7,30 @@ import { StarlingFlock } from './StarlingFlock';
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+    document.getElementById('main-content')?.focus({ preventScroll: true });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   const navLinks = [
     {
@@ -95,6 +119,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className={`flex flex-col selection:bg-[#448a7d] selection:text-white ${location.pathname === '/map' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'
       }`}>
+      <a
+        href="#main-content"
+        className="fixed left-4 top-4 z-[11000] -translate-y-24 rounded-full bg-[#1e3a34] px-5 py-3 text-sm font-black text-white shadow-xl transition-transform focus:translate-y-0"
+      >
+        Skip to content
+      </a>
       {location.pathname !== '/map' && <StarlingFlock />}
 
       {/* Mobile full-screen nav overlay */}
@@ -108,6 +138,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             transition={{ duration: 0.32, ease: EASE_OUT_EXPO }}
             className="md:hidden fixed inset-0 z-[9999] bg-[#0f2620] overflow-y-auto flex flex-col"
             style={{ scrollbarWidth: 'none' }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site navigation"
           >
             {/* Atmospheric orbs */}
             <div className="absolute top-0 right-0 w-72 h-72 bg-[#448a7d]/30 rounded-full blur-[90px] -translate-y-1/3 translate-x-1/3 pointer-events-none" />
@@ -138,6 +171,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 />
               </Link>
               <button
+                ref={closeButtonRef}
                 onClick={() => setIsMenuOpen(false)}
                 className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/18 active:scale-95 transition-all"
                 aria-label="Close menu"
@@ -244,7 +278,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <img src={`${import.meta.env.BASE_URL}logo-star.avif`} alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8" aria-label="Primary navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -275,7 +309,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </header>
 
-      <main className={`relative flex min-h-0 flex-grow flex-col ${location.pathname === '/map' ? 'overflow-hidden' : ''}`}>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className={`relative flex min-h-0 flex-grow flex-col outline-none ${location.pathname === '/map' ? 'overflow-hidden' : ''}`}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

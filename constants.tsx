@@ -82,7 +82,7 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://www.starlings.ca/",
     description: "Support for youth impacted by parental substance use through caregiver supports, youth leadership, and peer connection.",
     category: 'general',
-    imageUrl: `${import.meta.env.BASE_URL}images/starlingsWebsite.png`,
+    imageUrl: `${import.meta.env.BASE_URL}images/starlingsWebsite.webp`,
   },
   {
     id: "kickstand_connect",
@@ -93,7 +93,7 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://mykickstand.ca/connect/",
     description: "A youth-focused virtual clinic and support hub connecting young people with mental health, substance use, peer support, and wellness services.",
     category: 'general',
-    imageUrl: `${import.meta.env.BASE_URL}images/partners/kickstand.png`,
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/kickstand.webp`,
   },
   {
     id: "usay",
@@ -104,7 +104,7 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://usay.ca/",
     description: "Calgary-based programs and resources supporting Indigenous youth through culture, connection, learning, and community.",
     category: 'general',
-    imageUrl: `${import.meta.env.BASE_URL}images/partners/usay.png`,
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/usay.webp`,
   },
   {
     id: "roots_of_hope_laronge",
@@ -115,6 +115,6 @@ export const SEED_RESOURCES: Resource[] = [
     url: "https://www.rootsofhope.ca/",
     description: "A community-led suicide prevention and life promotion initiative focused on hope, connection, and locally grounded support.",
     category: 'general',
-    imageUrl: `${import.meta.env.BASE_URL}images/partners/roots-of-hope.png`,
+    imageUrl: `${import.meta.env.BASE_URL}images/partners/roots-of-hope.webp`,
   },
 ];

@@ -516,8 +516,10 @@ const Landing: React.FC = () => {
 
               {/* Illustration */}
               <motion.img
-                src={`${import.meta.env.BASE_URL}images/asset-qna.png`}
+                src={`${import.meta.env.BASE_URL}images/asset-qna.webp`}
                 alt=""
+                width="1536"
+                height="1024"
                 className="w-full h-auto relative z-[1]"
                 animate={{ y: [0, -12, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
@@ -730,6 +732,9 @@ const Landing: React.FC = () => {
               src={`${import.meta.env.BASE_URL}landing-people.jpg`}
               className="w-full h-full object-contain mix-blend-multiply opacity-95"
               alt=""
+              width="1500"
+              height="598"
+              fetchPriority="high"
             />
           </motion.div>
 
@@ -931,8 +936,11 @@ const Landing: React.FC = () => {
         >
           {/* Illustration — blends white bg into card */}
           <img
-            src={`${import.meta.env.BASE_URL}images/asset3.png`}
+            src={`${import.meta.env.BASE_URL}images/asset3.webp`}
             alt="A diverse community of young people sitting together outdoors in Calgary"
+            width="1537"
+            height="1023"
+            loading="lazy"
             className="absolute inset-0 w-full h-full object-contain object-bottom"
             style={{ mixBlendMode: 'multiply' }}
           />

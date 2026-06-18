@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { COLORS, ICONS } from '../constants.tsx';
+import { COLORS } from '../constants.tsx';
+import 'leaflet/dist/leaflet.css';
 
-declare const L: any;
+let Leaflet: typeof import('leaflet') | null = null;
 
 interface CityGroup {
   id: string;
@@ -57,8 +58,16 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
-    try {
-      const map = L.map(mapContainer.current, {
+    let cancelled = false;
+    let resizeObserver: ResizeObserver | null = null;
+    let refreshMarkers: (() => void) | null = null;
+
+    const initializeMap = async () => {
+      try {
+        Leaflet = await import('leaflet');
+        if (cancelled || !mapContainer.current || mapInstance.current) return;
+
+        const map = Leaflet.map(mapContainer.current, {
         center: [54, -98],
         zoom: 4,
         zoomControl: false,
@@ -66,12 +75,13 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         preferCanvas: true,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
       }).addTo(map);
 
-      L.control.zoom({ position: 'topright' }).addTo(map);
-      markersLayer.current = L.layerGroup().addTo(map);
+      Leaflet.control.zoom({ position: 'topright' }).addTo(map);
+      markersLayer.current = Leaflet.layerGroup().addTo(map);
       mapInstance.current = map;
 
       map.whenReady(() => {
@@ -79,36 +89,34 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         map.invalidateSize();
       });
 
-      const refreshMarkers = () => setMapRenderKey((key) => key + 1);
+      refreshMarkers = () => setMapRenderKey((key) => key + 1);
       map.on('zoomend moveend resize', refreshMarkers);
 
-      const resizeObserver = new ResizeObserver(() => {
+      resizeObserver = new ResizeObserver(() => {
         if (mapInstance.current) {
           mapInstance.current.invalidateSize();
-          refreshMarkers();
+          refreshMarkers?.();
         }
       });
       resizeObserver.observe(mapContainer.current);
 
-      return () => {
-        // Remove listeners first so they don't fire during teardown.
-        map.off('zoomend moveend resize', refreshMarkers);
-        resizeObserver.disconnect();
-        // Destroy the Leaflet instance and null the refs so that React
-        // StrictMode's second effect run (which re-invokes this effect after
-        // the cleanup) can safely recreate the map from scratch — including
-        // re-registering the zoomend/moveend listeners that drive dynamic
-        // pin clustering.  Without this, StrictMode removes the listeners in
-        // the cleanup then short-circuits the second run (mapInstance.current
-        // is still set), leaving the map alive but unresponsive to zoom events.
-        map.remove();
-        mapInstance.current = null;
-        markersLayer.current = null;
-        setMapReady(false);
-      };
-    } catch (err) {
-      console.error("Map load error:", err);
-    }
+      } catch (err) {
+        console.error("Map load error:", err);
+      }
+    };
+
+    initializeMap();
+
+    return () => {
+      cancelled = true;
+      const map = mapInstance.current;
+      if (map && refreshMarkers) map.off('zoomend moveend resize', refreshMarkers);
+      resizeObserver?.disconnect();
+      map?.remove();
+      mapInstance.current = null;
+      markersLayer.current = null;
+      setMapReady(false);
+    };
   }, []);
 
   // Threshold = "how close (in screen pixels) must two pin centres be to merge?"
@@ -204,7 +212,8 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
       return;
     }
 
-    const bounds = L.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
+    if (!Leaflet) return;
+    const bounds = Leaflet.latLngBounds(cluster.groups.map((g) => [g.lat, g.lng]));
 
     // If all groups sit at the exact same point (identical coords), select directly.
     const spanDeg = (bounds.getNorth() - bounds.getSouth()) + (bounds.getEast() - bounds.getWest());
@@ -313,7 +322,8 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
           .join(' + ');
 
         const iconSize = hasSelectedGroup ? 78 : 68;
-        const icon = L.divIcon({
+        if (!Leaflet) return;
+        const icon = Leaflet.divIcon({
           className: 'custom-marker-wrapper',
           html: `
             <div style="position: relative; width: ${iconSize}px; height: ${iconSize}px; display: flex; align-items: center; justify-content: center;">
@@ -398,9 +408,9 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
           iconAnchor: [iconSize / 2, iconSize / 2]
         });
 
-        const marker = L.marker([cluster.lat, cluster.lng], { icon })
+        const marker = Leaflet.marker([cluster.lat, cluster.lng], { icon })
           .on('click', (e: any) => {
-            L.DomEvent.stopPropagation(e);
+            Leaflet?.DomEvent.stopPropagation(e);
             focusCluster(cluster);
           });
 
@@ -424,7 +434,8 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         backgroundStyle = `background: linear-gradient(135deg, ${COLORS.teal500} 50%, ${COLORS.coral400} 50%);`;
       }
 
-      const icon = L.divIcon({
+      if (!Leaflet) return;
+      const icon = Leaflet.divIcon({
         className: `custom-marker-wrapper`,
         html: `
           <div style="position: relative; width: ${isSelected ? '64px' : '54px'}; height: ${isSelected ? '64px' : '54px'}; display: flex; align-items: center; justify-content: center;">
@@ -510,15 +521,15 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         iconAnchor: [isSelected ? 32 : 27, isSelected ? 32 : 27]
       });
 
-      const marker = L.marker([group.lat, group.lng], { icon })
+      const marker = Leaflet.marker([group.lat, group.lng], { icon })
         .on('click', (e: any) => {
-          L.DomEvent.stopPropagation(e);
+          Leaflet?.DomEvent.stopPropagation(e);
           focusGroup(group);
         });
 
       markersLayer.current.addLayer(marker);
     });
-  }, [groups, selectedGroupId, onMarkerClick, mapRenderKey]);
+  }, [groups, selectedGroupId, onMarkerClick, mapRenderKey, mapReady]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-[#f0f4f3] overflow-hidden">

@@ -51,7 +51,7 @@ describe('normalizeResource', () => {
       Approve: true,
       internal_notes: 'Staff only',
     };
-    const result = normalizeResource(raw) as Record<string, unknown>;
+    const result = normalizeResource(raw) as unknown as Record<string, unknown>;
     expect(result.submitter_email).toBeUndefined();
     expect(result.submitterEmail).toBeUndefined();
     expect(result.qualifications).toBeUndefined();
@@ -60,19 +60,19 @@ describe('normalizeResource', () => {
     expect(result.internal_notes).toBeUndefined();
   });
 
-  it('restores the approved legacy support group location dropped by the old sheet schema', () => {
+  it('does not invent a location when an approved resource has no structured location fields', () => {
     const result = normalizeResource({
       ...baseRaw,
       id: '03660cec-463b-4e37-8097-8ac5a0d62876',
-      title: 'support group[',
+      title: 'Support Group',
       resource_type: 'website',
       category: 'community',
     });
     expect(result.title).toBe('Support Group');
-    expect(result.city).toBe('Calgary');
-    expect(result.country).toBe('Canada');
-    expect(result.lat).toBe(51.0447);
-    expect(result.lng).toBe(-114.0719);
+    expect(result.city).toBeUndefined();
+    expect(result.country).toBeUndefined();
+    expect(result.lat).toBeUndefined();
+    expect(result.lng).toBeUndefined();
   });
 });
 

@@ -515,8 +515,11 @@ const AboutMap: React.FC = () => {
                 />
                 {/* Ken Burns — natural ratio, a touch oversized so the white image top can fade out */}
                 <motion.img
-                  src={`${import.meta.env.BASE_URL}images/asset3.png`}
+                  src={`${import.meta.env.BASE_URL}images/asset3.webp`}
                   alt="A diverse group of young people sitting together in a community circle"
+                  width="1537"
+                  height="1023"
+                  loading="lazy"
                   className="relative left-1/2 h-auto max-w-none block"
                   style={{
                     width: 'clamp(102%, 45vw, 116%)',

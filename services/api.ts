@@ -58,21 +58,6 @@ const isLocalhost = typeof window !== 'undefined' && (window.location.hostname =
 
 let inFlightRequest: Promise<Post[]> | null = null;
 
-/**
- * Compatibility corrections for approved resources created before the
- * production workbook had resource location columns. Keep these scoped by ID;
- * new submissions use the structured city/country/lat/lng fields instead.
- */
-const LEGACY_RESOURCE_CORRECTIONS: Record<string, Partial<Resource>> = {
-  '03660cec-463b-4e37-8097-8ac5a0d62876': {
-    title: 'Support Group',
-    city: 'Calgary',
-    country: 'Canada',
-    lat: 51.0447,
-    lng: -114.0719,
-  },
-};
-
 // ── Dynamic flagged-word list (sheet-sourced) ────────────────────────────────
 // Populated once on app boot via apiService.getFlaggedWords().
 // Checked synchronously on every submission alongside the static BANNED_PATTERNS.
@@ -151,20 +136,19 @@ const getBannedMatchInfo = (text: string): { severity: number; category: string 
 };
 
 export const normalizeResource = (resource: any): Resource => {
-  const correction = LEGACY_RESOURCE_CORRECTIONS[String(resource.id || '')] || {};
   const rawCategory = (resource.category || '').toLowerCase().trim();
   const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
   const rawType = resource.resource_type || resource.type || ResourceType.WEBSITE;
-  const rawCity = resource.city || correction.city;
-  const rawCountry = resource.country || correction.country;
-  const rawLat = resource.lat || correction.lat;
-  const rawLng = resource.lng || correction.lng;
+  const rawCity = resource.city;
+  const rawCountry = resource.country;
+  const rawLat = resource.lat;
+  const rawLng = resource.lng;
   return {
     id: String(resource.id || ''),
     timestamp: String(resource.timestamp || ''),
     status: resource.status || PostStatus.APPROVED,
     type: String(rawType).toLowerCase() as ResourceType,
-    title: String(correction.title || resource.title || ''),
+    title: String(resource.title || ''),
     url: String(resource.url || ''),
     description: resource.description ? String(resource.description) : undefined,
     alias: resource.alias ? String(resource.alias) : undefined,
@@ -729,8 +713,7 @@ export const apiService = {
     }
 
     const cleanReflection = reflection.trim();
-    const matchInfo = getBannedMatchInfo(cleanReflection);
-    const flagged = matchInfo !== null;
+    const flagged = getBannedMatchInfo(cleanReflection) !== null;
 
     if (flagged) {
       return { success: false, flagged: true };
@@ -745,7 +728,6 @@ export const apiService = {
         resourceId,
         reflection: cleanReflection,
         flagged,
-        ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
       };
       const res = await fetch(GAS_URL, {
         method: 'POST',
@@ -782,7 +764,7 @@ export const apiService = {
    * list immediately on subsequent calls. Falls back silently to static
    * BANNED_PATTERNS if the sheet is unreachable.
    */
-  async getFlaggedWords(): Promise<string[]> {
+  async getFlaggedWords(): Promise<FlaggedWordEntry[]> {
     // Already in memory — nothing to do
     if (dynamicFlaggedWords.length > 0) return dynamicFlaggedWords;
 

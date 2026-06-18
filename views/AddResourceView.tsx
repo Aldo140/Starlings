@@ -17,6 +17,7 @@ const AddResourceView: React.FC = () => {
     const [mode, setMode] = useState<'recommend' | 'apply'>(defaultMode);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const citySearchRef = useRef<HTMLInputElement>(null);
@@ -98,7 +99,17 @@ const AddResourceView: React.FC = () => {
         e.preventDefault();
         if (!isFormValid()) return;
 
+        setErrorMessage('');
         setIsSubmitting(true);
+        if (mode === 'recommend' && formData.includeOnMap) {
+            const locationSupported = await apiService.supportsResourceLocations();
+            if (!locationSupported) {
+                setErrorMessage('Map-based resource submissions are temporarily unavailable because the resource location columns have not been enabled in the moderation sheet.');
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
         const aliasValue = formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined;
         const combinedDesc = mode === 'apply'
             ? `[APPLICATION] Qualifications: ${formData.qualifications} | Desc: ${formData.description}`
@@ -447,6 +458,12 @@ const AddResourceView: React.FC = () => {
                                 </label>
                             </fieldset>
                         </>
+                    )}
+
+                    {errorMessage && (
+                        <div className="rounded-[1.5rem] border border-red-100 bg-red-50 px-5 py-4 text-sm font-bold leading-relaxed text-red-700">
+                            {errorMessage}
+                        </div>
                     )}
 
                     <button

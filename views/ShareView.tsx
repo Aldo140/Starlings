@@ -186,6 +186,13 @@ const ShareView: React.FC = () => {
       const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
       const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${recommendedBy})`.trim();
 
+      const locationSupported = await apiService.supportsResourceLocations();
+      if (!locationSupported) {
+        setErrorMessage('Map-based resource submissions are temporarily unavailable because location fields have not been enabled in the moderation sheet.');
+        setIsSubmitting(false);
+        return;
+      }
+
       result = await apiService.submitResource({
         title: formData.resourceTitle,
         url: formData.resourceUrl,

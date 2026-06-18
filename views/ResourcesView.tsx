@@ -439,7 +439,7 @@ const ResourcesView: React.FC = () => {
     const [syncing, setSyncing] = useState(false);
     /** Captured when sync completes — passed to the banner for the "N resources loaded" message */
     const [syncedCount, setSyncedCount] = useState(0);
-    const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(null);
+    const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(ResourceType.WEBSITE);
     const [activeGeneralIndex, setActiveGeneralIndex] = useState<number>(0);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -464,7 +464,7 @@ const ResourcesView: React.FC = () => {
             // LoadingBar + MurmurationSyncBanner both track this state.
             setSyncing(true);
             try {
-                const data = await apiService.getApprovedResources();
+                const data = await apiService.getApprovedResources(true);
                 setSyncedCount(data.length);
                 setResources(data);
             } catch (error) {
@@ -486,7 +486,6 @@ const ResourcesView: React.FC = () => {
 
     // BUCKETS CONFIGURATION (Shared across Mobile, Tablet, and Desktop layouts)
     const COMMUNITY_BUCKETS = [
-        { id: MAP_BASED_BUCKET_ID, label: 'Map-Based Resources', icon: <MapPin className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-emerald-600', bg: 'bg-gradient-to-br from-emerald-400 to-teal-700 shadow-emerald-500/30' },
         { id: ResourceType.VIDEO, label: 'Videos', icon: <Video className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-rose-500', bg: 'bg-gradient-to-br from-rose-400 to-red-600 shadow-rose-500/30' },
         { id: ResourceType.PUBLICATION, label: 'Publications', icon: <FileText className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-indigo-500', bg: 'bg-gradient-to-br from-indigo-400 to-indigo-700 shadow-indigo-500/30' },
         { id: ResourceType.TOOL, label: 'Tools', icon: <Wrench className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-cyan-600', bg: 'bg-gradient-to-br from-cyan-400 to-cyan-700 shadow-cyan-500/30' },
@@ -497,6 +496,7 @@ const ResourcesView: React.FC = () => {
         { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
         { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
         { id: OTHER_BUCKET_ID, label: 'Other Resources', icon: <Shapes className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-slate-500', bg: 'bg-gradient-to-br from-slate-400 to-slate-700 shadow-slate-500/30' },
+        { id: MAP_BASED_BUCKET_ID, label: 'Map-Based Resources', icon: <MapPin className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-emerald-600', bg: 'bg-gradient-to-br from-emerald-400 to-teal-700 shadow-emerald-500/30' },
     ];
 
     // MEMOIZED: Compute bucket resources only when resources array changes
@@ -1210,66 +1210,51 @@ const ResourcesView: React.FC = () => {
 
                             </div>
 
-                            {/* DESKTOP XL: Elegant Side-by-Side Rail Layout */}
-                            <div className="hidden xl:flex gap-10 mt-10 items-start h-[640px]">
-
-                                {/* LEFT RAIL — Category Selector */}
-                                <div className="w-[230px] flex-shrink-0 h-full">
-                                    <div className="h-full flex flex-col">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 px-1 mb-3">Browse by type</p>
-                                        <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                                            <div className="py-2">
-                                                {COMMUNITY_BUCKETS.map((bucket) => {
-                                                    const count = communityBucketResources[bucket.id].length;
-                                                    const isActive = activeCommunityIndex === bucket.id;
-                                                    return (
-                                                        <button
-                                                            key={bucket.id}
-                                                            onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
-                                                            className={`relative w-full flex items-center gap-3 px-4 py-3.5 transition-colors duration-150 text-left group ${isActive ? 'bg-[#e8f3f1]/70' : 'hover:bg-gray-50'}`}
-                                                        >
-                                                            {isActive && (
-                                                                <motion.div
-                                                                    layoutId="railIndicator"
-                                                                    className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#448a7d] rounded-r-full"
-                                                                    transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                                                                />
-                                                            )}
-                                                            <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center transition-all duration-150 ${isActive ? `bg-white shadow-sm border border-gray-100 ${bucket.color}` : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>
-                                                                <motion.div
-                                                                    animate={{ y: [0, -7, 0], scale: [1, 1.18, 1] }}
-                                                                    transition={{ duration: 1.8, repeat: Infinity, ease: [0.45, 0, 0.55, 1], delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.22, repeatDelay: 0.6 }}
-                                                                >
-                                                                    {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
-                                                                </motion.div>
-                                                            </div>
-                                                            <div className="flex-grow min-w-0">
-                                                                <span className={`text-sm font-black block leading-tight transition-colors ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>{bucket.label}</span>
-                                                            </div>
-                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 min-w-[22px] text-center transition-colors ${isActive ? 'bg-[#448a7d] text-white' : count > 0 ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-300'}`}>
-                                                                {count}
-                                                            </span>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 px-1">
-                                            <Link
-                                                to="/add-resource?mode=recommend"
-                                                className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#448a7d]/60 hover:text-[#448a7d] transition-colors group"
-                                            >
-                                                <div className="w-6 h-6 rounded-full bg-[#448a7d]/10 group-hover:bg-[#448a7d]/20 flex items-center justify-center transition-colors flex-shrink-0">
-                                                    {ICONS.Plus}
-                                                </div>
-                                                Suggest a resource
-                                            </Link>
+                            {/* DESKTOP XL: restored side-by-side rail design */}
+                            <div className="hidden xl:flex gap-10 mt-10 items-start min-h-[760px]">
+                                <div className="w-[230px] flex-shrink-0">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 px-1 mb-3">Browse by type</p>
+                                    <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                                        <div className="py-2">
+                                            {COMMUNITY_BUCKETS.map((bucket) => {
+                                                const count = communityBucketResources[bucket.id].length;
+                                                const isActive = activeCommunityIndex === bucket.id;
+                                                return (
+                                                    <button
+                                                        key={bucket.id}
+                                                        onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
+                                                        className={`relative w-full flex items-center gap-3 px-4 py-3 transition-colors duration-150 text-left group ${isActive ? 'bg-[#e8f3f1]/70' : 'hover:bg-gray-50'}`}
+                                                    >
+                                                        {isActive && (
+                                                            <motion.div
+                                                                layoutId="railIndicator"
+                                                                className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#448a7d] rounded-r-full"
+                                                            />
+                                                        )}
+                                                        <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center ${isActive ? `bg-white shadow-sm border border-gray-100 ${bucket.color}` : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>
+                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                        </div>
+                                                        <span className={`text-sm font-black flex-grow leading-tight ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                                                            {bucket.label}
+                                                        </span>
+                                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center ${isActive ? 'bg-[#448a7d] text-white' : count > 0 ? 'bg-gray-100 text-gray-500' : 'bg-gray-50 text-gray-300'}`}>
+                                                            {count}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
+                                    <Link
+                                        to="/add-resource?mode=recommend"
+                                        className="mt-4 px-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[#448a7d]/60 hover:text-[#448a7d] transition-colors group"
+                                    >
+                                        <span className="w-6 h-6 rounded-full bg-[#448a7d]/10 group-hover:bg-[#448a7d]/20 flex items-center justify-center">{ICONS.Plus}</span>
+                                        Suggest a resource
+                                    </Link>
                                 </div>
 
-                                {/* RIGHT PANEL — Content Area */}
-                                <div className="flex-grow h-full overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: '#e8f3f1 transparent' }}>
+                                <div className="flex-grow min-w-0">
                                     <AnimatePresence mode="wait" initial={false}>
                                         {!activeBucket ? (
                                             <motion.div
@@ -1277,24 +1262,23 @@ const ResourcesView: React.FC = () => {
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.2 }}
                                                 className="flex flex-col items-center justify-center py-28 text-center"
                                             >
                                                 <div className="flex items-end gap-2 mb-10">
-                                                    {COMMUNITY_BUCKETS.map((bucket, i) => (
+                                                    {COMMUNITY_BUCKETS.slice(0, 7).map((bucket, i) => (
                                                         <motion.div
                                                             key={bucket.id}
                                                             className={`rounded-2xl flex items-center justify-center shadow-md ${bucket.bg}`}
-                                                            style={{ width: 40 + (i === 2 ? 8 : i === 3 ? 4 : 0), height: 40 + (i === 2 ? 8 : i === 3 ? 4 : 0), opacity: 0.55 }}
-                                                            animate={{ y: [0, -(4 + i * 2.5), 0] }}
-                                                            transition={{ duration: 2.2 + i * 0.25, repeat: Infinity, delay: i * 0.32, ease: 'easeInOut' }}
+                                                            style={{ width: 40, height: 40, opacity: 0.55 }}
+                                                            animate={{ y: [0, -(4 + i), 0] }}
+                                                            transition={{ duration: 2.2 + i * 0.15, repeat: Infinity, delay: i * 0.2 }}
                                                         >
                                                             {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4 text-white' })}
                                                         </motion.div>
                                                     ))}
                                                 </div>
                                                 <h3 className="text-2xl font-black text-[#1e3a34]/30 italic tracking-tight mb-2">Select a category</h3>
-                                                <p className="text-sm text-gray-400 font-medium max-w-xs leading-relaxed">Choose a type from the left to explore peer-recommended resources</p>
+                                                <p className="text-sm text-gray-400 font-medium">Choose a type from the left to explore peer-recommended resources</p>
                                             </motion.div>
                                         ) : (
                                             <motion.div
@@ -1302,45 +1286,38 @@ const ResourcesView: React.FC = () => {
                                                 initial={{ opacity: 0, y: 18 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -18 }}
-                                                transition={{ duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
+                                                transition={{ duration: 0.32 }}
                                             >
-                                                {/* Panel header */}
                                                 <div className="flex items-center justify-between mb-8">
                                                     <div className="flex items-center gap-4">
                                                         <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-lg ${activeBucket.bg}`}>
                                                             {React.cloneElement(activeBucket.icon as React.ReactElement, { className: 'w-7 h-7 text-white' })}
                                                         </div>
                                                         <div>
-                                                            <h3 className="text-3xl font-black text-[#1e3a34] italic tracking-tight leading-none">{activeBucket.label}</h3>
-                                                            <p className="text-sm text-gray-500 font-medium mt-1.5">
-                                                                {activeResources.length === 0
-                                                                    ? 'No resources yet'
-                                                                    : `${activeResources.length} peer-recommended resource${activeResources.length !== 1 ? 's' : ''}`}
+                                                            <h3 className="text-3xl font-black text-[#1e3a34] italic tracking-tight">{activeBucket.label}</h3>
+                                                            <p className="text-sm text-gray-500 font-medium">
+                                                                {activeResources.length} peer-recommended resource{activeResources.length !== 1 ? 's' : ''}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     <button
                                                         onClick={() => setActiveCommunityIndex(null)}
-                                                        className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors shadow-sm active:scale-95"
+                                                        className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
                                                     >
                                                         {ICONS.X}
                                                     </button>
                                                 </div>
 
-                                                {/* Resource grid or empty */}
                                                 {activeResources.length === 0 ? (
                                                     <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-gray-200">
-                                                        <div className="w-20 h-20 bg-gray-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 text-gray-200 shadow-inner">
-                                                            <div className="scale-[2]">{ICONS.Heart}</div>
-                                                        </div>
-                                                        <p className="text-gray-400 font-bold text-xl mb-4 tracking-tight">No {activeBucket.label.toLowerCase()} yet.</p>
+                                                        <p className="text-gray-400 font-bold text-xl mb-4">No {activeBucket.label.toLowerCase()} yet.</p>
                                                         <Link
                                                             to={activeCommunityIndex === MAP_BASED_BUCKET_ID
                                                                 ? '/add-resource?mode=recommend&mapBased=1'
                                                                 : activeCommunityIndex === OTHER_BUCKET_ID
                                                                     ? '/add-resource?mode=recommend'
-                                                                : `/add-resource?mode=recommend&type=${activeCommunityIndex}`}
-                                                            className="inline-flex px-8 py-3.5 rounded-full bg-[#e8f3f1] border border-[#448a7d]/20 text-[#448a7d] font-black tracking-widest uppercase text-xs hover:bg-[#d5e8e4] transition-all active:scale-95"
+                                                                    : `/add-resource?mode=recommend&type=${activeCommunityIndex}`}
+                                                            className="inline-flex px-8 py-3.5 rounded-full bg-[#e8f3f1] text-[#448a7d] font-black tracking-widest uppercase text-xs"
                                                         >
                                                             Recommend the First One
                                                         </Link>
@@ -1352,7 +1329,7 @@ const ResourcesView: React.FC = () => {
                                                                 key={res.id}
                                                                 initial={{ opacity: 0, y: 20 }}
                                                                 animate={{ opacity: 1, y: 0 }}
-                                                                transition={{ delay: i * 0.07, duration: 0.38, ease: [0.25, 1, 0.5, 1] }}
+                                                                transition={{ delay: i * 0.07, duration: 0.38 }}
                                                             >
                                                                 <ResourceCard resource={res} />
                                                             </motion.div>
@@ -1363,7 +1340,6 @@ const ResourcesView: React.FC = () => {
                                         )}
                                     </AnimatePresence>
                                 </div>
-
                             </div>
                         </section>
 

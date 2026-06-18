@@ -177,8 +177,8 @@ const MapView: React.FC = () => {
       setRefreshing(true);
       try {
         const [realPosts, realResources] = await Promise.all([
-          apiService.getApprovedPosts(),
-          apiService.getApprovedResources(),
+          apiService.getApprovedPosts(true),
+          apiService.getApprovedResources(true),
         ]);
         setPosts(realPosts.filter(post => !isLegacyResourcePost(post)));
         const withCoords = realResources.filter(isMappableResource);

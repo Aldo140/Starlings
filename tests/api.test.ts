@@ -59,6 +59,21 @@ describe('normalizeResource', () => {
     expect(result.Approve).toBeUndefined();
     expect(result.internal_notes).toBeUndefined();
   });
+
+  it('restores the approved legacy support group location dropped by the old sheet schema', () => {
+    const result = normalizeResource({
+      ...baseRaw,
+      id: '03660cec-463b-4e37-8097-8ac5a0d62876',
+      title: 'support group[',
+      resource_type: 'website',
+      category: 'community',
+    });
+    expect(result.title).toBe('Support Group');
+    expect(result.city).toBe('Calgary');
+    expect(result.country).toBe('Canada');
+    expect(result.lat).toBe(51.0447);
+    expect(result.lng).toBe(-114.0719);
+  });
 });
 
 describe('Content Moderation BANNED_PATTERNS', () => {

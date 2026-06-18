@@ -39,7 +39,7 @@ const EXPECTED_SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
 
 // Cache management
 const CACHE_KEY = 'starlings_approved_posts_v3';
-const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v6';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v7';
 const QA_CACHE_KEY = 'starlings_approved_qa_v1';
 const FLAGGED_WORDS_CACHE_KEY = 'starlings_flagged_words_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -53,9 +53,25 @@ const isLocalhost = typeof window !== 'undefined' && (window.location.hostname =
   'starlings_approved_resources_v3',
   'starlings_approved_resources_v4',
   'starlings_approved_resources_v5',
+  'starlings_approved_resources_v6',
 ].forEach(k => localStorage.removeItem(k));
 
 let inFlightRequest: Promise<Post[]> | null = null;
+
+/**
+ * Compatibility corrections for approved resources created before the
+ * production workbook had resource location columns. Keep these scoped by ID;
+ * new submissions use the structured city/country/lat/lng fields instead.
+ */
+const LEGACY_RESOURCE_CORRECTIONS: Record<string, Partial<Resource>> = {
+  '03660cec-463b-4e37-8097-8ac5a0d62876': {
+    title: 'Support Group',
+    city: 'Calgary',
+    country: 'Canada',
+    lat: 51.0447,
+    lng: -114.0719,
+  },
+};
 
 // ── Dynamic flagged-word list (sheet-sourced) ────────────────────────────────
 // Populated once on app boot via apiService.getFlaggedWords().
@@ -135,15 +151,20 @@ const getBannedMatchInfo = (text: string): { severity: number; category: string 
 };
 
 export const normalizeResource = (resource: any): Resource => {
+  const correction = LEGACY_RESOURCE_CORRECTIONS[String(resource.id || '')] || {};
   const rawCategory = (resource.category || '').toLowerCase().trim();
   const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
   const rawType = resource.resource_type || resource.type || ResourceType.WEBSITE;
+  const rawCity = resource.city || correction.city;
+  const rawCountry = resource.country || correction.country;
+  const rawLat = resource.lat || correction.lat;
+  const rawLng = resource.lng || correction.lng;
   return {
     id: String(resource.id || ''),
     timestamp: String(resource.timestamp || ''),
     status: resource.status || PostStatus.APPROVED,
     type: String(rawType).toLowerCase() as ResourceType,
-    title: String(resource.title || ''),
+    title: String(correction.title || resource.title || ''),
     url: String(resource.url || ''),
     description: resource.description ? String(resource.description) : undefined,
     alias: resource.alias ? String(resource.alias) : undefined,
@@ -154,10 +175,10 @@ export const normalizeResource = (resource: any): Resource => {
     helpful_count: Number(resource.helpful_count || 0),
     supportive_count: Number(resource.supportive_count || 0),
     exploring_count: Number(resource.exploring_count || 0),
-    city: resource.city && resource.city !== 'Unknown' ? String(resource.city) : undefined,
-    country: resource.country || undefined,
-    lat: resource.lat ? Number(resource.lat) : undefined,
-    lng: resource.lng ? Number(resource.lng) : undefined,
+    city: rawCity && rawCity !== 'Unknown' ? String(rawCity) : undefined,
+    country: rawCountry ? String(rawCountry) : undefined,
+    lat: rawLat ? Number(rawLat) : undefined,
+    lng: rawLng ? Number(rawLng) : undefined,
   };
 };
 
@@ -526,6 +547,22 @@ export const apiService = {
         Boolean(result.address?.city || result.address?.town || result.address?.village)
       );
     } catch { return []; }
+  },
+
+  async supportsResourceLocations(): Promise<boolean> {
+    try {
+      const res = await fetch(`${GAS_URL}?action=health&ts=${Date.now()}`, { cache: 'no-store' });
+      const data = await parseJsonResponse(res);
+      if (!res.ok || data.success !== true || !Array.isArray(data.sheets)) return false;
+
+      return ['Pending_Resources', 'Live_Resources'].every(sheetName => {
+        const sheet = data.sheets.find((entry: any) => entry.name === sheetName);
+        const headers = Array.isArray(sheet?.normalizedHeaders) ? sheet.normalizedHeaders : [];
+        return ['city', 'country', 'lat', 'lng'].every(header => headers.includes(header));
+      });
+    } catch {
+      return false;
+    }
   },
 
   async getApprovedResources(skipCache?: boolean): Promise<Resource[]> {

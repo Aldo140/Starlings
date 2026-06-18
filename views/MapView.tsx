@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SupportMap from '../components/Map.tsx';
 import PostCard from '../components/PostCard.tsx';
@@ -48,40 +48,8 @@ interface CityGroup {
   count: number;
   items: MapItem[];
   topTags: string[];
+  mappable: boolean;
 }
-
-/**
- * Audited corrections for legacy approved rows whose original geocoder result
- * did not contain a usable city. Regional labels preserve every story on the
- * map without claiming a more precise location than the stored coordinates.
- */
-const STORY_LOCATION_CORRECTIONS: Record<string, { city: string; lat: number; lng: number }> = {
-  'd1ba9967-e3c8-4519-8ce2-f0baafb8a812': {
-    city: 'Kelowna',
-    lat: 49.8880,
-    lng: -119.4960,
-  },
-  '3f7c1e78-c523-4306-a8b2-3119d0fdd850': {
-    city: 'Northern Ontario',
-    lat: 50.000678,
-    lng: -86.000977,
-  },
-  '926b197d-d90c-451e-9266-22dc78c3fa52': {
-    city: 'Lesser Slave River Region',
-    lat: 55.001251,
-    lng: -115.002136,
-  },
-  '17ce7a5e-9483-40dd-a75d-5564b93def24': {
-    city: 'Northern Ontario',
-    lat: 50.000678,
-    lng: -86.000977,
-  },
-  '6ad4101f-aef5-4643-84e3-da03a432a17c': {
-    city: 'Stanley Parish Region',
-    lat: 46.500283,
-    lng: -66.750183,
-  },
-};
 
 /**
  * Resolves a post's display city and canonical coordinates.
@@ -158,7 +126,11 @@ const MapView: React.FC = () => {
   const [isDesktopPreviewVisible, setIsDesktopPreviewVisible] = useState(true);
   const [isDesktopPreviewExpanded, setIsDesktopPreviewExpanded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [isLocationActive, setIsLocationActive] = useState(false);
+  const [locationFocus, setLocationFocus] = useState<{ lat: number, lng: number, requestId: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const preloadRequested = useRef(false);
+  const locationRequestId = useRef(0);
   const navigate = useNavigate();
 
   const selectGroup = (groupId: string) => {
@@ -192,16 +164,55 @@ const MapView: React.FC = () => {
     fetchPosts();
   }, []);
 
+  // Ask for location permission as the page opens and cache the result. This
+  // intentionally does not move the map or reorder the list; that happens only
+  // after the visitor presses the location button.
+  useEffect(() => {
+    if (!navigator.geolocation || preloadRequested.current) return;
+    preloadRequested.current = true;
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setIsLocating(false);
+      },
+      () => {
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 5 * 60 * 1000,
+      }
+    );
+  }, []);
+
   const handleNearMe = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
       return;
     }
+
+    const focusLocation = (location: { lat: number, lng: number }) => {
+      locationRequestId.current += 1;
+      setSelectedGroupId(null);
+      setIsLocationActive(true);
+      setLocationFocus({ ...location, requestId: locationRequestId.current });
+    };
+
+    if (userLocation) {
+      focusLocation(userLocation);
+      return;
+    }
+
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        const location = { lat: latitude, lng: longitude };
+        setUserLocation(location);
+        focusLocation(location);
         setIsLocating(false);
       },
       (err) => {
@@ -209,7 +220,7 @@ const MapView: React.FC = () => {
         setIsLocating(false);
         alert("Location access denied or unavailable.");
       },
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5 * 60 * 1000 }
     );
   };
 
@@ -234,9 +245,27 @@ const MapView: React.FC = () => {
 
     // First pass: posts
     posts.forEach(post => {
-      const correction = STORY_LOCATION_CORRECTIONS[post.id];
-      const resolved = correction || resolveCity(post.city, post.lat, post.lng);
-      if (!resolved) return;
+      const resolved = resolveCity(post.city, post.lat, post.lng);
+      if (!resolved) {
+        const key = '__unknown_location__';
+        if (!map.has(key)) {
+          map.set(key, {
+            id: key,
+            city: 'Unknown location',
+            country: post.country || 'Canada',
+            lat: 0,
+            lng: 0,
+            count: 0,
+            items: [],
+            topTags: [],
+            mappable: false,
+          });
+        }
+        const unknownGroup = map.get(key)!;
+        unknownGroup.items.push({ kind: 'post', data: post });
+        unknownGroup.count = unknownGroup.items.length;
+        return;
+      }
       const key = resolved.city || post.country || 'Unknown';
       if (!map.has(key)) {
         map.set(key, {
@@ -248,6 +277,7 @@ const MapView: React.FC = () => {
           count: 0,
           items: [],
           topTags: [],
+          mappable: true,
         });
       }
       const group = map.get(key)!;
@@ -270,6 +300,7 @@ const MapView: React.FC = () => {
           count: 0,
           items: [],
           topTags: [],
+          mappable: true,
         });
       }
       const group = map.get(key)!;
@@ -313,7 +344,7 @@ const MapView: React.FC = () => {
     });
 
     // Drop groups whose coordinates are still (0, 0) — no real location data.
-    return result.filter(group => group.lat !== 0 || group.lng !== 0);
+    return result.filter(group => !group.mappable || group.lat !== 0 || group.lng !== 0);
   }, [posts, mappableResources]);
 
   const filteredGroups = useMemo(() => {
@@ -351,7 +382,7 @@ const MapView: React.FC = () => {
       return matchesSearch && group.count > 0;
     });
 
-    if (userLocation) {
+    if (isLocationActive && userLocation) {
       result = [...result].sort((a, b) => {
         const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
         const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
@@ -362,10 +393,11 @@ const MapView: React.FC = () => {
     }
 
     return result;
-  }, [groupedItems, searchTerm, userLocation, filterMode]);
+  }, [groupedItems, searchTerm, userLocation, isLocationActive, filterMode]);
 
   const hasActiveSearch = searchTerm.trim().length > 0;
   const totalMappedItems = groupedItems.reduce((sum, group) => sum + group.count, 0);
+  const mapGroups = filteredGroups.filter(group => group.mappable);
   const visiblePostCount = filteredGroups.reduce((sum, group) => sum + group.count, 0);
   const emptyStateTitle = filterMode === 'resources'
     ? 'No Resources Yet'
@@ -415,10 +447,6 @@ const MapView: React.FC = () => {
     setIsDesktopPreviewVisible(true);
     setIsDesktopPreviewExpanded(false);
   };
-
-  const mapFocus = selectedGroup
-    ? { lat: selectedGroup.lat, lng: selectedGroup.lng }
-    : userLocation || undefined;
 
   const [isListVisible, setIsListVisible] = useState(false);
 
@@ -499,7 +527,7 @@ const MapView: React.FC = () => {
               <div>
                 <h2 className="text-2xl font-black text-[#1e3a34] tracking-tight italic leading-none mb-2">Support Map.</h2>
                 <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
-                  <span>{groupedItems.length} Cities</span>
+                  <span>{groupedItems.length} Locations</span>
                   <span className="text-[#1e3a34]/20">•</span>
                   <span>{totalMappedItems} Stories & Resources</span>
                   {refreshing && posts.length > 0 && (
@@ -548,7 +576,7 @@ const MapView: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between gap-3 text-[10px] font-black uppercase tracking-widest text-[#1e3a34]/60">
-              <span>{visiblePostCount} posts in {filteredGroups.length} cities</span>
+              <span>{visiblePostCount} items in {filteredGroups.length} locations</span>
               {(hasActiveSearch || filterMode !== 'all') && (
                 <button
                   onClick={() => {
@@ -828,12 +856,12 @@ const MapView: React.FC = () => {
       {/* MAP */}
       <div className="relative z-10 h-full w-full min-w-0 flex-grow overflow-hidden bg-[#e8f3f1] md:w-auto">
         <SupportMap
-          groups={filteredGroups}
+          groups={mapGroups}
           onMarkerClick={(group) => {
             selectGroup(group.id);
           }}
           selectedGroupId={selectedGroupId || undefined}
-          flyToLocation={mapFocus}
+          flyToLocation={locationFocus || undefined}
         />
 
         <AnimatePresence>

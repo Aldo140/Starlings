@@ -6,7 +6,7 @@ addresses are intentionally omitted.
 
 ## Workbook Inventory
 
-Visible tabs:
+Visible tabs after repair:
 
 - `Instructions`
 - `Pending_Stories`
@@ -15,15 +15,13 @@ Visible tabs:
 - `Live_Resources`
 - `Pending_QA`
 - `Live_QA`
-- `Flagged_Words`
-
-Missing tabs required by the reflection feature:
-
 - `Pending_Reflections`
 - `Live_Reflections`
+- `Flagged_Words`
 
-The updated backend `setup()` creates both reflection tabs and adds resource
-location headers.
+The resource moderation tabs now share this safe positional order:
+common resource fields, `city`, `country`, `lat`, `lng`, then the pending
+approval control or live reaction counters.
 
 ## Production Data Findings
 
@@ -31,17 +29,17 @@ location headers.
   are populated.
 - `Live_Stories`: seven approved records.
   - Four use `Unknown` as the city.
-  - One says Kelowna but contains Calgary coordinates.
-  - Audited frontend corrections keep all five visible: Kelowna receives
-    Kelowna coordinates, while the four imprecise records use honest regional
-    labels at their stored coordinates.
-- `Pending_Resources`: one real pending record; no location columns exist yet.
-  - Its submitted link did not resolve during the audit and should not be
-    approved without correction.
-- `Live_Resources`: three physical rows representing two unique resources.
-  - One approved resource is duplicated with the same ID and timestamp.
-  - No resource has location fields because the required columns do not exist.
-  - Both unique live links resolved successfully.
+  - The current Calgary row uses matching Calgary coordinates.
+  - Unknown-location stories remain visible in the browse list but do not create
+    map pins.
+- `Pending_Resources`: no real pending records after the temporary schema test
+  was removed.
+- `Live_Resources`: four unique approved resources.
+  - The duplicate book row was removed.
+  - `Support Group` was normalized and assigned its confirmed Calgary location:
+    `Calgary`, `Canada`, `51.0447`, `-114.0719`.
+  - The other three approved resources have no confirmed location and therefore
+    remain in resource lists without map pins.
   - The live meme has a URL but no `image_url`; the frontend now keeps its link
     visible instead of rendering an unopenable text-only card.
 - `Pending_QA`: no real pending records.
@@ -54,40 +52,43 @@ moderation area. These are not submissions and must not be counted as records.
 
 ## Critical Privacy Finding
 
-The workbook was anonymously downloadable during this audit. This exposes
-pending moderation data directly, bypassing the Apps Script API. The workbook
-must be changed from public/anyone-with-link access to named moderators only.
+The workbook was anonymously downloadable at the start of this audit. Public
+workbook access was removed on 2026-06-18. The owner and Agnes retain named
+access.
 
-The deployed Apps Script endpoint also returned all `Live_Resources` columns.
-The updated backend now allowlists public fields and omits submitter email,
-qualifications, moderation flags, and approval controls.
+The deployed Apps Script endpoint still needs the repository backend update to
+enforce its public-field allowlist. Current approved resource rows contain no
+submitter email or qualification values, and the private workbook prevents
+direct access to pending moderation data.
 
-## Required Workbook Actions
+## Completed Workbook Actions
 
-1. Merge `docs/backend/gas-backend.js` into the existing Apps Script project
-   without deleting `ApprovalWorkflow.gs` or moderation-menu files.
-2. Run `repairWorkbookData()` as the workbook owner. It attempts to restrict
-   sharing, removes the duplicate resource, writes the five audited story
-   location corrections, and flags unreachable pending resource links.
-3. If the repair report says `sharingRestricted: false`, restrict workbook
-   sharing manually before doing anything else.
-4. If more precise locations become available later, replace the four regional
-   labels only when the submitter or another trustworthy source confirms them.
-5. `repairWorkbookData()` runs `setup()` automatically.
-6. Deploy a new Apps Script version.
-7. Confirm health reports backend version
-   `2026-06-18-location-based-resources` and both reflection tabs exist.
-8. Confirm `Pending_Resources` and `Live_Resources` include `city`, `country`,
-   `lat`, and `lng`.
-9. Audit the existing approval-workflow source to confirm it moves rows by
-   header name rather than fixed column number. That source is not present in
-   this repository and cannot be verified from the public workbook export.
+1. Created a pre-repair workbook backup.
+2. Removed anonymous workbook sharing while retaining named moderator access.
+3. Added `city`, `country`, `lat`, and `lng` to both resource tabs without
+   breaking positional approval workflows.
+4. Created both reflection tabs.
+5. Removed the duplicate approved resource.
+6. Corrected and located the approved `Support Group` resource in Calgary.
+7. Submitted a temporary map resource through the live public endpoint,
+   confirmed all location fields reached `Pending_Resources`, then deleted it.
+8. Confirmed the public endpoint still reads the now-private workbook.
+
+## Remaining Deployment Action
+
+Deploy `docs/backend/gas-backend.js` into the existing Apps Script project
+without deleting `ApprovalWorkflow.gs` or moderation-menu files. This publishes
+the public-field allowlist and header-based approval workflow. The current
+school account policy blocks anonymous access on newly created web apps, so the
+existing grandfathered public deployment must be updated from its Apps Script
+editor rather than replaced with the temporary standalone deployment.
 
 ## Frontend Rules After This Audit
 
 - The map reads approved stories plus approved coordinate-bearing resources.
-- All currently approved stories remain visible. Audited legacy rows use
-  explicit city or regional corrections rather than guessed nearby cities.
+- All currently approved stories remain visible in the list. Unknown locations
+  stay off the map, while named hub cities use their canonical city coordinates
+  so stories and resources group under one city pin.
 - Legacy resource-shaped story rows are ignored.
 - Map-origin resource submissions require a location.
 - Resources-page submissions require an explicit map-based opt-in before asking

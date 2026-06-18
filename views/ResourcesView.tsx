@@ -439,7 +439,7 @@ const ResourcesView: React.FC = () => {
     const [syncing, setSyncing] = useState(false);
     /** Captured when sync completes — passed to the banner for the "N resources loaded" message */
     const [syncedCount, setSyncedCount] = useState(0);
-    const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(ResourceType.WEBSITE);
+    const [activeCommunityIndex, setActiveCommunityIndex] = useState<string | null>(null);
     const [activeGeneralIndex, setActiveGeneralIndex] = useState<number>(0);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -1232,7 +1232,18 @@ const ResourcesView: React.FC = () => {
                                                             />
                                                         )}
                                                         <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center ${isActive ? `bg-white shadow-sm border border-gray-100 ${bucket.color}` : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200'}`}>
-                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                            <motion.div
+                                                                animate={{ y: [0, -7, 0], scale: [1, 1.16, 1] }}
+                                                                transition={{
+                                                                    duration: 1.8,
+                                                                    repeat: Infinity,
+                                                                    ease: [0.45, 0, 0.55, 1],
+                                                                    delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.18,
+                                                                    repeatDelay: 0.6,
+                                                                }}
+                                                            >
+                                                                {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4' })}
+                                                            </motion.div>
                                                         </div>
                                                         <span className={`text-sm font-black flex-grow leading-tight ${isActive ? 'text-[#1e3a34]' : 'text-gray-500 group-hover:text-gray-700'}`}>
                                                             {bucket.label}
@@ -1259,26 +1270,90 @@ const ResourcesView: React.FC = () => {
                                         {!activeBucket ? (
                                             <motion.div
                                                 key="xl-empty"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                className="flex flex-col items-center justify-center py-28 text-center"
+                                                initial={{ opacity: 0, y: 18 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -12 }}
+                                                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                                                className="relative min-h-[540px] flex items-center justify-center px-8 text-center"
                                             >
-                                                <div className="flex items-end gap-2 mb-10">
-                                                    {COMMUNITY_BUCKETS.slice(0, 7).map((bucket, i) => (
+                                                <motion.div
+                                                    aria-hidden="true"
+                                                    className="absolute left-[10%] right-[10%] top-1/2 h-32 -translate-y-1/2 rounded-[100%] bg-[#448a7d]/5 blur-3xl"
+                                                    animate={{ scaleX: [0.85, 1.08, 0.85], opacity: [0.35, 0.7, 0.35] }}
+                                                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                                                />
+
+                                                <div className="relative flex max-w-3xl flex-col items-center">
+                                                    <div className="relative mb-14 flex items-center justify-center px-8" aria-hidden="true">
                                                         <motion.div
-                                                            key={bucket.id}
-                                                            className={`rounded-2xl flex items-center justify-center shadow-md ${bucket.bg}`}
-                                                            style={{ width: 40, height: 40, opacity: 0.55 }}
-                                                            animate={{ y: [0, -(4 + i), 0] }}
-                                                            transition={{ duration: 2.2 + i * 0.15, repeat: Infinity, delay: i * 0.2 }}
+                                                            className="absolute left-0 right-0 top-1/2 h-px bg-gradient-to-r from-transparent via-[#448a7d]/25 to-transparent"
+                                                            animate={{ scaleX: [0.72, 1, 0.72], opacity: [0.25, 0.75, 0.25] }}
+                                                            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+                                                        />
+
+                                                        <div className="relative flex items-center gap-3">
+                                                            {COMMUNITY_BUCKETS.slice(0, 9).map((bucket, i) => (
+                                                                <motion.div
+                                                                    key={bucket.id}
+                                                                    className="relative"
+                                                                    animate={{
+                                                                        y: [0, -16, -4, 9, 0],
+                                                                    }}
+                                                                    transition={{
+                                                                        duration: 3.6,
+                                                                        repeat: Infinity,
+                                                                        delay: i * 0.12,
+                                                                        ease: [0.45, 0, 0.55, 1],
+                                                                    }}
+                                                                >
+                                                                    <motion.div
+                                                                        className={`relative z-10 h-12 w-12 rounded-2xl flex items-center justify-center text-white shadow-[0_14px_24px_-14px_rgba(30,58,52,0.65)] ${bucket.bg}`}
+                                                                        animate={{
+                                                                            scale: [1, 1.08, 1, 0.97, 1],
+                                                                            rotate: [0, -2, 0, 2, 0],
+                                                                        }}
+                                                                        transition={{
+                                                                            duration: 3.6,
+                                                                            repeat: Infinity,
+                                                                            delay: i * 0.12,
+                                                                            ease: [0.45, 0, 0.55, 1],
+                                                                        }}
+                                                                    >
+                                                                        {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-5 h-5 text-white' })}
+                                                                    </motion.div>
+                                                                    <motion.div
+                                                                        className="absolute left-1/2 top-full mt-3 h-1.5 w-7 -translate-x-1/2 rounded-full bg-[#1e3a34]/10 blur-[2px]"
+                                                                        animate={{ scaleX: [1, 0.55, 0.8, 1.15, 1], opacity: [0.32, 0.12, 0.2, 0.38, 0.32] }}
+                                                                        transition={{ duration: 3.6, repeat: Infinity, delay: i * 0.12 }}
+                                                                    />
+                                                                </motion.div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <motion.p
+                                                        className="mb-3 text-[10px] font-black uppercase tracking-[0.24em] text-[#448a7d]"
+                                                        animate={{ opacity: [0.55, 1, 0.55] }}
+                                                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                                                    >
+                                                        Shared by the community
+                                                    </motion.p>
+                                                    <h3 className="text-4xl font-black text-[#1e3a34] italic tracking-tight">
+                                                        Explore community resources.
+                                                    </h3>
+                                                    <p className="mt-4 max-w-lg text-base font-medium leading-relaxed text-[#1e3a34]/55">
+                                                        Books, tools, media, and local support—organized so you can find what feels useful right now.
+                                                    </p>
+                                                    <div className="mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#448a7d]">
+                                                        <motion.span
+                                                            className="h-px w-8 bg-[#448a7d]/30"
+                                                            animate={{ scaleX: [0.5, 1, 0.5] }}
+                                                            transition={{ duration: 2.4, repeat: Infinity }}
                                                         >
-                                                            {React.cloneElement(bucket.icon as React.ReactElement, { className: 'w-4 h-4 text-white' })}
-                                                        </motion.div>
-                                                    ))}
+                                                        </motion.span>
+                                                        Choose a category on the left
+                                                    </div>
                                                 </div>
-                                                <h3 className="text-2xl font-black text-[#1e3a34]/30 italic tracking-tight mb-2">Select a category</h3>
-                                                <p className="text-sm text-gray-400 font-medium">Choose a type from the left to explore peer-recommended resources</p>
                                             </motion.div>
                                         ) : (
                                             <motion.div

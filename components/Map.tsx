@@ -18,7 +18,7 @@ interface MapProps {
   groups: CityGroup[];
   onMarkerClick: (group: CityGroup) => void;
   selectedGroupId?: string;
-  flyToLocation?: { lat: number, lng: number };
+  flyToLocation?: { lat: number, lng: number, requestId: number };
 }
 
 interface MarkerCluster {

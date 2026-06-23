@@ -301,7 +301,7 @@ const AboutMap: React.FC = () => {
             >
               <h2
                 className="font-cabinet font-black italic tracking-tight text-[#1e3a34] leading-[0.9] mb-7"
-                style={{ fontSize: 'clamp(3.6rem, 9vw, 6.4rem)' }}
+                style={{ fontSize: 'clamp(2.6rem, 9vw, 6.4rem)' }}
               >
                 Starlings<br />Offerings.
               </h2>

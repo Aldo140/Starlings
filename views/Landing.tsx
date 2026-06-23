@@ -1090,7 +1090,7 @@ const Landing: React.FC = () => {
           </div>
 
           {/* ── Category cards — full width 5-col grid ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
             {([
               {
                 label: 'Care Partners',
@@ -1162,18 +1162,18 @@ const Landing: React.FC = () => {
               >
                 <Link
                   to="/resources"
-                  className="group flex flex-col h-full rounded-[1.75rem] p-6 md:p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_-16px_rgba(30,58,52,0.18)]"
+                  className="group flex flex-col h-full rounded-[1.75rem] p-4 sm:p-6 md:p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_-16px_rgba(30,58,52,0.18)]"
                   style={{ background: item.cardBg }}
                 >
                   <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-200 group-hover:scale-110"
+                    className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-110"
                     style={{ background: item.iconBg, color: item.color }}
                   >
                     {item.icon}
                   </div>
-                  <p className="font-black text-[#1e3a34] text-[13px] leading-tight mb-1.5">{item.label}</p>
-                  <p className="text-[11px] font-medium text-[#1e3a34]/68 leading-snug flex-1">{item.desc}</p>
-                  <div className="mt-4 flex items-center gap-1.5" style={{ color: item.color }}>
+                  <p className="font-black text-[#1e3a34] text-[12px] sm:text-[13px] leading-tight mb-1">{item.label}</p>
+                  <p className="hidden sm:block text-[11px] font-medium text-[#1e3a34]/68 leading-snug flex-1">{item.desc}</p>
+                  <div className="mt-3 sm:mt-4 flex items-center gap-1.5" style={{ color: item.color }}>
                     <span className="text-[10px] font-black uppercase tracking-[0.18em]">View</span>
                     <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -1268,14 +1268,14 @@ const Landing: React.FC = () => {
             ] as const).map((step, i) => (
               <React.Fragment key={step.num}>
                 <motion.div
-                  className="flex-1 pb-8 md:pb-0"
+                  className={`flex-1 md:pb-0 ${i < 2 ? 'pb-7 mb-7 border-b border-[#448a7d]/14 md:border-none md:mb-0' : 'pb-0'}`}
                   initial={{ opacity: 0, y: 28 }}
                   animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.62, delay: 0.28 + i * 0.1, ease: EASE_OUT_EXPO }}
                 >
                   <span
                     className="font-cabinet font-black italic text-[#e57c6e] block mb-3 leading-none"
-                    style={{ fontSize: 'clamp(2.8rem, 5vw, 4rem)' }}
+                    style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)' }}
                   >
                     {step.num}
                   </span>
@@ -1332,7 +1332,7 @@ const Landing: React.FC = () => {
                 </div>
                 <h3 className="font-black text-[#1e3a34] text-sm uppercase tracking-[0.16em]">Best Practices</h3>
               </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 {[
                   'Be specific, not graphic',
                   'Focus on healing, not harm',
@@ -1365,7 +1365,7 @@ const Landing: React.FC = () => {
                 </div>
                 <h3 className="font-black text-[#1e3a34] text-sm uppercase tracking-[0.16em]">Quick Checklist</h3>
               </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                 {[
                   'No personal details',
                   'Safe for all ages',

@@ -1089,8 +1089,56 @@ const Landing: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* ── Category cards — full width 5-col grid ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          {/* ── Mobile: editorial category list ── */}
+          <div className="md:hidden rounded-[1.75rem] overflow-hidden" style={{ background: 'rgba(255,255,255,0.76)', border: '1px solid rgba(30,58,52,0.07)' }}>
+            {([
+              { label: 'Care Partners',    desc: 'Vetted local organizations', cardBg: '#e8f3f1', color: '#1e3a34',
+                icon: <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+              { label: 'Crisis Lines',     desc: '24/7 immediate support',     cardBg: '#fbd6d1', color: '#9f453d',
+                icon: <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg> },
+              { label: 'Peer Resources',   desc: 'Community-shared tools',     cardBg: '#e8f3f1', color: '#2d5a52',
+                icon: <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg> },
+              { label: 'Community Guides', desc: 'Step-by-step reading',       cardBg: '#f3f1e8', color: '#1e3a34',
+                icon: <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
+              { label: 'Youth Services',   desc: 'Support for young people',   cardBg: '#fbd6d1', color: '#9f453d',
+                icon: <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
+            ] as const).map((item, i, arr) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, x: -14 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-24px' }}
+                transition={{ duration: 0.45, delay: 0.05 * i, ease: EASE_OUT_EXPO }}
+              >
+                <Link
+                  to="/resources"
+                  className="flex items-center gap-3.5 px-5 py-[1.05rem] group active:bg-black/[0.025] transition-colors duration-150"
+                  style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(30,58,52,0.06)' : 'none' }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center"
+                    style={{ background: item.cardBg, color: item.color }}
+                  >
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-cabinet font-bold text-[#1e3a34] leading-tight" style={{ fontSize: '1.05rem' }}>{item.label}</p>
+                    <p className="text-[11px] font-medium text-[#1e3a34]/40 mt-0.5">{item.desc}</p>
+                  </div>
+                  <svg
+                    className="w-4 h-4 flex-shrink-0 transition-all duration-200 group-hover:translate-x-0.5"
+                    style={{ color: 'rgba(30,58,52,0.22)' }}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* ── Desktop: card grid ── */}
+          <div className="hidden md:grid md:grid-cols-5 gap-4">
             {([
               {
                 label: 'Care Partners',
@@ -1162,18 +1210,18 @@ const Landing: React.FC = () => {
               >
                 <Link
                   to="/resources"
-                  className="group flex flex-col h-full rounded-[1.75rem] p-4 sm:p-6 md:p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_-16px_rgba(30,58,52,0.18)]"
+                  className="group flex flex-col h-full rounded-[1.75rem] p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_-16px_rgba(30,58,52,0.18)]"
                   style={{ background: item.cardBg }}
                 >
                   <div
-                    className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-110"
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-200 group-hover:scale-110"
                     style={{ background: item.iconBg, color: item.color }}
                   >
                     {item.icon}
                   </div>
-                  <p className="font-black text-[#1e3a34] text-[12px] sm:text-[13px] leading-tight mb-1">{item.label}</p>
-                  <p className="hidden sm:block text-[11px] font-medium text-[#1e3a34]/68 leading-snug flex-1">{item.desc}</p>
-                  <div className="mt-3 sm:mt-4 flex items-center gap-1.5" style={{ color: item.color }}>
+                  <p className="font-black text-[#1e3a34] text-[13px] leading-tight mb-1.5">{item.label}</p>
+                  <p className="text-[11px] font-medium text-[#1e3a34]/68 leading-snug flex-1">{item.desc}</p>
+                  <div className="mt-4 flex items-center gap-1.5" style={{ color: item.color }}>
                     <span className="text-[10px] font-black uppercase tracking-[0.18em]">View</span>
                     <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -1248,27 +1296,53 @@ const Landing: React.FC = () => {
             </div>
           </motion.div>
 
-          <div className="flex flex-col md:flex-row md:items-start mb-5 md:mb-6">
+          {/* Mobile: glass step cards with ghost background numbers */}
+          <div className="md:hidden flex flex-col gap-3 mb-6">
             {([
-              {
-                num: '01',
-                title: 'You write a note',
-                desc: 'A short story, a resource that helped, or a question — posted anonymously. No account, no email, no trace.',
-              },
-              {
-                num: '02',
-                title: 'A person reviews it',
-                desc: 'A Starlings volunteer checks your note within 48–72 hours to make sure it\'s safe and supportive.',
-              },
-              {
-                num: '03',
-                title: 'It lands on the map',
-                desc: 'Your note becomes a pin on the Alberta map — visible to anyone navigating the same experience.',
-              },
+              { num: '01', title: 'You write a note',     desc: 'A short story, a resource that helped, or a question — posted anonymously. No account, no email, no trace.' },
+              { num: '02', title: 'A person reviews it',  desc: "A Starlings volunteer checks your note within 48–72 hours to make sure it's safe and supportive." },
+              { num: '03', title: 'It lands on the map',  desc: 'Your note becomes a pin on the Alberta map — visible to anyone navigating the same experience.' },
+            ] as const).map((step, i) => (
+              <motion.div
+                key={step.num}
+                className="relative rounded-[1.5rem] p-5 overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.07)' }}
+                initial={{ opacity: 0, y: 22 }}
+                animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.55, delay: 0.28 + i * 0.1, ease: EASE_OUT_EXPO }}
+              >
+                {/* Ghost number — large background watermark */}
+                <span
+                  className="absolute right-2 -top-2 font-cabinet font-black italic leading-none pointer-events-none select-none"
+                  style={{ fontSize: '7.5rem', color: 'rgba(229,124,110,0.07)' }}
+                  aria-hidden="true"
+                >
+                  {step.num}
+                </span>
+                <div className="relative z-10">
+                  <span
+                    className="font-cabinet font-black italic text-[#e57c6e] block mb-2 leading-none"
+                    style={{ fontSize: '2.2rem' }}
+                  >
+                    {step.num}
+                  </span>
+                  <p className="font-black text-white text-[15px] leading-tight mb-1.5">{step.title}</p>
+                  <p className="text-[#c8e0da] text-[13px] font-normal leading-relaxed">{step.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Desktop: horizontal flex with connectors */}
+          <div className="hidden md:flex md:items-start mb-5 md:mb-6">
+            {([
+              { num: '01', title: 'You write a note',     desc: 'A short story, a resource that helped, or a question — posted anonymously. No account, no email, no trace.' },
+              { num: '02', title: 'A person reviews it',  desc: "A Starlings volunteer checks your note within 48–72 hours to make sure it's safe and supportive." },
+              { num: '03', title: 'It lands on the map',  desc: 'Your note becomes a pin on the Alberta map — visible to anyone navigating the same experience.' },
             ] as const).map((step, i) => (
               <React.Fragment key={step.num}>
                 <motion.div
-                  className={`flex-1 md:pb-0 ${i < 2 ? 'pb-7 mb-7 border-b border-[#448a7d]/14 md:border-none md:mb-0' : 'pb-0'}`}
+                  className="flex-1"
                   initial={{ opacity: 0, y: 28 }}
                   animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.62, delay: 0.28 + i * 0.1, ease: EASE_OUT_EXPO }}
@@ -1282,11 +1356,9 @@ const Landing: React.FC = () => {
                   <p className="font-black text-white text-base leading-tight mb-2">{step.title}</p>
                   <p className="text-[#c8e0da] text-sm font-normal leading-relaxed md:pr-8">{step.desc}</p>
                 </motion.div>
-
-                {/* Connector — desktop only, between steps */}
                 {i < 2 && (
                   <motion.div
-                    className="hidden md:flex flex-shrink-0 items-center"
+                    className="flex-shrink-0 flex items-center"
                     style={{ width: '3.5rem', paddingTop: '1.4rem' }}
                     initial={{ opacity: 0 }}
                     animate={quickRefInView ? { opacity: 1 } : {}}

@@ -293,7 +293,7 @@ const AboutMap: React.FC = () => {
 
             {/* Left: heading + accent rule + body */}
             <motion.div
-              className="md:pr-12 lg:pr-20 pb-12 md:pb-0"
+              className="md:pr-12 lg:pr-20 pb-8 md:pb-0"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
@@ -325,7 +325,7 @@ const AboutMap: React.FC = () => {
 
             {/* Right: offerings as line items with thin dividers */}
             <motion.div
-              className="md:pl-12 lg:pl-20"
+              className="md:pl-12 lg:pl-20 pt-6 md:pt-0 border-t md:border-none border-[#1e3a34]/10"
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
@@ -342,7 +342,7 @@ const AboutMap: React.FC = () => {
                 ] as const).map((item, i) => (
                   <motion.div
                     key={item}
-                    className="flex items-center gap-4 py-4"
+                    className="flex items-center gap-4 py-3.5 md:py-4"
                     style={{ borderBottom: i < 5 ? '1px solid rgba(30,58,52,0.08)' : 'none' }}
                     initial={{ opacity: 0, x: 16 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -355,11 +355,17 @@ const AboutMap: React.FC = () => {
                       aria-hidden="true"
                     />
                     <span
-                      className="font-cabinet font-bold text-[#1e3a34]"
-                      style={{ fontSize: 'clamp(1.05rem, 2.2vw, 1.2rem)' }}
+                      className="font-cabinet font-bold text-[#1e3a34] flex-1"
+                      style={{ fontSize: 'clamp(1.15rem, 2.2vw, 1.2rem)' }}
                     >
                       {item}
                     </span>
+                    <svg
+                      className="md:hidden w-3.5 h-3.5 flex-shrink-0 text-[#1e3a34]/20"
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </motion.div>
                 ))}
               </div>

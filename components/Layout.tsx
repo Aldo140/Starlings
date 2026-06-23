@@ -6,6 +6,8 @@ import { StarlingFlock } from './StarlingFlock';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const location = useLocation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -31,6 +33,31 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMenuOpen]);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactStatus('sending');
+    try {
+      const res = await fetch('https://formsubmit.co/ajax/programs@starlings.ca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: contactForm.name,
+          email: contactForm.email,
+          message: contactForm.message,
+          _subject: 'Starlings Support Map — New Contact',
+        }),
+      });
+      if (res.ok) {
+        setContactStatus('sent');
+        setContactForm({ name: '', email: '', message: '' });
+      } else {
+        setContactStatus('error');
+      }
+    } catch {
+      setContactStatus('error');
+    }
+  };
 
   const navLinks = [
     {
@@ -163,7 +190,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               transition={{ duration: 0.3, delay: 0.08, ease: EASE_OUT_EXPO }}
               className="flex items-center justify-between px-6 pt-7 pb-3 relative z-10 flex-shrink-0"
             >
-              <Link to="/" onClick={() => setIsMenuOpen(false)}>
+              <Link
+                to="/"
+                onClick={() => { setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              >
                 <img
                   src={`${import.meta.env.BASE_URL}logo-star.avif`}
                   alt="Starlings"
@@ -274,7 +304,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-white z-[5000] flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center group">
+          <Link
+            to="/"
+            className="flex items-center group"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
             <img src={`${import.meta.env.BASE_URL}logo-star.avif`} alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
           </Link>
 
@@ -329,30 +363,159 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </main>
 
       {location.pathname !== '/map' && (
-        <footer className="bg-[#1e3a34] text-white py-20 px-4">
+        <footer className="bg-[#1e3a34] text-white pt-20 pb-10 px-4">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
-              <div className="max-w-md">
-                <h3 className="font-bold text-3xl mb-6">starlings community</h3>
-                <p className="text-teal-100/60 leading-relaxed font-light">
+
+            {/* ── Top row: brand + links grid ── */}
+            <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-0">
+              <div className="max-w-sm">
+                <h3 className="font-bold text-3xl mb-5">starlings community</h3>
+                <p className="text-teal-100/55 leading-relaxed font-light mb-5">
                   Empowering youth impacted by family substance use through community, healing, and hope.
                 </p>
+                <a
+                  href="https://www.starlings.ca"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[#448a7d] text-sm font-bold hover:text-white transition-colors"
+                >
+                  Visit starlings.ca
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M7 17L17 7M17 7H7M17 7v10" />
+                  </svg>
+                </a>
               </div>
-              <div className="grid grid-cols-2 gap-x-16 gap-y-4">
+
+              <div className="grid grid-cols-2 gap-x-14 gap-y-4 flex-shrink-0">
+                {/* Project links */}
                 <div>
                   <p className="font-bold text-[#e57c6e] uppercase tracking-widest text-xs mb-4">Project</p>
                   <div className="flex flex-col gap-3">
-                    <Link to="/map" className="text-sm text-teal-100/80 hover:text-white transition-colors">Support Map</Link>
-                    <Link to="/resources" className="text-sm text-teal-100/80 hover:text-white transition-colors">Resources</Link>
-                    <Link to="/share" className="text-sm text-teal-100/80 hover:text-white transition-colors">Submit Note</Link>
+                    <Link to="/map" className="text-sm text-teal-100/75 hover:text-white transition-colors">Support Map</Link>
+                    <Link to="/resources" className="text-sm text-teal-100/75 hover:text-white transition-colors">Resources</Link>
+                    <Link to="/share" className="text-sm text-teal-100/75 hover:text-white transition-colors">Submit Note</Link>
+                    <Link to="/about" className="text-sm text-teal-100/75 hover:text-white transition-colors">About the Map</Link>
+                  </div>
+                </div>
+
+                {/* Starlings website links */}
+                <div>
+                  <p className="font-bold text-[#e57c6e] uppercase tracking-widest text-xs mb-4">Starlings</p>
+                  <div className="flex flex-col gap-3">
+                    <a href="https://www.starlings.ca" target="_blank" rel="noopener noreferrer" className="text-sm text-teal-100/75 hover:text-white transition-colors">Our Website</a>
+                    <a href="https://www.starlings.ca" target="_blank" rel="noopener noreferrer" className="text-sm text-teal-100/75 hover:text-white transition-colors">Offerings &amp; Programs</a>
+                    <a href="https://www.starlings.ca" target="_blank" rel="noopener noreferrer" className="text-sm text-teal-100/75 hover:text-white transition-colors">About Starlings</a>
+                    <a href="https://www.starlings.ca/community-crisis-lines" target="_blank" rel="noopener noreferrer" className="text-sm text-teal-100/75 hover:text-white transition-colors">Crisis Lines</a>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-teal-100/40 border-t border-white/5 pt-12 text-center md:text-left">
-              <p>&copy; {new Date().getFullYear()} Starlings Community.</p>
-              <p>Starlings is not crisis support. If you need support right now, you can find care options <a href="https://www.starlings.ca/community-crisis-lines" className="underline hover:text-[#e57c6e] transition-colors">here</a>.</p>
+
+            {/* ── Contact Form ── */}
+            <div className="border-t border-white/[0.07] mt-14 pt-14 mb-0">
+              <div className="flex flex-col lg:flex-row gap-10 lg:gap-20">
+
+                {/* Left: heading */}
+                <div className="lg:max-w-[17rem] flex-shrink-0">
+                  <p className="font-black text-[#e57c6e] text-[9px] uppercase tracking-[0.34em] mb-2">Get in Touch</p>
+                  <h4
+                    className="font-cabinet font-black italic text-white tracking-tight leading-[0.96] mb-4"
+                    style={{ fontSize: 'clamp(1.9rem, 3.5vw, 2.5rem)' }}
+                  >
+                    Contact Us
+                  </h4>
+                  <p className="text-teal-100/45 text-[13px] font-light leading-relaxed">
+                    Have a question about Starlings or the Support Map? We&apos;d love to hear from you.
+                  </p>
+                </div>
+
+                {/* Right: form */}
+                <div className="flex-1 min-w-0">
+                  {contactStatus === 'sent' ? (
+                    <div className="rounded-2xl bg-[#448a7d]/14 border border-[#448a7d]/22 p-8 text-center">
+                      <div className="mb-3 flex justify-center">
+                        <span className="w-10 h-10 rounded-full bg-[#448a7d]/20 border border-[#448a7d]/30 flex items-center justify-center">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#448a7d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        </span>
+                      </div>
+                      <p className="text-[#448a7d] font-black uppercase tracking-[0.2em] text-[10px] mb-2">Message sent</p>
+                      <p className="text-white/60 text-sm font-medium">Thanks for reaching out. We&apos;ll be in touch soon.</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleContactSubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <input
+                          type="text"
+                          name="name"
+                          placeholder="Your name"
+                          required
+                          value={contactForm.name}
+                          onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))}
+                          className="w-full bg-white/[0.07] border border-white/[0.11] text-white placeholder:text-white/28 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#448a7d]/48 transition-colors"
+                        />
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="Your email"
+                          required
+                          value={contactForm.email}
+                          onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))}
+                          className="w-full bg-white/[0.07] border border-white/[0.11] text-white placeholder:text-white/28 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#448a7d]/48 transition-colors"
+                        />
+                      </div>
+                      <textarea
+                        name="message"
+                        placeholder="Your message"
+                        required
+                        rows={4}
+                        value={contactForm.message}
+                        onChange={e => setContactForm(f => ({ ...f, message: e.target.value }))}
+                        className="w-full bg-white/[0.07] border border-white/[0.11] text-white placeholder:text-white/28 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-[#448a7d]/48 transition-colors resize-none"
+                      />
+                      {contactStatus === 'error' && (
+                        <p className="text-[#e57c6e] text-xs font-bold">
+                          Something went wrong. Please try again or email us at{' '}
+                          <a href="mailto:programs@starlings.ca" className="underline">programs@starlings.ca</a>.
+                        </p>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={contactStatus === 'sending'}
+                        className="inline-flex items-center gap-2.5 bg-[#e57c6e] hover:bg-[#d46a5c] disabled:opacity-60 disabled:cursor-not-allowed text-white px-7 py-3 rounded-full text-sm font-bold transition-all shadow-[0_15px_30px_-10px_rgba(229,124,110,0.38)] active:scale-[0.97]"
+                      >
+                        {contactStatus === 'sending' ? (
+                          <>
+                            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                            </svg>
+                            Sending…
+                          </>
+                        ) : (
+                          <>
+                            Send Message
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M22 2L11 13M22 2L15 22l-4-9-9-4L22 2z" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+              </div>
             </div>
+
+            {/* ── Copyright bar ── */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-teal-100/35 border-t border-white/[0.05] mt-14 pt-8 text-center md:text-left">
+              <p>&copy; {new Date().getFullYear()} Starlings Community.</p>
+              <p>Starlings is not crisis support. If you need support right now, you can find care options{' '}
+                <a href="https://www.starlings.ca/community-crisis-lines" className="underline hover:text-[#e57c6e] transition-colors">here</a>.
+              </p>
+            </div>
+
           </div>
         </footer>
       )}

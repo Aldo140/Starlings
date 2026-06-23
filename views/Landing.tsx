@@ -156,7 +156,16 @@ const Landing: React.FC = () => {
   ];
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative py-16 md:py-24 overflow-hidden" style={{ background: 'linear-gradient(150deg, #eaf6f1 0%, #f5fbf7 52%, #e6f4ef 100%)' }}>
+    <section ref={qaRef} id="ask-question" className="relative py-16 md:py-24 overflow-hidden">
+      {/* Frosted-glass backdrop — birds visible but blurred behind the section */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(150deg, rgba(234,246,241,0.38) 0%, rgba(245,251,247,0.44) 52%, rgba(230,244,239,0.38) 100%)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+        }}
+      />
 
       {/* ── Atmospheric Background ─────────────────────────────────── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -1020,203 +1029,320 @@ const Landing: React.FC = () => {
       {questionSection}
 
       {/* ── Resources Discovery Section ── */}
-      <section className="relative overflow-hidden bg-white py-14 md:py-28">
-        {/* Subtle dot texture */}
-        <div className="absolute inset-0 pointer-events-none opacity-40"
-          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      <section className="relative overflow-hidden py-24 md:py-40">
+        {/* Light wash — birds visible through */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.48)' }} />
+        <div className="absolute inset-0 pointer-events-none opacity-35"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-6">
 
-          {/* Mobile: stacked; Desktop: two-panel grid */}
-          <div className="grid md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr] gap-4 md:gap-5 items-stretch">
-
-            {/* ── LEFT: dark editorial card — heading + CTA ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
+          {/* ── Centered hero text ── */}
+          <div className="text-center mb-16 md:mb-24 max-w-3xl mx-auto">
+            <motion.p
+              className="text-[9px] font-black uppercase tracking-[0.45em] text-[#448a7d] mb-5"
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.72, ease: EASE_OUT_EXPO }}
-              className="flex flex-col justify-between rounded-[2.5rem] md:rounded-[3rem] overflow-hidden"
-              style={{ background: '#1e3a34', minHeight: 'clamp(280px, 40vw, 480px)' }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
             >
-              <div className="p-7 md:p-12">
-                <p className="text-[9px] font-black uppercase tracking-[0.42em] text-[#448a7d] mb-5 md:mb-7">
-                  Support Resources
-                </p>
-                <h2 className="font-cabinet font-black text-white leading-[0.95] tracking-tight mb-4 md:mb-5"
-                  style={{ fontSize: 'clamp(2.1rem, 4vw, 3.75rem)' }}>
-                  Everything you<br />need,{' '}
-                  <span className="text-[#e57c6e] italic">in one place.</span>
-                </h2>
-                <p className="text-white/40 text-[13px] font-medium leading-relaxed max-w-[28ch]">
-                  Vetted partners, crisis lines, peer resources, and community guides — organized for young people navigating family substance use.
-                </p>
-              </div>
-              <div className="p-7 md:p-12 pt-2 md:pt-0">
+              Support Resources
+            </motion.p>
+            <motion.h2
+              className="font-cabinet font-black tracking-tight leading-[0.92] text-[#1e3a34] mb-6"
+              style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)' }}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.72, delay: 0.08, ease: EASE_OUT_EXPO }}
+            >
+              Everything you need,{' '}
+              <span className="text-[#e57c6e] italic">in one place.</span>
+            </motion.h2>
+            <motion.p
+              className="text-[#1e3a34]/66 font-light leading-relaxed mb-10 mx-auto"
+              style={{ fontSize: 'clamp(1rem, 1.8vw, 1.1rem)', maxWidth: '46ch' }}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.65, delay: 0.16, ease: EASE_OUT_EXPO }}
+            >
+              Vetted partners, crisis lines, peer resources, and community guides —
+              organized for young people navigating family substance use.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.6, delay: 0.24, ease: EASE_OUT_EXPO }}
+            >
+              <Link
+                to="/resources"
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full font-black text-[11px] uppercase tracking-[0.22em] text-white transition-all active:scale-95 hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, #e57c6e 0%, #d46a5c 100%)', boxShadow: '0 14px 36px -10px rgba(229,124,110,0.58)' }}
+              >
+                Browse Resources
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* ── Category cards — full width 5-col grid ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            {([
+              {
+                label: 'Care Partners',
+                desc: 'Vetted local organizations',
+                color: '#1e3a34',
+                cardBg: '#e8f3f1',
+                iconBg: 'rgba(30,58,52,0.10)',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                ),
+              },
+              {
+                label: 'Crisis Lines',
+                desc: '24/7 immediate support',
+                color: '#9f453d',
+                cardBg: '#fbd6d1',
+                iconBg: 'rgba(159,69,61,0.14)',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                ),
+              },
+              {
+                label: 'Peer Resources',
+                desc: 'Community-shared tools',
+                color: '#2d5a52',
+                cardBg: '#e8f3f1',
+                iconBg: 'rgba(68,138,125,0.16)',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                ),
+              },
+              {
+                label: 'Community Guides',
+                desc: 'Step-by-step reading',
+                color: '#1e3a34',
+                cardBg: '#f3f1e8',
+                iconBg: 'rgba(30,58,52,0.08)',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                ),
+              },
+              {
+                label: 'Youth Services',
+                desc: 'Support for young people',
+                color: '#9f453d',
+                cardBg: '#fbd6d1',
+                iconBg: 'rgba(159,69,61,0.14)',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                ),
+              },
+            ] as const).map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.55, delay: 0.06 * i, ease: EASE_OUT_EXPO }}
+              >
                 <Link
                   to="/resources"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full font-black text-[11px] uppercase tracking-[0.2em] text-white transition-all active:scale-95 hover:-translate-y-0.5"
-                  style={{
-                    background: 'linear-gradient(135deg, #e57c6e 0%, #d46a5c 100%)',
-                    boxShadow: '0 14px 36px -10px rgba(229,124,110,0.6)',
-                  }}
+                  className="group flex flex-col h-full rounded-[1.75rem] p-6 md:p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_-16px_rgba(30,58,52,0.18)]"
+                  style={{ background: item.cardBg }}
                 >
-                  Browse Resources
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* ── RIGHT: mint card — animated resource category rows ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 32 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.72, delay: 0.1, ease: EASE_OUT_EXPO }}
-              className="rounded-[2.5rem] md:rounded-[3rem] overflow-hidden flex flex-col"
-              style={{ background: '#e8f3f1' }}
-            >
-              {([
-                {
-                  label: 'Care Partners',
-                  desc: 'Vetted local organizations',
-                  color: '#1e3a34',
-                  bg: 'rgba(30,58,52,0.08)',
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  ),
-                },
-                {
-                  label: 'Crisis Lines',
-                  desc: '24/7 immediate support',
-                  color: '#e57c6e',
-                  bg: 'rgba(229,124,110,0.10)',
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  ),
-                },
-                {
-                  label: 'Peer Resources',
-                  desc: 'Community-shared tools',
-                  color: '#448a7d',
-                  bg: 'rgba(68,138,125,0.10)',
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  ),
-                },
-                {
-                  label: 'Community Guides',
-                  desc: 'Step-by-step reading',
-                  color: '#1e3a34',
-                  bg: 'rgba(30,58,52,0.08)',
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  ),
-                },
-                {
-                  label: 'Youth Services',
-                  desc: 'Support for young people',
-                  color: '#448a7d',
-                  bg: 'rgba(68,138,125,0.10)',
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  ),
-                },
-              ] as const).map((item, i) => (
-                <motion.div
-                  key={item.label}
-                  initial={{ opacity: 0, x: 16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.18 + i * 0.07, ease: EASE_OUT_EXPO }}
-                  className={i < 4 ? 'border-b border-[#c8dedd]/50' : ''}
-                >
-                  <Link
-                    to="/resources"
-                    className="flex items-center gap-4 px-6 md:px-9 py-4 md:py-5 group hover:bg-white/50 transition-colors duration-200"
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-200 group-hover:scale-110"
+                    style={{ background: item.iconBg, color: item.color }}
                   >
-                    <div
-                      className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
-                      style={{ background: item.bg, color: item.color }}
-                    >
-                      {item.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[#1e3a34] font-black text-[13px] leading-none mb-0.5">{item.label}</p>
-                      <p className="text-[#1e3a34]/40 text-[11px] font-medium">{item.desc}</p>
-                    </div>
-                    <svg
-                      className="w-4 h-4 text-[#448a7d]/30 group-hover:text-[#448a7d] group-hover:translate-x-1 transition-all duration-200 flex-shrink-0"
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    {item.icon}
+                  </div>
+                  <p className="font-black text-[#1e3a34] text-[13px] leading-tight mb-1.5">{item.label}</p>
+                  <p className="text-[11px] font-medium text-[#1e3a34]/68 leading-snug flex-1">{item.desc}</p>
+                  <div className="mt-4 flex items-center gap-1.5" style={{ color: item.color }}>
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em]">View</span>
+                    <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Quick Reference ── */}
-      <section className="relative z-10 py-16 md:py-24 bg-white">
-        <div className="absolute inset-0 pointer-events-none opacity-30"
-          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+      {/* ── Before You Post / Quick Reference ── */}
+      <section className="relative overflow-hidden py-20 md:py-36" style={{ background: '#1e3a34' }}>
+
+        {/* Ambient dot grid */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.055) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+        {/* Soft coral glow — bottom right */}
+        <div className="absolute bottom-[-8rem] right-[-8rem] w-[36rem] h-[36rem] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(229,124,110,0.08) 0%, transparent 65%)' }} />
+        {/* Soft teal glow — top left */}
+        <div className="absolute top-[-8rem] left-[-8rem] w-[36rem] h-[36rem] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(68,138,125,0.14) 0%, transparent 65%)' }} />
+
         <div ref={quickRefRef} className="relative z-10 max-w-7xl mx-auto px-6 max-[400px]:px-4">
+
+          {/* ── Editorial split header — heading left, context right ── */}
+          <div className="grid md:grid-cols-2 gap-10 md:gap-20 items-end mb-16 md:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.72, ease: EASE_OUT_EXPO }}
+            >
+              <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[#448a7d] mb-4">
+                Before You Post
+              </p>
+              <h2
+                className="font-cabinet font-black italic tracking-tight leading-[0.9] text-white"
+                style={{ fontSize: 'clamp(3rem, 7vw, 5.5rem)' }}
+              >
+                Quick<br />Reference.
+              </h2>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.68, delay: 0.12, ease: EASE_OUT_EXPO }}
+            >
+              {/* Accent rule */}
+              <div className="w-10 mb-5" style={{ height: '2px', background: 'linear-gradient(90deg, #e57c6e 0%, #448a7d 100%)' }} />
+              <p className="text-[#c8e0da] font-normal leading-[1.75]" style={{ fontSize: 'clamp(0.92rem, 1.6vw, 1rem)' }}>
+                The Support Map lets young people leave anonymous notes — a story, a resource, or a
+                question from lived experience. A Starlings volunteer reviews each one, then places it
+                as a pin on an interactive map of Alberta. Someone else navigating a home shaped by
+                substance use might find exactly what they needed. Here's what to keep in mind
+                before you add yours.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* ── How It Works — featured numbered strip ── */}
           <motion.div
-            className="mb-10 md:mb-14"
-            initial={{ opacity: 0, y: 28 }}
+            className="mb-5 md:mb-6"
+            initial={{ opacity: 0, y: 8 }}
             animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+            transition={{ duration: 0.5, delay: 0.22, ease: EASE_OUT_EXPO }}
           >
-            <p className="text-[9px] font-black uppercase tracking-[0.34em] text-[#448a7d] mb-3">Before You Post</p>
-            <h2 className="font-cabinet text-3xl md:text-4xl font-black text-[#1e3a34] tracking-tight leading-tight">
-              Quick Reference
-            </h2>
+            <div className="flex items-center gap-4">
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#448a7d]/70">How It Works</span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(68,138,125,0.22)' }} />
+            </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col md:flex-row md:items-start mb-5 md:mb-6">
+            {([
+              {
+                num: '01',
+                title: 'You write a note',
+                desc: 'A short story, a resource that helped, or a question — posted anonymously. No account, no email, no trace.',
+              },
+              {
+                num: '02',
+                title: 'A person reviews it',
+                desc: 'A Starlings volunteer checks your note within 48–72 hours to make sure it\'s safe and supportive.',
+              },
+              {
+                num: '03',
+                title: 'It lands on the map',
+                desc: 'Your note becomes a pin on the Alberta map — visible to anyone navigating the same experience.',
+              },
+            ] as const).map((step, i) => (
+              <React.Fragment key={step.num}>
+                <motion.div
+                  className="flex-1 pb-8 md:pb-0"
+                  initial={{ opacity: 0, y: 28 }}
+                  animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ duration: 0.62, delay: 0.28 + i * 0.1, ease: EASE_OUT_EXPO }}
+                >
+                  <span
+                    className="font-cabinet font-black italic text-[#e57c6e] block mb-3 leading-none"
+                    style={{ fontSize: 'clamp(2.8rem, 5vw, 4rem)' }}
+                  >
+                    {step.num}
+                  </span>
+                  <p className="font-black text-white text-base leading-tight mb-2">{step.title}</p>
+                  <p className="text-[#c8e0da] text-sm font-normal leading-relaxed md:pr-8">{step.desc}</p>
+                </motion.div>
 
-            {/* Card 1 — Best Practices */}
+                {/* Connector — desktop only, between steps */}
+                {i < 2 && (
+                  <motion.div
+                    className="hidden md:flex flex-shrink-0 items-center"
+                    style={{ width: '3.5rem', paddingTop: '1.4rem' }}
+                    initial={{ opacity: 0 }}
+                    animate={quickRefInView ? { opacity: 1 } : {}}
+                    transition={{ duration: 0.5, delay: 0.38 + i * 0.1, ease: EASE_OUT_EXPO }}
+                    aria-hidden="true"
+                  >
+                    <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(229,124,110,0.18) 0%, rgba(229,124,110,0.45) 60%, rgba(229,124,110,0.18) 100%)' }} />
+                    <svg className="flex-shrink-0 ml-1" width="5" height="9" viewBox="0 0 5 9" fill="none">
+                      <path d="M1 1l3 3.5L1 8" stroke="#e57c6e" strokeOpacity="0.55" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </motion.div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* ── Guide cards — 2 col ── */}
+          <motion.div
+            className="mb-5 md:mb-6"
+            initial={{ opacity: 0, y: 8 }}
+            animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.54, ease: EASE_OUT_EXPO }}
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#448a7d]/70">Guidelines</span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(68,138,125,0.22)' }} />
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Best Practices */}
             <motion.div
               initial={{ opacity: 0, y: 28 }}
               animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0 }}
-              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#fef8f0] to-white border border-amber-100/60
-                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
-                transition-all duration-300"
+              transition={{ duration: 0.62, delay: 0.6, ease: EASE_OUT_EXPO }}
+              className="rounded-[1.75rem] p-7 md:p-9"
+              style={{ background: '#f3f1e8' }}
             >
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-xl bg-[#1e3a34]/10 flex items-center justify-center">
                   <BestPracticesIcon />
                 </div>
-                <h3 className="font-black text-[#1e3a34] text-base">Best Practices</h3>
+                <h3 className="font-black text-[#1e3a34] text-sm uppercase tracking-[0.16em]">Best Practices</h3>
               </div>
-              <ul className="space-y-3">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                 {[
                   'Be specific, not graphic',
                   'Focus on healing, not harm',
                   'Respect others\' experiences',
                   'No unsolicited advice',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-500 font-light">
-                    <span className="mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-[#e8f3f1] flex items-center justify-center">
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
-                        <path d="M1.5 4l1.8 1.8L6.5 2" stroke="#448a7d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-[#1e3a34]/78 font-medium leading-snug">
+                    <span className="mt-1 flex-shrink-0 w-3.5 h-3.5 rounded-full bg-[#448a7d]/18 flex items-center justify-center">
+                      <svg width="7" height="7" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                        <path d="M1.5 4l1.8 1.8L6.5 2" stroke="#448a7d" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </span>
                     <span>{item}</span>
@@ -1225,73 +1351,33 @@ const Landing: React.FC = () => {
               </ul>
             </motion.div>
 
-            {/* Card 2 — Quick Checklist */}
+            {/* Quick Checklist */}
             <motion.div
               initial={{ opacity: 0, y: 28 }}
               animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0.1 }}
-              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#f0f4f9] to-white border border-gray-100/70
-                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
-                transition-all duration-300"
+              transition={{ duration: 0.62, delay: 0.68, ease: EASE_OUT_EXPO }}
+              className="rounded-[1.75rem] p-7 md:p-9"
+              style={{ background: '#e8f3f1' }}
             >
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl bg-[#e8f3f1] flex items-center justify-center">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-xl bg-[#448a7d]/16 flex items-center justify-center">
                   <ChecklistIcon />
                 </div>
-                <h3 className="font-black text-[#1e3a34] text-base">Quick Checklist</h3>
+                <h3 className="font-black text-[#1e3a34] text-sm uppercase tracking-[0.16em]">Quick Checklist</h3>
               </div>
-              <ul className="space-y-3.5">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                 {[
                   'No personal details',
                   'Safe for all ages',
                   'Not triggering or graphic',
                   'Respectful tone',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="flex-shrink-0 w-4 h-4 rounded border-2 border-[#d4ede9] bg-white" />
-                    <span className="text-sm text-gray-500 font-light">{item}</span>
+                  <li key={i} className="flex items-center gap-2.5">
+                    <div className="flex-shrink-0 w-3.5 h-3.5 rounded border-[1.5px] border-[#448a7d]/40 bg-white/60" />
+                    <span className="text-sm text-[#1e3a34]/78 font-medium">{item}</span>
                   </li>
                 ))}
               </ul>
-            </motion.div>
-
-            {/* Card 3 — How It Works */}
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={quickRefInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.65, ease: EASE_OUT_EXPO, delay: 0.2 }}
-              className="p-6 md:p-7 rounded-[1.75rem] bg-gradient-to-br from-[#f4faf9] to-white border border-[#e8f3f1]
-                shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_40px_-10px_rgba(30,58,52,0.12)]
-                transition-all duration-300"
-            >
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-xl bg-[#e8f3f1] flex items-center justify-center text-[#448a7d]">
-                  {ICONS.ShieldCheck}
-                </div>
-                <h3 className="font-black text-[#1e3a34] text-base">How It Works</h3>
-              </div>
-              <div className="flex flex-col gap-0">
-                {[
-                  { num: '01', title: 'You submit', desc: 'Your note enters the queue anonymously — no account, no trace.' },
-                  { num: '02', title: 'We review', desc: 'A human moderator checks within 48–72 hours.' },
-                  { num: '03', title: "It's live", desc: 'Your note appears on the map for the community.' },
-                ].map((step, idx) => (
-                  <React.Fragment key={step.num}>
-                    <div className="flex items-start gap-3 py-3">
-                      <span className="text-[11px] font-black text-[#448a7d] tabular-nums mt-0.5 flex-shrink-0 w-6">
-                        {step.num}
-                      </span>
-                      <div>
-                        <p className="text-sm font-black text-[#1e3a34]">{step.title}</p>
-                        <p className="text-xs font-light text-gray-500 mt-0.5 leading-relaxed">{step.desc}</p>
-                      </div>
-                    </div>
-                    {idx < 2 && (
-                      <div className="ml-[22px] h-px bg-[#e8f3f1]" />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
             </motion.div>
 
           </div>

@@ -230,9 +230,217 @@ const AboutMap: React.FC = () => {
             className="text-white/70 font-light leading-relaxed max-w-2xl"
             style={{ fontSize: 'clamp(1rem, 2.2vw, 1.2rem)' }}
           >
-            Starlings Community is a not for profit whose mission is to strengthen the community of support around the 1 in 4 young people growing up with parental/familial substance use challenges through peer led and evidence informed strategies.
+            Starlings Community is a not for profit whose mission is to strengthen the community of support around the 1 in 4 young people growing up with parental/familial substance use challenges through peer led and evidence informed strategies.{' '}
+            <a
+              href="https://www.starlings.ca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#448a7d] underline decoration-[#448a7d]/40 underline-offset-2 hover:text-white transition-colors"
+            >
+              Learn more about Starlings ↗
+            </a>
           </p>
         </motion.div>
+      </section>
+
+      {/* ── Section 1.5: Starlings Offerings — Editorial Broadcast ──────────── */}
+      <section className="relative overflow-hidden py-20 md:py-36">
+
+        {/* Semi-transparent wash — StarlingFlock (fixed canvas) shows through clearly */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'rgba(255,253,247,0.52)' }}
+        />
+
+        {/* Faint dot grid — tactile depth without hiding birds */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(30,58,52,0.036) 1px, transparent 1px)',
+            backgroundSize: '34px 34px',
+          }}
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 max-[400px]:px-4">
+
+          {/* Eyebrow row */}
+          <motion.div
+            className="flex items-center gap-3 mb-10"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.65, ease: EASE_OUT_EXPO }}
+          >
+            <span className="text-[9px] font-black uppercase tracking-[0.45em] text-[#448a7d]">Starlings Community</span>
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#e57c6e' }} aria-hidden="true" />
+            <span className="text-[9px] font-black uppercase tracking-[0.45em] text-[#1e3a34]/40">Not-for-Profit</span>
+          </motion.div>
+
+          {/* Salutation */}
+          <motion.p
+            className="font-cabinet font-black italic text-[#e57c6e] leading-snug mb-10"
+            style={{ fontSize: 'clamp(1.15rem, 2.5vw, 1.45rem)', maxWidth: '38ch' }}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.65, delay: 0.08, ease: EASE_OUT_EXPO }}
+          >
+            For every young person growing up in a home shaped by substance use —
+          </motion.p>
+
+          {/* Main two-column grid: heading + body left | offerings right */}
+          <div className="grid md:grid-cols-[1fr_1px_1fr] lg:grid-cols-[1.4fr_1px_1fr] gap-0 items-start mb-16 md:mb-20">
+
+            {/* Left: heading + accent rule + body */}
+            <motion.div
+              className="md:pr-12 lg:pr-20 pb-12 md:pb-0"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.72, delay: 0.14, ease: EASE_OUT_EXPO }}
+            >
+              <h2
+                className="font-cabinet font-black italic tracking-tight text-[#1e3a34] leading-[0.9] mb-7"
+                style={{ fontSize: 'clamp(3.6rem, 9vw, 6.4rem)' }}
+              >
+                Starlings<br />Offerings.
+              </h2>
+              {/* Gradient accent rule */}
+              <div
+                className="w-14 mb-7"
+                style={{ height: '2px', background: 'linear-gradient(90deg, #e57c6e 0%, #448a7d 100%)' }}
+              />
+              <p
+                className="text-[#1e3a34]/60 font-light leading-[1.78]"
+                style={{ fontSize: 'clamp(0.9rem, 1.65vw, 0.98rem)', maxWidth: '40ch' }}
+              >
+                The Support Map is one part of what we do. Starlings Community builds peer-led programs,
+                community circles, and evidence-informed resources — all designed for youth, all free,
+                all rooted in lived experience.
+              </p>
+            </motion.div>
+
+            {/* Vertical divider — desktop only */}
+            <div className="hidden md:block self-stretch" style={{ background: 'rgba(30,58,52,0.09)' }} />
+
+            {/* Right: offerings as line items with thin dividers */}
+            <motion.div
+              className="md:pl-12 lg:pl-20"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.72, delay: 0.22, ease: EASE_OUT_EXPO }}
+            >
+              <div className="flex flex-col">
+                {([
+                  'Youth Programs',
+                  'Peer Support',
+                  'Community Circles',
+                  'Family Resources',
+                  'Crisis Navigation',
+                  'Wellness Tools',
+                ] as const).map((item, i) => (
+                  <motion.div
+                    key={item}
+                    className="flex items-center gap-4 py-4"
+                    style={{ borderBottom: i < 5 ? '1px solid rgba(30,58,52,0.08)' : 'none' }}
+                    initial={{ opacity: 0, x: 16 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.48, delay: 0.28 + i * 0.07, ease: EASE_OUT_EXPO }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: i % 2 === 0 ? '#e57c6e' : '#448a7d' }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className="font-cabinet font-bold text-[#1e3a34]"
+                      style={{ fontSize: 'clamp(1.05rem, 2.2vw, 1.2rem)' }}
+                    >
+                      {item}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom bar: signature left, CTAs right */}
+          <motion.div
+            className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 pt-8"
+            style={{ borderTop: '1px solid rgba(30,58,52,0.10)' }}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.6, delay: 0.42, ease: EASE_OUT_EXPO }}
+          >
+            {/* Signature */}
+            <div>
+              <span className="block text-[9px] font-black uppercase tracking-[0.38em] text-[#448a7d] mb-1.5">
+                Visit us at
+              </span>
+              <a
+                href="https://www.starlings.ca"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-cabinet font-black italic text-[#1e3a34] hover:text-[#448a7d] transition-colors leading-none"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}
+              >
+                starlings.ca
+              </a>
+            </div>
+
+            {/* CTA cluster */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <a
+                href="https://www.starlings.ca"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 text-white text-sm font-bold px-7 py-3.5 rounded-full transition-all active:scale-[0.97]"
+                style={{ background: '#e57c6e', boxShadow: '0 16px 36px -12px rgba(229,124,110,0.44)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#d46a5c')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#e57c6e')}
+              >
+                Explore Offerings
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M7 17L17 7M17 7H7M17 7v10" />
+                </svg>
+              </a>
+              <a
+                href="https://www.starlings.ca/community-crisis-lines"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-sm font-bold text-[#448a7d] hover:text-[#1e3a34] transition-colors px-4 py-3.5"
+              >
+                Crisis Lines ↗
+              </a>
+            </div>
+          </motion.div>
+
+          {/* Trust tags + postscript */}
+          <motion.div
+            className="flex flex-wrap items-center gap-2 mt-7"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: '-20px' }}
+            transition={{ duration: 0.5, delay: 0.58, ease: EASE_OUT_EXPO }}
+          >
+            {(['Peer-Led', 'Evidence-Informed', 'Youth-First', 'Not-for-Profit'] as const).map((tag) => (
+              <span
+                key={tag}
+                className="text-[9px] font-black uppercase tracking-[0.22em] text-[#1e3a34]/30 px-3 py-1.5 rounded-full"
+                style={{ border: '1px solid rgba(30,58,52,0.09)' }}
+              >
+                {tag}
+              </span>
+            ))}
+            <span className="text-[9px] font-medium text-[#1e3a34]/22 ml-1">
+              · Free to access · Anonymous where it matters · Rooted in community
+            </span>
+          </motion.div>
+
+        </div>
       </section>
 
       {/* ── Section 2: Visual Support Gallery — pinned scroll, viewport locked while images swim ── */}
@@ -241,7 +449,7 @@ const AboutMap: React.FC = () => {
         className="relative z-10 hidden lg:block"
         style={{ height: 'calc(100vh + 900px)' }}
       >
-        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: '#f4f1e8' }}>
+        <div className="sticky top-0 h-screen overflow-hidden" style={{ background: 'transparent' }}>
 
           {/* Static soft glow — teal; no animation to avoid continuous compositing */}
           <div className="absolute top-1/2 left-1/4 w-[50vw] h-[50vw] max-w-[420px] rounded-full pointer-events-none -translate-y-1/2"
@@ -257,8 +465,8 @@ const AboutMap: React.FC = () => {
 
               {/* ─── Environment ──────────────────────────────────────────── */}
 
-              {/* Warm cream base */}
-              <div className="absolute inset-0 pointer-events-none" style={{ background: '#f4f1e8' }} />
+              {/* Warm cream base — semi-transparent so StarlingFlock (fixed canvas) shows through */}
+              <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(244,241,232,0.46)' }} />
 
               {/* Very faint dot grid — tactile depth */}
               <div className="absolute inset-0 pointer-events-none"
@@ -548,8 +756,8 @@ const AboutMap: React.FC = () => {
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
             />
 
-            {/* RIGHT: image swimming pool — atmospheric, secondary to headline */}
-            <div className="flex-1 relative overflow-hidden">
+            {/* RIGHT: image swimming pool — solid background keeps images/notes clean (no birds behind them) */}
+            <div className="flex-1 relative overflow-hidden" style={{ background: '#f4f1e8' }}>
               <div
                 className="absolute inset-0 z-0 pointer-events-none"
                 style={{

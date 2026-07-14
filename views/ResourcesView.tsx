@@ -40,6 +40,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [exploring, setExploring] = useState(false);
     const [showReflection, setShowReflection] = useState(false);
     const [reflectionText, setReflectionText] = useState('');
+    const [reflectionImageUrl, setReflectionImageUrl] = useState('');
     const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
     const [reflectionError, setReflectionError] = useState('');
 
@@ -54,7 +55,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
         const text = reflectionText.trim();
         if (!text) return;
         setReflectionError('');
-        const result = await apiService.submitReflection(resource.id, text);
+        const result = await apiService.submitReflection(resource.id, text, reflectionImageUrl);
         if (result.flagged) {
             setReflectionError('Please revise this reflection to remove crisis details, links, contact information, or identifying details.');
             return;
@@ -63,6 +64,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
             setReflectionSubmitted(true);
             setShowReflection(false);
             setReflectionText('');
+            setReflectionImageUrl('');
         } else {
             setReflectionError('Something went wrong. Please try again.');
         }
@@ -140,6 +142,13 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
                             maxLength={280}
                             placeholder="Optional short reflection..."
                             className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner min-h-24 resize-none"
+                        />
+                        <input
+                            type="url"
+                            value={reflectionImageUrl}
+                            onChange={(e) => setReflectionImageUrl(e.target.value)}
+                            placeholder="Add a photo link (optional)"
+                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner"
                         />
                         {reflectionError && <p className="text-xs text-red-600 font-bold">{reflectionError}</p>}
                         <div className="flex gap-2">
@@ -500,15 +509,26 @@ const ResourcesView: React.FC = () => {
     ];
 
     // MEMOIZED: Compute bucket resources only when resources array changes
+    //
+    // A resource's *format* (book, video, website, ...) always wins over the
+    // fact that it also happens to carry a city/lat/lng tag. Tagging a book
+    // with a location (e.g. "recommended by a Calgary reader") used to yank
+    // it out of the Books bucket entirely and strand it under "Map-Based
+    // Resources", which is confusing to maintain — the resource still shows
+    // its location badge on the card either way. "Map-Based Resources" is
+    // reserved for resources that don't fit any known format but do have a
+    // location (e.g. an in-person support group). "Other Resources" catches
+    // the remainder.
     const communityBucketResources = useMemo(() => {
         const result: Record<string, Resource[]> = {};
         COMMUNITY_BUCKETS.forEach(bucket => {
             result[bucket.id] = resources
                 .filter(r => {
                     if (r.category !== 'community') return false;
-                    if (bucket.id === MAP_BASED_BUCKET_ID) return hasMapLocation(r);
-                    if (bucket.id === OTHER_BUCKET_ID) return !hasMapLocation(r) && !KNOWN_RESOURCE_TYPES.has(String(r.type));
-                    return !hasMapLocation(r) && r.type === bucket.id;
+                    const isKnownType = KNOWN_RESOURCE_TYPES.has(String(r.type));
+                    if (bucket.id === MAP_BASED_BUCKET_ID) return !isKnownType && hasMapLocation(r);
+                    if (bucket.id === OTHER_BUCKET_ID) return !isKnownType && !hasMapLocation(r);
+                    return isKnownType && r.type === bucket.id;
                 })
                 .sort((a, b) => a.title.localeCompare(b.title));
         });

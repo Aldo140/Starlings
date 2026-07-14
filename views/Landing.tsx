@@ -602,7 +602,7 @@ const Landing: React.FC = () => {
                   </div>
                 ) : approvedQA.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                    {approvedQA.slice(0, 4).map((item, i) => (
+                    {approvedQA.map((item, i) => (
                       <QAThreadCard key={item.id} item={item} index={i} />
                     ))}
                   </div>

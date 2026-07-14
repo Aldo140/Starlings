@@ -706,7 +706,7 @@ export const apiService = {
     }
   },
 
-  async submitReflection(resourceId: string, reflection: string): Promise<{ success: boolean; flagged: boolean }> {
+  async submitReflection(resourceId: string, reflection: string, imageUrl?: string): Promise<{ success: boolean; flagged: boolean }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
       return { success: true, flagged: false };
@@ -727,6 +727,7 @@ export const apiService = {
         status: PostStatus.PENDING,
         resourceId,
         reflection: cleanReflection,
+        image_url: imageUrl ? imageUrl.trim() : '',
         flagged,
       };
       const res = await fetch(GAS_URL, {

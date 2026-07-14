@@ -1,7 +1,15 @@
 // ==========================================
 // STARLINGS SUPPORT MAP - GOOGLE APPS SCRIPT BACKEND V2
 // ==========================================
-// 
+//
+// 2026-07-13 — Consolidated update. This version fixes two reported bugs:
+//   1. Duplicate rows appearing in Live_Resources after approving something.
+//   2. Pending_Reflections having no working Approve checkbox.
+// See the big comment directly above onEdit() further down for the full
+// duplicate-row root-cause explanation and the Triggers-menu check you must
+// do by hand — this file alone cannot fully fix it if a second onEdit-style
+// trigger still exists elsewhere in the Apps Script project.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -17,11 +25,20 @@
 // 3. For the Flagged_Words tab, put terms in the "Term" column starting on row 2.
 // 4. In the menu, click Extensions > Apps Script.
 // 5. Replace only the web-backend file that contains doGet/doPost. Do NOT
-//    delete ApprovalWorkflow.gs or other moderation/menu files.
-// 6. If another file already defines onEdit(e), keep only one onEdit handler
-//    and merge the header-based row-moving logic from the bottom of this file.
-// 7. Run setup() once. This adds missing resource location columns and
-//    reflection tabs safely.
+//    delete ApprovalWorkflow.gs or other moderation/menu files — but see
+//    step 6, this file is now meant to be the ONLY onEdit handler.
+// 6. If another file (e.g. ApprovalWorkflow.gs) already defines onEdit(e) —
+//    or the sheet has its own row-moving logic — delete that function (or
+//    rename it so it's no longer literally "onEdit") so this file's onEdit
+//    is the only one running. Then open Extensions > Apps Script > Triggers
+//    (clock icon, left sidebar) and delete any installable "On edit" trigger
+//    you find there too — an installable trigger fires IN ADDITION TO the
+//    automatic simple trigger below, and running the same move logic twice
+//    on one click is what produces duplicate Live_Resources rows.
+// 7. Run setup() once from the Apps Script editor (select it in the function
+//    dropdown, click Run). This adds missing resource location columns,
+//    reflection tabs, an image_url column for reflection photos, and makes
+//    sure every "Approve" column renders as clickable checkboxes.
 // 8. Click "Deploy > Manage Deployments".
 // 9. Edit the existing deployment, select "New version", and click "Deploy".
 // ==========================================
@@ -87,6 +104,9 @@ function writePendingSubmission_(sheet, rowValues) {
     const targetRow = 2;
     sheet.insertRowBefore(targetRow);
     sheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+    // Row 2 sits directly under the header, which has no checkbox formatting
+    // to inherit — re-apply it explicitly so the Approve box is clickable.
+    ensureApproveCheckboxes_(sheet);
     return targetRow;
 }
 
@@ -150,6 +170,27 @@ function ensureSheet_(doc, sheetName, headers) {
     return sheet;
 }
 
+/**
+ * Makes sure the "Approve" column (if present) renders as real, clickable
+ * checkboxes for every data row, not just whichever rows happened to inherit
+ * checkbox formatting from a neighboring row. Without this, newly inserted
+ * pending rows can show a plain FALSE/TRUE text value with nothing to click
+ * — which is exactly what happened on Pending_Reflections (new rows are
+ * inserted at row 2 via writePendingSubmission_, directly under the header,
+ * which has no checkbox formatting to inherit from).
+ */
+function ensureApproveCheckboxes_(sheet) {
+    if (!sheet) return;
+    const lastColumn = Math.max(sheet.getLastColumn(), 1);
+    const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(normalizeHeader_);
+    const approveIndex = headers.indexOf("Approve");
+    if (approveIndex === -1) return;
+
+    const numRows = Math.max(sheet.getMaxRows() - 1, 1);
+    const rule = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+    sheet.getRange(2, approveIndex + 1, numRows, 1).setDataValidation(rule);
+}
+
 function getPublicRow_(action, rowData) {
     const allowedFields = {
         getStories: [
@@ -180,8 +221,16 @@ function setup() {
     SCRIPT_PROP.setProperty('key', doc.getId());
     ensureResourceLocationHeaders_(doc.getSheetByName("Pending_Resources"));
     ensureResourceLocationHeaders_(doc.getSheetByName("Live_Resources"));
-    ensureSheet_(doc, "Pending_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "flagged", "Approve"]);
-    ensureSheet_(doc, "Live_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "flagged"]);
+    // image_url carries an optional photo attached to a reflection (e.g. a
+    // photo of a dog-eared page, a screenshot). Blank for text-only reflections.
+    ensureSheet_(doc, "Pending_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "image_url", "flagged", "Approve"]);
+    ensureSheet_(doc, "Live_Reflections", ["id", "timestamp", "status", "resourceId", "reflection", "image_url", "flagged"]);
+
+    // Make sure every Pending_ tab's Approve column (if it has one) is a
+    // real checkbox column, not plain TRUE/FALSE text with nothing to click.
+    ["Pending_Stories", "Pending_Resources", "Pending_QA", "Pending_Reflections"].forEach(function (name) {
+        ensureApproveCheckboxes_(doc.getSheetByName(name));
+    });
 }
 
 function deduplicateLiveResources_(doc) {
@@ -288,7 +337,7 @@ function repairWorkbookData() {
         sharingRestricted,
         duplicateResourcesRemoved: deduplicateLiveResources_(doc),
         unreachablePendingResourcesFlagged: flagUnreachablePendingResourceUrls_(doc),
-        backendVersion: "2026-06-18-location-based-resources"
+        backendVersion: "2026-07-13-reflections-approval-and-dedup"
     };
     console.log(JSON.stringify(report));
     return report;
@@ -321,7 +370,7 @@ function doGet(e) {
 
             return responseJSON({
                 success: true,
-                backendVersion: "2026-06-18-location-based-resources",
+                backendVersion: "2026-07-13-reflections-approval-and-dedup",
                 spreadsheetId,
                 spreadsheetUrl: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
                 expectedTabs,
@@ -532,6 +581,19 @@ function doOptions(e) {
 // ------------------------------------------------------------------
 // AUTOMATION: Move row from Pending to Live
 // ------------------------------------------------------------------
+//
+// IMPORTANT — read this if you're chasing "duplicate resources on approval":
+// This is the ONLY onEdit handler this project should have. Apps Script
+// merges every .gs file into one global scope, and if a second file (e.g. a
+// legacy "ApprovalWorkflow.gs") ALSO defines a function named onEdit, or if
+// there is a separate *installable* "On edit" trigger registered under
+// Extensions > Apps Script > Triggers pointing at similar row-moving logic,
+// the same checkbox click fires the move twice — once as the automatic
+// simple trigger, once as the installable trigger — producing two rows in
+// Live_Resources. Go to Triggers and delete any extra "on edit" trigger so
+// this function is the only thing that runs. As a second line of defense,
+// moveApprovedRow_() below also refuses to insert a row whose id is already
+// present in the Live_ sheet, so even a double-fire can't duplicate data.
 function onEdit(e) {
     if (!e || !e.range) return;
     const sheet = e.range.getSheet();
@@ -540,16 +602,47 @@ function onEdit(e) {
     // Only trigger on edits in tabs that start with "Pending_"
     if (!sheetName.startsWith("Pending_")) return;
 
-    // Only trigger if they edited column 3 ("status" column in position C)
-    if (e.range.getColumn() !== 3) return;
-
-    // Ensure they changed the value to "APPROVED" (case-insensitive)
-    if (!e.value || typeof e.value !== 'string' || e.value.toUpperCase() !== "APPROVED") return;
-
     const rowNumber = e.range.getRow();
     if (rowNumber === 1) return; // Don't move header
 
-    const doc = e.source;
+    const columnCount = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, columnCount).getValues()[0].map(normalizeHeader_);
+    const editedHeader = headers[e.range.getColumn() - 1];
+    const statusColIndex = headers.indexOf("status");
+
+    let approved = false;
+
+    if (editedHeader === "status") {
+        // Legacy path: someone typed "APPROVED" directly into the status cell.
+        approved = typeof e.value === 'string' && e.value.toUpperCase() === "APPROVED";
+    } else if (editedHeader === "Approve") {
+        // Primary path: staff ticks the Approve checkbox. Sheets delivers
+        // checkbox edits as the boolean/string "TRUE" in e.value.
+        const checked = e.value === true || String(e.value).toUpperCase() === "TRUE";
+        if (checked) {
+            approved = true;
+            // Mirror the approval into the status column too, so the sheet
+            // stays legible to anyone scanning status directly. This is a
+            // script-driven setValue, so it does NOT re-fire this simple
+            // trigger — no risk of recursion.
+            if (statusColIndex !== -1) {
+                sheet.getRange(rowNumber, statusColIndex + 1).setValue("APPROVED");
+            }
+        }
+    } else {
+        return; // Edit wasn't to a column that drives approval — ignore it.
+    }
+
+    if (!approved) return;
+
+    moveApprovedRow_(sheet, sheetName, rowNumber);
+}
+
+function moveApprovedRow_(sheet, sheetName, rowNumber) {
+    // Guard against a row that a concurrent/duplicate trigger already moved.
+    if (rowNumber > sheet.getLastRow()) return;
+
+    const doc = sheet.getParent();
     const liveSheetName = sheetName.replace("Pending_", "Live_");
     const liveSheet = doc.getSheetByName(liveSheetName);
 
@@ -578,6 +671,15 @@ function onEdit(e) {
         }
     } catch (err) { }
 
+    // Idempotency guard — see the big comment above onEdit(). If this id is
+    // already live, someone/something already moved it; just clean up the
+    // leftover pending row instead of inserting a duplicate.
+    const idToMove = String(sourceByHeader.id || '').trim();
+    if (idToMove && liveRowHasId_(liveSheet, idToMove)) {
+        sheet.deleteRow(rowNumber);
+        return;
+    }
+
     const liveColumnCount = liveSheet.getLastColumn();
     const liveHeaders = liveSheet.getRange(1, 1, 1, liveColumnCount).getValues()[0]
         .map(normalizeHeader_);
@@ -590,4 +692,14 @@ function onEdit(e) {
 
     liveSheet.getRange(liveSheet.getLastRow() + 1, 1, 1, liveColumnCount).setValues([liveRow]);
     sheet.deleteRow(rowNumber);
+}
+
+function liveRowHasId_(liveSheet, id) {
+    if (!liveSheet || liveSheet.getLastRow() < 2) return false;
+    const columnCount = liveSheet.getLastColumn();
+    const headers = liveSheet.getRange(1, 1, 1, columnCount).getValues()[0].map(normalizeHeader_);
+    const idIndex = headers.indexOf("id");
+    if (idIndex === -1) return false;
+    const ids = liveSheet.getRange(2, idIndex + 1, liveSheet.getLastRow() - 1, 1).getValues();
+    return ids.some(function (row) { return String(row[0] || '').trim() === id; });
 }

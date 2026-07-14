@@ -688,8 +688,15 @@ const ResourcesView: React.FC = () => {
                                  bands instead of one unified panel ── */}
                             <div className="md:hidden">
 
-                                {/* TOP: eyebrow / heading / description — flashlight bg, rounded top */}
-                                <div className="relative overflow-hidden rounded-t-[1.75rem]">
+                                {/* TOP: eyebrow / heading / description — flashlight bg, now
+                                     full-bleed (matches the card band below) and taller, so the
+                                     animation actually gets room to read. A bottom gradient fades
+                                     the overlay toward black so the seam with the card band melts
+                                     together instead of cutting hard. */}
+                                <div
+                                    className="relative overflow-hidden"
+                                    style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}
+                                >
                                     {/* Flashlight background — fills this zone only */}
                                     <div className="cp-flashlight" aria-hidden="true" />
                                     {/* Dark overlay */}
@@ -697,11 +704,17 @@ const ResourcesView: React.FC = () => {
                                         className="absolute inset-0 pointer-events-none"
                                         style={{ background: 'rgba(7,16,12,0.88)' }}
                                     />
+                                    {/* Fade to black at the bottom — blends into the card band */}
+                                    <div
+                                        className="absolute inset-x-0 bottom-0 h-16 pointer-events-none"
+                                        style={{ background: 'linear-gradient(to bottom, transparent, #000000)' }}
+                                        aria-hidden="true"
+                                    />
 
-                                    <div className="relative z-10 px-4 pt-5 pb-5">
+                                    <div className="relative z-10 px-4 pt-7 pb-10">
 
                                         {/* Eyebrow row: page label + count badge */}
-                                        <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center justify-between mb-5">
                                             <div className="flex items-center gap-2">
                                                 <span className="block w-4 h-px flex-shrink-0" style={{ background: 'rgba(68,138,125,0.55)' }} />
                                                 <span className="text-[8px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgba(126,197,184,0.60)' }}>
@@ -719,8 +732,8 @@ const ResourcesView: React.FC = () => {
 
                                         {/* Heading */}
                                         <h2
-                                            className="font-cabinet font-black text-white tracking-tight leading-[1.06] mb-2"
-                                            style={{ fontSize: 'clamp(1.7rem, 5.8vw, 2.4rem)' }}
+                                            className="font-cabinet font-black text-white tracking-tight leading-[1.06] mb-3"
+                                            style={{ fontSize: 'clamp(1.9rem, 7.2vw, 2.6rem)' }}
                                         >
                                             Starlings&#8209;trained{' '}
                                             <span className="cp-words-slot">
@@ -733,10 +746,31 @@ const ResourcesView: React.FC = () => {
                                             </span>
                                         </h2>
 
-                                        {/* Description */}
-                                        <p className="text-[11px] font-medium leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)', maxWidth: '92%' }}>
-                                            Specialized, verified care for youth affected by parental substance use.
+                                        <div className="w-10 h-px mb-4" style={{ background: 'rgba(68,138,125,0.35)' }} />
+
+                                        {/* Description — fuller copy, matches the desktop version */}
+                                        <p className="text-[13px] font-medium leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '94%' }}>
+                                            Starlings&#8209;trained organizations offering{' '}
+                                            <span className="font-semibold" style={{ color: '#7ec5b8' }}>specialized, verified care</span>{' '}
+                                            for youth and adults who have grown up with parental substance use.
+                                            Listed by location — each partner is independent and responsible for their care.
                                         </p>
+
+                                        {/* Verified badge + become-a-partner CTA */}
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            <span className="inline-block text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-[#448a7d] text-white rounded-full">
+                                                ✓ Verified
+                                            </span>
+                                            <Link
+                                                to="/add-resource?mode=apply"
+                                                className="inline-flex items-center gap-1.5 text-white/40 hover:text-white/70 text-[10px] font-black uppercase tracking-[0.22em] transition-colors duration-200"
+                                            >
+                                                Become a partner
+                                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                </svg>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
 

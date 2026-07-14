@@ -32,18 +32,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Get repository name and set base path
+      - name: Set base path
         id: repo
         run: |
-          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-          # If repo name ends with .github.io, use root base path, otherwise use /repo-name/
-          if [[ "$REPO_NAME" == *.github.io ]]; then
-            BASE_PATH="/"
-          else
-            BASE_PATH="/$REPO_NAME/"
-          fi
-          echo "name=$REPO_NAME" >> $GITHUB_OUTPUT
-          echo "base=$BASE_PATH" >> $GITHUB_OUTPUT
+          # starlingsmap.ca is a custom domain served at the root — not a
+          # /reponame/ subpath — so base must always be "/" now that a
+          # CNAME file (public/CNAME) pins the custom domain. This also
+          # means the old https://aldo140.github.io/Starlings/ URL will no
+          # longer load correctly (its asset paths expect a /Starlings/
+          # prefix); starlingsmap.ca is the canonical URL going forward.
+          echo "base=/" >> $GITHUB_OUTPUT
       
       - name: Build
         env:

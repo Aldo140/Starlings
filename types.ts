@@ -87,16 +87,6 @@ export interface QAItem {
   flagged?: boolean;
 }
 
-export interface ReflectionItem {
-  id: string;
-  timestamp: string;
-  status: PostStatus | string;
-  resourceId: string;
-  reflection: string;
-  imageUrl?: string;
-  flagged?: boolean;
-}
-
 /**
  * Discriminated union for items rendered on the Support Map.
  * Posts come from Live_Stories; Resources come from Live_Resources

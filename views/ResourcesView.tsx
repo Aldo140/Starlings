@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
-import { Resource, ResourceType, ReflectionItem } from '../types.ts';
+import { Resource, ResourceType } from '../types.ts';
 import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
 import {
     Book,
@@ -34,7 +34,7 @@ const hasMapLocation = (resource: Resource): boolean =>
     );
 
 
-const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[] }> = memo(({ resource, reflections }) => {
+const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [liked, setLiked] = useState(false);
     const [supportive, setSupportive] = useState(false);
     const [exploring, setExploring] = useState(false);
@@ -90,7 +90,6 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
     };
 
     const social = resource.type === ResourceType.SOCIAL_MEDIA ? getSocialDetails(resource.url) : null;
-    const resourceReflections = reflections.filter(r => r.resourceId === resource.id && !r.flagged);
 
     return (
         <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
@@ -166,31 +165,6 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                         <MessageCircle className="w-4 h-4" /> Add reflection
                     </button>
                 )}
-
-                {resourceReflections.length > 0 && (
-                    <div className="mt-5 pt-5 border-t border-gray-100 space-y-3">
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                            What others shared
-                        </p>
-                        {resourceReflections.map(r => (
-                            <div key={r.id} className="flex gap-3 items-start">
-                                <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-[#e8f3f1] text-[#448a7d] text-[11px] font-black flex items-center justify-center">
-                                    &ldquo;
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-sm text-[#1e3a34]/75 italic leading-relaxed">{r.reflection}</p>
-                                    {r.imageUrl && (
-                                        <img
-                                            src={r.imageUrl}
-                                            alt=""
-                                            className="mt-2 max-h-40 rounded-xl border border-gray-100 object-cover"
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -202,8 +176,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
         prev.description === next.description &&
         prev.helpful_count === next.helpful_count &&
         prev.supportive_count === next.supportive_count &&
-        prev.exploring_count === next.exploring_count &&
-        prevProps.reflections === nextProps.reflections;
+        prev.exploring_count === next.exploring_count;
 });
 
 const ResourcesHero: React.FC = () => {
@@ -470,7 +443,6 @@ const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ 
 
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);
-    const [reflections, setReflections] = useState<ReflectionItem[]>([]);
     const [loading, setLoading] = useState(true);
     /** Tracks the background Google Sheets hot-swap — drives the LoadingBar + MurmurationSyncBanner */
     const [syncing, setSyncing] = useState(false);
@@ -508,15 +480,6 @@ const ResourcesView: React.FC = () => {
                 console.error('Failed to fetch resources', error);
             } finally {
                 setSyncing(false);
-            }
-
-            // Approved reflections — fetched separately, non-blocking. Safe to
-            // fail silently (returns []) until the backend's getReflections
-            // route is deployed; see docs/backend/Code.gs.js.
-            try {
-                setReflections(await apiService.getApprovedReflections());
-            } catch (error) {
-                console.error('Failed to fetch reflections', error);
             }
         };
         fetchResources();
@@ -1255,7 +1218,7 @@ const ResourcesView: React.FC = () => {
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 transition={{ delay: i * 0.06, duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
                                                             >
-                                                                <ResourceCard resource={res} reflections={reflections} />
+                                                                <ResourceCard resource={res} />
                                                             </motion.div>
                                                         ))}
                                                     </div>
@@ -1463,7 +1426,7 @@ const ResourcesView: React.FC = () => {
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 transition={{ delay: i * 0.07, duration: 0.38 }}
                                                             >
-                                                                <ResourceCard resource={res} reflections={reflections} />
+                                                                <ResourceCard resource={res} />
                                                             </motion.div>
                                                         ))}
                                                     </div>
@@ -1623,7 +1586,7 @@ const ResourcesView: React.FC = () => {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-10">
-                                                {bucketResources.map(res => <ResourceCard key={res.id} resource={res} reflections={reflections} />)}
+                                                {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
                                             </div>
                                         )}
                                     </div>

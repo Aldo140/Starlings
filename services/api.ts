@@ -1,4 +1,4 @@
-import { Post, PostStatus, LocationSearchResult, Resource, ResourceType, QAItem, ReflectionItem } from '../types.ts';
+import { Post, PostStatus, LocationSearchResult, Resource, ResourceType, QAItem } from '../types.ts';
 import { BANNED_PATTERNS, SEED_RESOURCES } from '../constants.tsx';
 
 /**
@@ -41,7 +41,6 @@ const EXPECTED_SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
 const CACHE_KEY = 'starlings_approved_posts_v3';
 const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v7';
 const QA_CACHE_KEY = 'starlings_approved_qa_v1';
-const REFLECTION_CACHE_KEY = 'starlings_approved_reflections_v1';
 const FLAGGED_WORDS_CACHE_KEY = 'starlings_flagged_words_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const FLAGGED_WORDS_TTL = 30 * 60 * 1000; // 30 minutes — word list changes rarely
@@ -230,23 +229,6 @@ const getCachedQA = (): { data: QAItem[], timestamp: number } | null => {
 const setCachedQA = (items: QAItem[]): void => {
   try {
     localStorage.setItem(QA_CACHE_KEY, JSON.stringify({ data: items, timestamp: Date.now() }));
-  } catch (e) { /* storage unavailable */ }
-};
-
-const getCachedReflections = (): { data: ReflectionItem[], timestamp: number } | null => {
-  try {
-    const cached = localStorage.getItem(REFLECTION_CACHE_KEY);
-    if (!cached) return null;
-    const parsed = JSON.parse(cached);
-    if (Date.now() - parsed.timestamp < CACHE_TTL) return parsed;
-    localStorage.removeItem(REFLECTION_CACHE_KEY);
-    return null;
-  } catch (e) { return null; }
-};
-
-const setCachedReflections = (items: ReflectionItem[]): void => {
-  try {
-    localStorage.setItem(REFLECTION_CACHE_KEY, JSON.stringify({ data: items, timestamp: Date.now() }));
   } catch (e) { /* storage unavailable */ }
 };
 
@@ -848,41 +830,6 @@ export const apiService = {
       return items;
     } catch (e) {
       console.error("Failed to fetch Live_QA:", e);
-      return [];
-    }
-  },
-
-  /**
-   * Fetches approved reflections for display on resource cards. Requires the
-   * backend to route action=getReflections to the Live_Reflections sheet —
-   * see docs/backend/Code.gs.js for the exact one-line addition needed in
-   * the live Apps Script's doGet(). Until that's deployed, this safely
-   * returns [] (a 404/unknown-action response won't be a JSON array).
-   */
-  async getApprovedReflections(): Promise<ReflectionItem[]> {
-    const cached = getCachedReflections();
-    if (cached && !isLocalhost) return cached.data;
-
-    try {
-      const res = await fetch(`${GAS_URL}?action=getReflections`);
-      const data = await res.json();
-      if (!Array.isArray(data)) return [];
-
-      const items: ReflectionItem[] = data
-        .filter((item: any) => item && item.resourceId && item.reflection)
-        .map((item: any) => ({
-          id: item.id || Math.random().toString(36).substring(7),
-          timestamp: item.timestamp || new Date().toISOString(),
-          status: item.status || PostStatus.APPROVED,
-          resourceId: String(item.resourceId),
-          reflection: String(item.reflection),
-          imageUrl: item.image_url || item.imageUrl || undefined,
-          flagged: item.flagged === true || item.flagged === 'TRUE',
-        }));
-      setCachedReflections(items);
-      return items;
-    } catch (e) {
-      console.error("Failed to fetch Live_Reflections:", e);
       return [];
     }
   }

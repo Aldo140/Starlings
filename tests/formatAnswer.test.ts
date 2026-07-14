@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAnswerBlocks } from '../components/QAThread.tsx';
+import { parseTextBlocks } from '../components/FormattedText.tsx';
 
 // Real answers from the Q&A section (2026-07-13), used verbatim to lock in
 // behavior against the exact prose staff actually write — not synthetic
@@ -20,9 +20,9 @@ const answer4 =
 const answer5 =
   "When an adult is yelling, our bodies can feel scared or overwhelmed, especially if the yelling has been happening for a long time or begins to feel unsafe. Sometimes talking back or arguing can make the situation more intense, so if you can, focus on getting yourself and your siblings to a place where you feel safer until things calm down. Remember, your parent's yelling is not your fault, and it is not your job to fix it.";
 
-describe('parseAnswerBlocks', () => {
+describe('parseTextBlocks', () => {
   it('extracts a "Written by:" attribution and linkifies the embedded URL (answer 1)', () => {
-    const blocks = parseAnswerBlocks(answer1);
+    const blocks = parseTextBlocks(answer1);
     const attribution = blocks.find(b => b.type === 'attribution');
     expect(attribution).toEqual({ type: 'attribution', text: 'A Starlings Peer & Advisor' });
     // The attribution line must not leak into the last paragraph's text.
@@ -31,7 +31,7 @@ describe('parseAnswerBlocks', () => {
   });
 
   it('detects a sequential numbered list and separates trailing prose from it (answer 2)', () => {
-    const blocks = parseAnswerBlocks(answer2);
+    const blocks = parseTextBlocks(answer2);
     const ordered = blocks.find(b => b.type === 'ordered') as { type: 'ordered'; items: string[] } | undefined;
     expect(ordered).toBeDefined();
     expect(ordered!.items).toEqual([
@@ -50,7 +50,7 @@ describe('parseAnswerBlocks', () => {
   });
 
   it('detects "Label: advice" clauses as a labeled list (answer 3)', () => {
-    const blocks = parseAnswerBlocks(answer3);
+    const blocks = parseTextBlocks(answer3);
     const labeled = blocks.find(b => b.type === 'labeled') as
       | { type: 'labeled'; items: { label: string; text: string }[] }
       | undefined;
@@ -64,7 +64,7 @@ describe('parseAnswerBlocks', () => {
   });
 
   it('detects a bulleted list (answer 4)', () => {
-    const blocks = parseAnswerBlocks(answer4);
+    const blocks = parseTextBlocks(answer4);
     const unordered = blocks.find(b => b.type === 'unordered') as { type: 'unordered'; items: string[] } | undefined;
     expect(unordered).toBeDefined();
     expect(unordered!.items.length).toBe(6);
@@ -73,17 +73,17 @@ describe('parseAnswerBlocks', () => {
   });
 
   it('leaves plain prose with no list signal as paragraphs only (answer 5)', () => {
-    const blocks = parseAnswerBlocks(answer5);
+    const blocks = parseTextBlocks(answer5);
     expect(blocks.every(b => b.type === 'paragraph')).toBe(true);
     expect(blocks.length).toBeGreaterThan(0);
   });
 
   it('does not treat a single incidental colon clause as a list', () => {
-    const blocks = parseAnswerBlocks('Remember: you are not alone in this, and support is always available.');
+    const blocks = parseTextBlocks('Remember: you are not alone in this, and support is always available.');
     expect(blocks.every(b => b.type === 'paragraph')).toBe(true);
   });
 
   it('handles empty/undefined input gracefully', () => {
-    expect(parseAnswerBlocks('')).toEqual([]);
+    expect(parseTextBlocks('')).toEqual([]);
   });
 });

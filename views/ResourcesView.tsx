@@ -21,6 +21,7 @@ import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSp
 import { useRef } from 'react';
 import LoadingBar from '../components/LoadingBar.tsx';
 import InfoPopover from '../components/InfoPopover.tsx';
+import { FormattedText } from '../components/FormattedText.tsx';
 
 const MAP_BASED_BUCKET_ID = 'map_based';
 const OTHER_BUCKET_ID = 'other';
@@ -137,7 +138,11 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                     <span className="text-[10px] font-black uppercase tracking-widest">{resource.city}</span>
                 </div>
             )}
-            <p className="text-base font-medium text-gray-600 mb-6 flex-grow leading-relaxed">{cleanDescription}</p>
+            <FormattedText
+                text={cleanDescription}
+                className="text-base font-medium text-gray-600 leading-relaxed"
+                wrapperClassName="mb-6 flex-grow"
+            />
             {resource.url && (resource.type !== ResourceType.MEME || !resource.imageUrl) && (
                 <a href={resource.url} target="_blank" rel="noopener noreferrer" className="text-sm font-black text-indigo-500 hover:text-indigo-600 hover:underline mb-6 inline-block uppercase tracking-widest">Explore Resource &rarr;</a>
             )}
@@ -238,7 +243,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                                         className="relative bg-[#f4faf7] rounded-2xl p-4 pl-5 border border-[#c8e0da]/60"
                                     >
                                         <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-[#448a7d]/25" aria-hidden="true" />
-                                        <p className="text-sm text-[#1e3a34]/80 italic leading-relaxed">&ldquo;{r.reflection}&rdquo;</p>
+                                        <FormattedText text={r.reflection} className="text-sm text-[#1e3a34]/80 italic leading-relaxed" />
                                         {r.imageUrl && (
                                             <img
                                                 src={r.imageUrl}

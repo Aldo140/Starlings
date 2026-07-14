@@ -34,6 +34,22 @@
 // ApprovalWorkflow.gs.js's TAB_CONFIG comment) — without it, reflection
 // photos are silently dropped on submission.
 //
+// 2026-07-14 addition: doGet() now handles action=health, returning
+// {success, spreadsheetId, expectedTabs} — this got dropped from the
+// live Code.gs during an edit and silently broke Q&A submissions (see
+// the comment on that block below for the full explanation). Test
+// `?action=health` directly after any future Code.gs change.
+//
+// 2026-07-14 addition: doPost() now calls insertCheckboxes() on the new
+// row's Approve cell right after writing it. Checkbox *appearance* on
+// "Approve" only ever came from a one-time manual menu action
+// (ApprovalWorkflow.gs's "🎨 Apply Formatting"), which only covers
+// whatever rows existed at the moment it was run — every row a
+// submission appends afterward showed up as plain FALSE/blank text with
+// no clickable checkbox. This makes every new submission self-format,
+// permanently, without anyone needing to remember to re-run that menu
+// action. THIS CHANGE MUST BE MANUALLY PASTED INTO THE LIVE Code.gs too.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -68,6 +84,22 @@ function doGet(e) {
         const doc = SpreadsheetApp.openById(SCRIPT_PROP.getProperty('key'));
 
         const action = e.parameter.action || "getStories";
+
+        // Must come before the sheetName routing below — health doesn't look
+        // at any sheet, and if this is missing, verifyBackendTarget() in
+        // api.ts fails (it requires {success:true, spreadsheetId,
+        // expectedTabs}), which silently breaks Q&A question submission —
+        // this exact regression happened live on 2026-07-14 when a Code.gs
+        // edit dropped this handler. Test `?action=health` after any Code.gs
+        // change and confirm it returns this shape, not a story list.
+        if (action === "health") {
+            return responseJSON({
+                success: true,
+                spreadsheetId: doc.getId(),
+                expectedTabs: ["Pending_Stories", "Live_Stories", "Pending_Resources", "Live_Resources", "Pending_QA", "Live_QA", "Pending_Reflections", "Live_Reflections", "Flagged_Words"]
+            });
+        }
+
         let sheetName = "Live_Stories";
 
         if (action === "getResources") sheetName = "Live_Resources";
@@ -177,6 +209,21 @@ function doPost(e) {
         });
 
         sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+
+        // The checkbox look on "Approve" comes from checkbox data validation,
+        // which is only ever applied manually (the 🎨 "Apply Formatting"
+        // menu action in ApprovalWorkflow.gs, run once, over whatever row
+        // range existed at that moment). It does NOT automatically extend to
+        // rows appended later by submissions — those show up as plain
+        // FALSE/blank text with nothing clickable. Apply it here, on every
+        // new row, so every submission gets a real checkbox without anyone
+        // needing to remember to re-run the formatting menu action.
+        const approveColIdx = headers.map(function (h) { return String(h).trim(); }).indexOf('Approve');
+        if (approveColIdx !== -1) {
+            const approveCell = sheet.getRange(nextRow, approveColIdx + 1);
+            approveCell.insertCheckboxes();
+            approveCell.setValue(false);
+        }
 
         return responseJSON({
             success: true,

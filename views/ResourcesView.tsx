@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
-import { Resource, ResourceType } from '../types.ts';
+import { Resource, ResourceType, ReflectionItem } from '../types.ts';
 import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
 import {
     Book,
@@ -9,6 +9,7 @@ import {
     Globe,
     Headphones,
     Image as ImageIcon,
+    Info,
     MapPin,
     MessageCircle,
     Music,
@@ -33,8 +34,81 @@ const hasMapLocation = (resource: Resource): boolean =>
         (resource.lat !== 0 || resource.lng !== 0)
     );
 
+// A photo only makes intuitive sense to attach for physical/visual media —
+// a photo of a book page, a meme, a printed article. For digital-native
+// resources (a website, a podcast episode, a video) "attach a photo" isn't
+// a natural action, so the field is hidden there rather than asking every
+// user a question that mostly won't apply to them.
+const IMAGE_FRIENDLY_REFLECTION_TYPES = new Set<ResourceType>([
+    ResourceType.BOOK,
+    ResourceType.MEME,
+    ResourceType.PUBLICATION,
+]);
+const supportsReflectionImage = (type: ResourceType): boolean => IMAGE_FRIENDLY_REFLECTION_TYPES.has(type);
 
-const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
+/**
+ * Small "i" info affordance — opens on hover for mouse users, and on tap for
+ * touch users (no hover event exists there), via a single click-to-toggle
+ * handler layered under hover handlers. Closes on outside click/tap or Escape.
+ */
+const InfoPopover: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => {
+    const [open, setOpen] = useState(false);
+    const wrapperRef = useRef<HTMLSpanElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handleOutside = (e: MouseEvent | TouchEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
+        };
+        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('touchstart', handleOutside);
+        document.addEventListener('keydown', handleKey);
+        return () => {
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('touchstart', handleOutside);
+            document.removeEventListener('keydown', handleKey);
+        };
+    }, [open]);
+
+    return (
+        <span
+            ref={wrapperRef}
+            className="relative inline-flex"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+        >
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                aria-label={label}
+                aria-expanded={open}
+                className="flex-shrink-0 w-4 h-4 rounded-full bg-[#e8f3f1] text-[#448a7d] flex items-center justify-center hover:bg-[#448a7d] hover:text-white transition-colors"
+            >
+                <Info className="w-2.5 h-2.5" />
+            </button>
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 4, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                        transition={{ duration: 0.18, ease: EASE_OUT_EXPO }}
+                        className="absolute z-20 top-full mt-2 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 w-60 max-w-[80vw] p-3.5 rounded-xl bg-[#1e3a34] text-white text-[11px] font-medium leading-relaxed shadow-[0_18px_40px_-14px_rgba(30,58,52,0.55)]"
+                        role="tooltip"
+                    >
+                        {children}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </span>
+    );
+};
+
+
+const REFLECTIONS_PREVIEW_COUNT = 2;
+
+const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[] }> = memo(({ resource, reflections }) => {
     const [liked, setLiked] = useState(false);
     const [supportive, setSupportive] = useState(false);
     const [exploring, setExploring] = useState(false);
@@ -44,6 +118,7 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
     const [reflectionError, setReflectionError] = useState('');
     const [isSubmittingReflection, setIsSubmittingReflection] = useState(false);
+    const [showAllReflections, setShowAllReflections] = useState(false);
 
     // Synchronous lock, not just state — React state updates can batch, so two
     // rapid clicks can both read `liked === false` before either re-render
@@ -106,6 +181,9 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     };
 
     const social = resource.type === ResourceType.SOCIAL_MEDIA ? getSocialDetails(resource.url) : null;
+    const resourceReflections = reflections.filter(r => r.resourceId === resource.id && !r.flagged);
+    const visibleReflections = showAllReflections ? resourceReflections : resourceReflections.slice(0, REFLECTIONS_PREVIEW_COUNT);
+    const imageFieldRelevant = supportsReflectionImage(resource.type);
 
     return (
         <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
@@ -160,14 +238,31 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
                             disabled={isSubmittingReflection}
                             className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner min-h-24 resize-none disabled:opacity-60"
                         />
-                        <input
-                            type="url"
-                            value={reflectionImageUrl}
-                            onChange={(e) => setReflectionImageUrl(e.target.value)}
-                            placeholder="Add a photo link (optional)"
-                            disabled={isSubmittingReflection}
-                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner disabled:opacity-60"
-                        />
+                        {imageFieldRelevant && (
+                            <div>
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                    <label htmlFor={`reflection-image-${resource.id}`} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        Add a photo (optional)
+                                    </label>
+                                    <InfoPopover label="How to get an image link">
+                                        <p className="font-black uppercase tracking-widest text-[9px] text-[#7ec8ba] mb-1.5">
+                                            Getting a photo link
+                                        </p>
+                                        Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
+                                        <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                                    </InfoPopover>
+                                </div>
+                                <input
+                                    id={`reflection-image-${resource.id}`}
+                                    type="url"
+                                    value={reflectionImageUrl}
+                                    onChange={(e) => setReflectionImageUrl(e.target.value)}
+                                    placeholder="Paste an image link..."
+                                    disabled={isSubmittingReflection}
+                                    className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner disabled:opacity-60"
+                                />
+                            </div>
+                        )}
                         {reflectionError && <p className="text-xs text-red-600 font-bold">{reflectionError}</p>}
                         <div className="flex gap-2">
                             <button
@@ -193,6 +288,50 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
                         <MessageCircle className="w-4 h-4" /> Add reflection
                     </button>
                 )}
+
+                {resourceReflections.length > 0 && (
+                    <div className="mt-5 pt-5 border-t border-gray-100">
+                        <div className="flex items-center gap-2 mb-3">
+                            <MessageCircle className="w-3.5 h-3.5 text-[#448a7d]" />
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">What others shared</p>
+                            <span className="text-[10px] font-black text-[#448a7d] bg-[#e8f3f1] rounded-full px-2 py-0.5 tabular-nums">
+                                {resourceReflections.length}
+                            </span>
+                        </div>
+                        <div className="space-y-2.5">
+                            <AnimatePresence initial={false}>
+                                {visibleReflections.map((r, i) => (
+                                    <motion.div
+                                        key={r.id}
+                                        initial={i >= REFLECTIONS_PREVIEW_COUNT ? { opacity: 0, y: -6 } : false}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
+                                        className="relative bg-[#f4faf7] rounded-2xl p-4 pl-5 border border-[#c8e0da]/60"
+                                    >
+                                        <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-[#448a7d]/25" aria-hidden="true" />
+                                        <p className="text-sm text-[#1e3a34]/80 italic leading-relaxed">&ldquo;{r.reflection}&rdquo;</p>
+                                        {r.imageUrl && (
+                                            <img
+                                                src={r.imageUrl}
+                                                alt=""
+                                                loading="lazy"
+                                                className="mt-3 w-full max-h-48 object-cover rounded-xl border border-[#c8e0da]/60"
+                                            />
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                        {resourceReflections.length > REFLECTIONS_PREVIEW_COUNT && (
+                            <button
+                                onClick={() => setShowAllReflections(v => !v)}
+                                className="mt-2.5 text-[11px] font-black text-[#448a7d] uppercase tracking-widest hover:underline"
+                            >
+                                {showAllReflections ? 'Show less' : `+${resourceReflections.length - REFLECTIONS_PREVIEW_COUNT} more`}
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -204,7 +343,8 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
         prev.description === next.description &&
         prev.helpful_count === next.helpful_count &&
         prev.supportive_count === next.supportive_count &&
-        prev.exploring_count === next.exploring_count;
+        prev.exploring_count === next.exploring_count &&
+        prevProps.reflections === nextProps.reflections;
 });
 
 const ResourcesHero: React.FC = () => {
@@ -471,6 +611,7 @@ const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ 
 
 const ResourcesView: React.FC = () => {
     const [resources, setResources] = useState<Resource[]>([]);
+    const [reflections, setReflections] = useState<ReflectionItem[]>([]);
     const [loading, setLoading] = useState(true);
     /** Tracks the background Google Sheets hot-swap — drives the LoadingBar + MurmurationSyncBanner */
     const [syncing, setSyncing] = useState(false);
@@ -508,6 +649,15 @@ const ResourcesView: React.FC = () => {
                 console.error('Failed to fetch resources', error);
             } finally {
                 setSyncing(false);
+            }
+
+            // Approved reflections — fetched separately, non-blocking. Safe to
+            // fail silently (returns []) until the backend's getReflections
+            // route is deployed; see docs/backend/Code.gs.js.
+            try {
+                setReflections(await apiService.getApprovedReflections());
+            } catch (error) {
+                console.error('Failed to fetch reflections', error);
             }
         };
         fetchResources();
@@ -1246,7 +1396,7 @@ const ResourcesView: React.FC = () => {
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 transition={{ delay: i * 0.06, duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
                                                             >
-                                                                <ResourceCard resource={res} />
+                                                                <ResourceCard resource={res} reflections={reflections} />
                                                             </motion.div>
                                                         ))}
                                                     </div>
@@ -1454,7 +1604,7 @@ const ResourcesView: React.FC = () => {
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 transition={{ delay: i * 0.07, duration: 0.38 }}
                                                             >
-                                                                <ResourceCard resource={res} />
+                                                                <ResourceCard resource={res} reflections={reflections} />
                                                             </motion.div>
                                                         ))}
                                                     </div>
@@ -1614,7 +1764,7 @@ const ResourcesView: React.FC = () => {
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 pb-10">
-                                                {bucketResources.map(res => <ResourceCard key={res.id} resource={res} />)}
+                                                {bucketResources.map(res => <ResourceCard key={res.id} resource={res} reflections={reflections} />)}
                                             </div>
                                         )}
                                     </div>

@@ -59,7 +59,10 @@ An anonymous support map for youth impacted by family substance use — share no
 │
 └── docs/
     ├── backend/
-    │   └── gas-backend.js  — Google Apps Script source (deploy separately)
+    │   ├── Code.gs.js               — mirrors the live "Code.gs" (doGet/doPost API surface)
+    │   └── ApprovalWorkflow.gs.js   — mirrors the live "ApprovalWorkflow.gs" (checkbox-driven
+    │                                  approve → move-to-Live automation; deliberately partial,
+    │                                  see the file's header comment before trusting it)
     └── staff-guide.md      — Staff guide: spreadsheet workflow, moderation, flagged words
 ```
 
@@ -87,9 +90,9 @@ Non-landing routes are `React.lazy`-loaded in `App.tsx` so framer-motion and Lea
 - **Stage 2 (deep search):** Nominatim (OSM) debounced at ≥500 ms, filtered to `countrycodes=ca`
 
 ### 4. Google Apps Script Backend
-The backend is a single Apps Script file (`docs/backend/gas-backend.js`) deployed as a Web App. It routes `doGet`/`doPost` requests to Google Sheets tabs. All reads are from `Live_*` tabs; all writes go to `Pending_*` tabs awaiting moderator approval.
+The backend is **two** Apps Script files deployed together as one Web App: `Code.gs` (routes `doGet`/`doPost` requests to Google Sheets tabs) and `ApprovalWorkflow.gs` (moderation menu + approval automation). Mirrors live in `docs/backend/Code.gs.js` and `docs/backend/ApprovalWorkflow.gs.js` — read the header comments in those files before trusting them, they're not guaranteed 100% complete copies of the live script. All reads are from `Live_*` tabs; all writes go to `Pending_*` tabs awaiting moderator approval.
 
-An `onEdit` trigger auto-promotes rows: when column C changes to `"APPROVED"`, the row moves from `Pending_X` → `Live_X`.
+An installable `approvalOnEdit` trigger (in `ApprovalWorkflow.gs`) auto-promotes rows: ticking the "Approve" checkbox on a `Pending_*` tab (or setting the `status` column to `"APPROVED"` directly) moves the row to the matching `Live_*` tab. `Code.gs` must NOT also define its own `onEdit` — that caused duplicate rows in `Live_Resources` (fixed 2026-07-14) because both handlers fired on the same edit.
 
 ### 5. Offline Queue
 If submission fails (no network), `apiService` serialises the payload to `localStorage` under `offlineQueue`. On app mount and on the `online` browser event, `syncOfflinePosts()` drains the queue.
@@ -139,7 +142,7 @@ To update the word list, edit the `Term` column of the `Flagged_Words` sheet. Th
 
 - **Crisis banner**: Fixed at the top of every page (`z-50`). Never remove or cover it.
 - **Safety modal** (`z-[9000]`): In `Landing.tsx`, the Q&A form intercepts submissions that match crisis keywords and shows a resources modal before allowing submission.
-- **Server-side backstop**: `gas-backend.js` has its own hardcoded crisis keyword check that marks submitted rows as `flagged` even if frontend checks are bypassed.
+- **Server-side backstop**: `Code.gs`'s `doPost` has its own hardcoded crisis keyword check that marks submitted rows as `flagged` even if frontend checks are bypassed.
 - **ShareView consent gates**: Users must tick three safety checkboxes (age, anonymity, moderation) before the submit button activates.
 
 ---

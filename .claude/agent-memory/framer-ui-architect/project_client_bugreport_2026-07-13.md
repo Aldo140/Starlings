@@ -29,5 +29,19 @@ Client (Agnes Chen, agneschen@starlings.ca) emailed Aldo on 2026-07-13 with 4 is
 **Fixed in repo:** removed the `.slice(0, 4)` cap; all approved Q&A items now render.
 
 ## Related code pointers
-- Backend reference/source-of-truth for the Google Apps Script project: `docs/backend/gas-backend.js` (not auto-deployed — must be manually pasted into the Apps Script editor and redeployed).
+- Backend reference/source-of-truth for the Google Apps Script project: `docs/backend/Code.gs.js` + `docs/backend/ApprovalWorkflow.gs.js` (not auto-deployed — must be manually pasted into the Apps Script editor and redeployed). The old single `docs/backend/gas-backend.js` was deleted 2026-07-14 — it had drifted into an aspirational draft that didn't match the real deployed script (real project has two files: Code.gs + ApprovalWorkflow.gs, confirmed by reading the actual pasted source). Don't recreate that mistake — verify against what the user pastes from the live Apps Script editor before writing backend docs.
 - Resource category bucketing logic (type vs. map-location priority): `views/ResourcesView.tsx`, `communityBucketResources` — a resource's format (book, video, etc.) now always wins over having a location tag; "Map-Based Resources" bucket is reserved for resources with no recognized format that also carry a location.
+
+## Ground-truth ledger (2026-07-14) — ONLY claim these are fixed with this level of confidence
+
+| Item | Status | Confidence |
+|---|---|---|
+| Q&A showing only 4 of 5 | Fixed | Solid — pure frontend code (Landing.tsx), tested, committed, pushed |
+| Q&A answer auto-formatting (lists/bullets/bylines) | Fixed | Solid — frontend code (QAThread.tsx), covered by tests/formatAnswer.test.ts against real answer text, committed, pushed |
+| Glass Castle book under Map-Based Resources | Fixed | Solid — pure frontend bucket-priority fix (ResourcesView.tsx), tested, committed, pushed |
+| Duplicate resources on approval | Fixed | High — root cause (Code.gs onEdit + ApprovalWorkflow.gs approvalOnEdit both firing) requires deleting Code.gs's onEdit function live in the Apps Script editor; user's later report of Resources-approve breaking is consistent with them having done this. Not independently re-verifiable by me. |
+| Resources Approve checkbox not moving rows (found after the duplicate fix) | Fixed | Confirmed — user explicitly tested and said "okay it works" after the findHeaderCol_ header-driven rewrite |
+| Reflections "no option to approve" | Presumed fixed, NOT independently confirmed | Medium — TAB_CONFIG entries for Pending_Reflections/Live_Reflections were given in the same message as the Code.gs onEdit deletion; user's later Resources-breaking report implies they applied that whole message, but they never explicitly re-tested Reflections specifically. Ask before telling Agnes this is 100% done. |
+| Reflection photo field | Partially fixed — REAL GAP FOUND | Frontend field + api.ts payload wiring is done and correct. But the real `Pending_Reflections`/`Live_Reflections` sheets do NOT have an `image_url` column (confirmed from the actual screenshot: id, timestamp, status, resourceId, reflection, flagged, Approve — no image_url). Code.gs's doPost only writes a value if a matching header already exists — so any submitted photo URL is currently silently dropped. Fix needed: add an `image_url` header to both sheets manually (one-time Sheets edit, no code change needed since doPost/moveRowToLive are already generic). NOT YET DONE as of 2026-07-14. |
+| Reflections ever displayed publicly (incl. photos) | Not built, open product decision | Nothing fetches/displays Live_Reflections anywhere in the frontend. Flagged to the client as a decision to make, not silently built, given youth-safety/anonymity sensitivity. |
+| Domain starlingsmap.ca DNS/GitHub Pages | In progress | DNS records correct (verified via WHOIS + direct nameserver query), GitHub Pages configured with CNAME + Actions source. Domain was in CIRA `addPeriod` (freshly registered) as of last check — still NXDOMAIN externally, expected to resolve within hours. Not yet confirmed live. |

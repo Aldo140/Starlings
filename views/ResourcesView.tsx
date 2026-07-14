@@ -2,14 +2,13 @@ import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { Resource, ResourceType, ReflectionItem } from '../types.ts';
-import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS } from '../constants.tsx';
+import { ICONS, SEED_RESOURCES, EASE_OUT_EXPO, EASE_OUT_EXPO_CSS, supportsResourceImage } from '../constants.tsx';
 import {
     Book,
     FileText,
     Globe,
     Headphones,
     Image as ImageIcon,
-    Info,
     MapPin,
     MessageCircle,
     Music,
@@ -21,6 +20,7 @@ import {
 import { AnimatePresence, motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
 import { useRef } from 'react';
 import LoadingBar from '../components/LoadingBar.tsx';
+import InfoPopover from '../components/InfoPopover.tsx';
 
 const MAP_BASED_BUCKET_ID = 'map_based';
 const OTHER_BUCKET_ID = 'other';
@@ -33,77 +33,6 @@ const hasMapLocation = (resource: Resource): boolean =>
         Number.isFinite(resource.lng) &&
         (resource.lat !== 0 || resource.lng !== 0)
     );
-
-// A photo only makes intuitive sense to attach for physical/visual media —
-// a photo of a book page, a meme, a printed article. For digital-native
-// resources (a website, a podcast episode, a video) "attach a photo" isn't
-// a natural action, so the field is hidden there rather than asking every
-// user a question that mostly won't apply to them.
-const IMAGE_FRIENDLY_REFLECTION_TYPES = new Set<ResourceType>([
-    ResourceType.BOOK,
-    ResourceType.MEME,
-    ResourceType.PUBLICATION,
-]);
-const supportsReflectionImage = (type: ResourceType): boolean => IMAGE_FRIENDLY_REFLECTION_TYPES.has(type);
-
-/**
- * Small "i" info affordance — opens on hover for mouse users, and on tap for
- * touch users (no hover event exists there), via a single click-to-toggle
- * handler layered under hover handlers. Closes on outside click/tap or Escape.
- */
-const InfoPopover: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => {
-    const [open, setOpen] = useState(false);
-    const wrapperRef = useRef<HTMLSpanElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-        const handleOutside = (e: MouseEvent | TouchEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
-        };
-        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-        document.addEventListener('mousedown', handleOutside);
-        document.addEventListener('touchstart', handleOutside);
-        document.addEventListener('keydown', handleKey);
-        return () => {
-            document.removeEventListener('mousedown', handleOutside);
-            document.removeEventListener('touchstart', handleOutside);
-            document.removeEventListener('keydown', handleKey);
-        };
-    }, [open]);
-
-    return (
-        <span
-            ref={wrapperRef}
-            className="relative inline-flex"
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-        >
-            <button
-                type="button"
-                onClick={() => setOpen(o => !o)}
-                aria-label={label}
-                aria-expanded={open}
-                className="flex-shrink-0 w-4 h-4 rounded-full bg-[#e8f3f1] text-[#448a7d] flex items-center justify-center hover:bg-[#448a7d] hover:text-white transition-colors"
-            >
-                <Info className="w-2.5 h-2.5" />
-            </button>
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 4, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.96 }}
-                        transition={{ duration: 0.18, ease: EASE_OUT_EXPO }}
-                        className="absolute z-20 top-full mt-2 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 w-60 max-w-[80vw] p-3.5 rounded-xl bg-[#1e3a34] text-white text-[11px] font-medium leading-relaxed shadow-[0_18px_40px_-14px_rgba(30,58,52,0.55)]"
-                        role="tooltip"
-                    >
-                        {children}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </span>
-    );
-};
 
 
 const REFLECTIONS_PREVIEW_COUNT = 2;
@@ -183,7 +112,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
     const social = resource.type === ResourceType.SOCIAL_MEDIA ? getSocialDetails(resource.url) : null;
     const resourceReflections = reflections.filter(r => r.resourceId === resource.id && !r.flagged);
     const visibleReflections = showAllReflections ? resourceReflections : resourceReflections.slice(0, REFLECTIONS_PREVIEW_COUNT);
-    const imageFieldRelevant = supportsReflectionImage(resource.type);
+    const imageFieldRelevant = supportsResourceImage(resource.type);
 
     return (
         <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">

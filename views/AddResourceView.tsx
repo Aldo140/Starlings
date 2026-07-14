@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { LocationSearchResult, ResourceType } from '../types.ts';
-import { ICONS } from '../constants.tsx';
+import { ICONS, supportsResourceImage } from '../constants.tsx';
+import InfoPopover from '../components/InfoPopover.tsx';
 
 const AddResourceView: React.FC = () => {
     const navigate = useNavigate();
@@ -35,7 +36,14 @@ const AddResourceView: React.FC = () => {
         includeOnMap: defaultMapBased,
         citySearch: '',
         selectedLocation: null as LocationSearchResult | null,
+        imageUrl: '',
     });
+
+    const imageFieldRelevant = supportsResourceImage(formData.type);
+    // A meme IS an image — there's no meaningful submission without one.
+    // Other image-friendly types (book, publication) treat the photo as a
+    // nice-to-have, not a requirement.
+    const imageRequired = formData.type === ResourceType.MEME;
 
     const wordCount = formData.description.trim().split(/\s+/).filter(Boolean).length;
     const selectedCity = formData.selectedLocation
@@ -89,6 +97,7 @@ const AddResourceView: React.FC = () => {
     const isFormValid = () => {
         if (!formData.title.trim() || !formData.url.trim() || wordCount > 500) return false;
         if (mode === 'recommend' && formData.includeOnMap && (!formData.selectedLocation || !selectedCity)) return false;
+        if (imageRequired && !formData.imageUrl.trim()) return false;
         if (mode === 'apply') {
             return formData.submitterEmail.trim() && formData.qualifications.trim() && formData.agreeToTerms;
         }
@@ -133,6 +142,7 @@ const AddResourceView: React.FC = () => {
             submitterEmail: mode === 'apply' ? formData.submitterEmail : undefined,
             qualifications: mode === 'apply' ? formData.qualifications : undefined,
             category: mode === 'apply' ? 'partner' : 'community',
+            imageUrl: imageFieldRelevant ? formData.imageUrl.trim() : undefined,
             ...locationPayload,
         });
 
@@ -247,6 +257,35 @@ const AddResourceView: React.FC = () => {
                             </select>
                         </div>
                     </div>
+
+                    {imageFieldRelevant && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="imageUrl" className="block text-[#1e3a34] font-black text-xl italic">
+                                    Photo {imageRequired ? <span className="text-[#e57c6e]">*</span> : null}
+                                </label>
+                                {!imageRequired && (
+                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
+                                )}
+                                <InfoPopover label="How to get an image link">
+                                    <p className="font-black uppercase tracking-widest text-[9px] text-[#7ec8ba] mb-1.5">
+                                        Getting a photo link
+                                    </p>
+                                    Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
+                                    <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                                </InfoPopover>
+                            </div>
+                            <input
+                                id="imageUrl"
+                                type="url"
+                                required={imageRequired}
+                                placeholder="Paste an image link..."
+                                className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                                value={formData.imageUrl}
+                                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                            />
+                        </div>
+                    )}
 
                     {/* Map placement is opt-in for community recommendations only. */}
                     {mode === 'recommend' && (

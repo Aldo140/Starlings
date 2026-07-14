@@ -23,6 +23,23 @@ export const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 /** CSS string form for use in `transitionTimingFunction` inline styles. */
 export const EASE_OUT_EXPO_CSS = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
+/**
+ * Resource types where attaching a photo is a natural, expected action —
+ * a book cover/page, a meme (which IS an image), a photographed article.
+ * For digital-native types (website, video, podcast, song, social media,
+ * tool) "attach a photo" isn't a natural ask, so image fields are hidden
+ * for those rather than prompting every submitter with an irrelevant field.
+ * Shared between AddResourceView (submitting a resource) and ResourcesView
+ * (reflecting on one) so both stay in sync — don't duplicate this set.
+ */
+export const IMAGE_FRIENDLY_RESOURCE_TYPES = new Set<ResourceType>([
+  ResourceType.BOOK,
+  ResourceType.MEME,
+  ResourceType.PUBLICATION,
+]);
+export const supportsResourceImage = (type: ResourceType): boolean =>
+  IMAGE_FRIENDLY_RESOURCE_TYPES.has(type);
+
 export const COLORS = {
   teal900: '#1e3a34',
   teal700: '#2d5a52',

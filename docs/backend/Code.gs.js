@@ -23,6 +23,15 @@
 // getting duplicated into Live_Resources when approved. Do not re-add
 // an onEdit(e) function to this file.
 //
+// 2026-07-14 addition: doGet() now routes action=getReflections to
+// Live_Reflections (see below) — this is what the website's new "What
+// others shared" section on each resource card reads from. THIS LINE
+// MUST BE MANUALLY PASTED INTO THE LIVE Code.gs — this repo file is
+// only a mirror, it does not deploy itself. Also requires an
+// "image_url" column to exist on both Pending_Reflections and
+// Live_Reflections (see ApprovalWorkflow.gs.js's TAB_CONFIG comment) —
+// without it, reflection photos are silently dropped on submission.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -61,6 +70,7 @@ function doGet(e) {
 
         if (action === "getResources") sheetName = "Live_Resources";
         if (action === "getQA") sheetName = "Live_QA";
+        if (action === "getReflections") sheetName = "Live_Reflections"; // added 2026-07-14 — see note below
         if (action === "getFlaggedWords") sheetName = "Flagged_Words";
 
         const sheet = doc.getSheetByName(sheetName);

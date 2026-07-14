@@ -683,62 +683,75 @@ const ResourcesView: React.FC = () => {
                         {communityPartners.length > 0 && (
                         <section>
 
-                            {/* ── MOBILE: Single unified flashlight panel — header + accordion in one flow ── */}
-                            <div className="md:hidden relative overflow-hidden rounded-[1.75rem]">
-                                {/* Flashlight background — fills the whole panel */}
-                                <div className="cp-flashlight" aria-hidden="true" />
-                                {/* Dark overlay — consistent across the full panel */}
-                                <div
-                                    className="absolute inset-0 pointer-events-none"
-                                    style={{ background: 'rgba(7,16,12,0.88)' }}
-                                />
+                            {/* ── MOBILE: text zone keeps the live flashlight background; card
+                                 zone below breaks full-bleed black — two visually distinct
+                                 bands instead of one unified panel ── */}
+                            <div className="md:hidden">
 
-                                {/* All content in normal document flow */}
-                                <div className="relative z-10 px-4 pt-5 pb-5">
+                                {/* TOP: eyebrow / heading / description — flashlight bg, rounded top */}
+                                <div className="relative overflow-hidden rounded-t-[1.75rem]">
+                                    {/* Flashlight background — fills this zone only */}
+                                    <div className="cp-flashlight" aria-hidden="true" />
+                                    {/* Dark overlay */}
+                                    <div
+                                        className="absolute inset-0 pointer-events-none"
+                                        style={{ background: 'rgba(7,16,12,0.88)' }}
+                                    />
 
-                                    {/* Eyebrow row: page label + count badge */}
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="block w-4 h-px flex-shrink-0" style={{ background: 'rgba(68,138,125,0.55)' }} />
-                                            <span className="text-[8px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgba(126,197,184,0.60)' }}>
-                                                Peer &amp; Community Resources
+                                    <div className="relative z-10 px-4 pt-5 pb-5">
+
+                                        {/* Eyebrow row: page label + count badge */}
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <span className="block w-4 h-px flex-shrink-0" style={{ background: 'rgba(68,138,125,0.55)' }} />
+                                                <span className="text-[8px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgba(126,197,184,0.60)' }}>
+                                                    Peer &amp; Community Resources
+                                                </span>
+                                            </div>
+                                            <span
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em]"
+                                                style={{ background: 'rgba(68,138,125,0.12)', border: '1px solid rgba(68,138,125,0.22)', color: 'rgba(126,197,184,0.65)' }}
+                                            >
+                                                <span className="w-1 h-1 rounded-full inline-block" style={{ background: '#448a7d' }} />
+                                                {communityPartners.length} verified
                                             </span>
                                         </div>
-                                        <span
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em]"
-                                            style={{ background: 'rgba(68,138,125,0.12)', border: '1px solid rgba(68,138,125,0.22)', color: 'rgba(126,197,184,0.65)' }}
+
+                                        {/* Heading */}
+                                        <h2
+                                            className="font-cabinet font-black text-white tracking-tight leading-[1.06] mb-2"
+                                            style={{ fontSize: 'clamp(1.7rem, 5.8vw, 2.4rem)' }}
                                         >
-                                            <span className="w-1 h-1 rounded-full inline-block" style={{ background: '#448a7d' }} />
-                                            {communityPartners.length} verified
-                                        </span>
+                                            Starlings&#8209;trained{' '}
+                                            <span className="cp-words-slot">
+                                                <span className="cp-words-word">care partner</span>
+                                                <span className="cp-words-word">care organization</span>
+                                                <span className="cp-words-word">youth specialist</span>
+                                                <span className="cp-words-word">trusted partner</span>
+                                                <span className="cp-words-word">community leader</span>
+                                                <span className="cp-words-word">care partner</span>
+                                            </span>
+                                        </h2>
+
+                                        {/* Description */}
+                                        <p className="text-[11px] font-medium leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)', maxWidth: '92%' }}>
+                                            Specialized, verified care for youth affected by parental substance use.
+                                        </p>
                                     </div>
+                                </div>
 
-                                    {/* Heading */}
-                                    <h2
-                                        className="font-cabinet font-black text-white tracking-tight leading-[1.06] mb-2"
-                                        style={{ fontSize: 'clamp(1.7rem, 5.8vw, 2.4rem)' }}
-                                    >
-                                        Starlings&#8209;trained{' '}
-                                        <span className="cp-words-slot">
-                                            <span className="cp-words-word">care partner</span>
-                                            <span className="cp-words-word">care organization</span>
-                                            <span className="cp-words-word">youth specialist</span>
-                                            <span className="cp-words-word">trusted partner</span>
-                                            <span className="cp-words-word">community leader</span>
-                                            <span className="cp-words-word">care partner</span>
-                                        </span>
-                                    </h2>
+                                {/* BOTTOM: accordion cards — solid black, full-bleed edge-to-edge */}
+                                <div
+                                    className="relative bg-black"
+                                    style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}
+                                >
+                                    <div className="px-4 pt-4 pb-5">
 
-                                    {/* Description */}
-                                    <p className="text-[11px] font-medium leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.38)', maxWidth: '92%' }}>
-                                        Specialized, verified care for youth affected by parental substance use.
-                                    </p>
+                                        {/* Divider */}
+                                        <div className="mb-3" style={{ height: '1px', background: 'rgba(68,138,125,0.18)' }} />
 
-                                    {/* Divider */}
-                                    <div className="mb-3" style={{ height: '1px', background: 'rgba(68,138,125,0.18)' }} />
-
-                                    {/* Accordion cards — macOS browser window style */}
-                                    <div className="flex flex-col gap-2.5">
+                                        {/* Accordion cards — macOS browser window style */}
+                                        <div className="flex flex-col gap-2.5">
                                         {communityPartners.map((resource, index) => {
                                             const config = typeConfig[resource.type] || typeConfig.website;
                                             const isActive = activeGeneralIndex === index;
@@ -859,6 +872,7 @@ const ResourcesView: React.FC = () => {
                                                 </div>
                                             );
                                         })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -43,30 +43,46 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
     const [reflectionImageUrl, setReflectionImageUrl] = useState('');
     const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
     const [reflectionError, setReflectionError] = useState('');
+    const [isSubmittingReflection, setIsSubmittingReflection] = useState(false);
+
+    // Synchronous lock, not just state — React state updates can batch, so two
+    // rapid clicks can both read `liked === false` before either re-render
+    // lands. A ref updates immediately, so the second click is blocked for
+    // real, not just after the fact. This is what stops one eager tap turning
+    // into duplicate increments on Live_Resources.
+    const insightLockRef = useRef({ helpful: false, supportive: false, exploring: false });
 
     const handleInsightClick = async (type: 'helpful' | 'supportive' | 'exploring') => {
-        if (type === 'helpful') { if (liked) return; setLiked(true); }
-        if (type === 'supportive') { if (supportive) return; setSupportive(true); }
-        if (type === 'exploring') { if (exploring) return; setExploring(true); }
+        if (insightLockRef.current[type]) return;
+        insightLockRef.current[type] = true;
+        if (type === 'helpful') setLiked(true);
+        if (type === 'supportive') setSupportive(true);
+        if (type === 'exploring') setExploring(true);
         await apiService.incrementInsight(resource.id, type);
     };
 
     const handleReflectionSubmit = async () => {
+        if (isSubmittingReflection) return; // already in flight — ignore repeat clicks
         const text = reflectionText.trim();
         if (!text) return;
         setReflectionError('');
-        const result = await apiService.submitReflection(resource.id, text, reflectionImageUrl);
-        if (result.flagged) {
-            setReflectionError('Please revise this reflection to remove crisis details, links, contact information, or identifying details.');
-            return;
-        }
-        if (result.success) {
-            setReflectionSubmitted(true);
-            setShowReflection(false);
-            setReflectionText('');
-            setReflectionImageUrl('');
-        } else {
-            setReflectionError('Something went wrong. Please try again.');
+        setIsSubmittingReflection(true);
+        try {
+            const result = await apiService.submitReflection(resource.id, text, reflectionImageUrl);
+            if (result.flagged) {
+                setReflectionError('Please revise this reflection to remove crisis details, links, contact information, or identifying details.');
+                return;
+            }
+            if (result.success) {
+                setReflectionSubmitted(true);
+                setShowReflection(false);
+                setReflectionText('');
+                setReflectionImageUrl('');
+            } else {
+                setReflectionError('Something went wrong. Please try again.');
+            }
+        } finally {
+            setIsSubmittingReflection(false);
         }
     };
 
@@ -122,13 +138,13 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
             <div className="border-t border-gray-200 pt-5 mt-auto">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-3">Peer Insights</p>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <button onClick={() => handleInsightClick('helpful')} className={`px-4 py-2 rounded-full text-xs font-black transition-colors ${liked ? 'bg-red-50 text-red-600 border border-red-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('helpful')} disabled={liked} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${liked ? 'bg-red-50 text-red-600 border border-red-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         ❤️ Helpful {((resource.helpful_count || 0) + (liked ? 1 : 0)) > 0 ? `(${((resource.helpful_count || 0) + (liked ? 1 : 0))})` : ''}
                     </button>
-                    <button onClick={() => handleInsightClick('supportive')} className={`px-4 py-2 rounded-full text-xs font-black transition-colors ${supportive ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('supportive')} disabled={supportive} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${supportive ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         🤝 Supportive {((resource.supportive_count || 0) + (supportive ? 1 : 0)) > 0 ? `(${((resource.supportive_count || 0) + (supportive ? 1 : 0))})` : ''}
                     </button>
-                    <button onClick={() => handleInsightClick('exploring')} className={`px-4 py-2 rounded-full text-xs font-black transition-colors ${exploring ? 'bg-green-50 text-green-600 border border-green-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('exploring')} disabled={exploring} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${exploring ? 'bg-green-50 text-green-600 border border-green-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         🌱 Worth exploring {((resource.exploring_count || 0) + (exploring ? 1 : 0)) > 0 ? `(${((resource.exploring_count || 0) + (exploring ? 1 : 0))})` : ''}
                     </button>
                 </div>
@@ -141,21 +157,33 @@ const ResourceCard: React.FC<{ resource: Resource }> = memo(({ resource }) => {
                             onChange={(e) => setReflectionText(e.target.value)}
                             maxLength={280}
                             placeholder="Optional short reflection..."
-                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner min-h-24 resize-none"
+                            disabled={isSubmittingReflection}
+                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner min-h-24 resize-none disabled:opacity-60"
                         />
                         <input
                             type="url"
                             value={reflectionImageUrl}
                             onChange={(e) => setReflectionImageUrl(e.target.value)}
                             placeholder="Add a photo link (optional)"
-                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner"
+                            disabled={isSubmittingReflection}
+                            className="w-full text-sm font-medium bg-white border border-gray-200 rounded-xl px-4 py-3 text-[#1e3a34] focus:outline-none focus:border-[#448a7d] shadow-inner disabled:opacity-60"
                         />
                         {reflectionError && <p className="text-xs text-red-600 font-bold">{reflectionError}</p>}
                         <div className="flex gap-2">
-                            <button onClick={handleReflectionSubmit} className="px-4 py-2 rounded-full bg-[#1e3a34] text-white text-xs font-black uppercase tracking-widest hover:bg-[#2d5a52] transition-colors">
-                                Submit
+                            <button
+                                onClick={handleReflectionSubmit}
+                                disabled={isSubmittingReflection || !reflectionText.trim()}
+                                className="px-4 py-2 rounded-full bg-[#1e3a34] text-white text-xs font-black uppercase tracking-widest hover:bg-[#2d5a52] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1e3a34] flex items-center gap-2"
+                            >
+                                {isSubmittingReflection && (
+                                    <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-hidden="true" />
+                                )}
+                                {isSubmittingReflection ? 'Submitting...' : 'Submit'}
                             </button>
-                            <button onClick={() => { setShowReflection(false); setReflectionError(''); }} className="px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors">
+                            <button
+                                onClick={() => { setShowReflection(false); setReflectionError(''); }}
+                                disabled={isSubmittingReflection}
+                                className="px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 Cancel
                             </button>
                         </div>

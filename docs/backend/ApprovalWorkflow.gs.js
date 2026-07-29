@@ -309,6 +309,50 @@ function setupApprovalTrigger() {
 }
 
 // ============================================================
+// CUSTOM MENU — restores a working "⭐ Starlings" toolbar menu
+// ============================================================
+// Added 2026-07-30 (reported live: the custom Starlings menu buttons —
+// approve, formatting, etc. — stopped working). This file has always
+// been a DELIBERATELY INCOMPLETE mirror (see the file header): the real
+// onOpen() that builds the live menu, plus formatOneTab(), polishSheet(),
+// writeInfoBlock(), and several other functions, only ever existed in
+// the live Apps Script project and were never reproduced here. If an
+// earlier paste replaced the ENTIRE live ApprovalWorkflow.gs with just
+// this repo's tracked subset (instead of merging), onOpen() and those
+// formatting functions would have been deleted — exactly matching the
+// menu breaking.
+//
+// This function does NOT touch or guess at any of that missing code — it
+// only wires up menu items for functions we KNOW exist in this repo:
+// approve, sweep, the text-color repair, and reinstalling the trigger.
+//
+// RUN THIS RIGHT NOW to get a working menu back immediately: select
+// "buildStarlingsMenu" in the function dropdown and click ▶ Run. The
+// menu appears in the spreadsheet immediately — no need to reopen it.
+//
+// To make the menu rebuild automatically every time the sheet is opened
+// (instead of running this by hand each session), it would need to be
+// named onOpen(e) — that reserved name is what Apps Script auto-runs on
+// open. This file deliberately does NOT claim that name automatically:
+// if the live project's original onOpen() still exists somewhere (it
+// might not have been deleted after all), a SECOND onOpen() anywhere in
+// the project causes a project-wide "onOpen has already been declared"
+// error that breaks every trigger and every menu, not just this one. If
+// you confirm (Ctrl+F search "function onOpen" across every file in the
+// live editor) that none exists, it's then safe to duplicate this
+// function's body into one named onOpen(e) yourself.
+function buildStarlingsMenu() {
+  SpreadsheetApp.getUi()
+    .createMenu('⭐ Starlings')
+    .addItem('✅ Approve Checked Rows', 'approveCheckedRows')
+    .addItem('🧹 Sweep Approved (catch missed rows)', 'sweepApproved')
+    .addItem('🩹 Fix Invisible Text', 'fixInvisibleText')
+    .addSeparator()
+    .addItem('🔧 Reinstall Approval Trigger', 'setupApprovalTrigger')
+    .addToUi();
+}
+
+// ============================================================
 // BULK APPROVE FROM MENU (works on the active Pending tab)
 // ============================================================
 function approveCheckedRows() {

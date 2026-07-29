@@ -31,8 +31,9 @@ const RouteFallback: React.FC = () => (
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Attempt to sync any queued posts on initial mount
-    apiService.syncOfflinePosts();
+    // Attempt to sync any queued submissions (posts/resources/reflections
+    // that failed to reach the backend due to a network error) on mount
+    apiService.syncOfflineSubmissions();
 
     // Pre-fetch the sheet-sourced flagged word list so it's ready before
     // any submission check runs. Fails silently — static BANNED_PATTERNS
@@ -41,7 +42,7 @@ const App: React.FC = () => {
 
     // Listen for browser gaining network connection
     const handleOnline = () => {
-      apiService.syncOfflinePosts();
+      apiService.syncOfflineSubmissions();
     };
 
     window.addEventListener('online', handleOnline);

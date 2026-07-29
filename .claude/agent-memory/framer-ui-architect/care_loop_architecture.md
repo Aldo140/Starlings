@@ -1,10 +1,14 @@
 ---
 name: "Care Loop Architecture"
-description: "How the horizontal scroll section (Promise Journey / Care Loop) is built in Landing.tsx — what to preserve vs improve"
+description: "How the horizontal scroll section (Promise Journey / Care Loop) is built in AboutMap.tsx — what to preserve vs improve"
 type: "project"
 ---
 
-The Care Loop section is called "Horizontal Promise Journey" in the code. It is fully implemented and polished. Located in `views/Landing.tsx` starting around line 1001.
+**CORRECTED 2026-07-28 — this section is no longer in Landing.tsx.** At some point after this memory was first written (2026-05-13), the Care Loop was moved wholesale out of `views/Landing.tsx` (confirmed absent — zero matches for `promiseRef`/`promisePanels` there as of 2026-07-28) into a new page, `views/AboutMap.tsx`, routed at `/about` ("About the Map", linked from Layout.tsx nav). If you're asked to touch the Care Loop, edit `views/AboutMap.tsx`, not Landing.tsx.
+
+The Care Loop section is called "Horizontal Promise Journey" in the code. It is fully implemented and polished. Desktop version in `views/AboutMap.tsx` around line 1274 (`hidden lg:block`, ≥1024px). **A separate mobile fallback now exists** (was previously just a "could improve" suggestion) — a vertical/stacked `lg:hidden` version around line 1131, also mapping over the same `promisePanels` array. Do not assume mobile users see nothing; check both blocks before editing.
+
+Visual system changed too: panels now render via a shared `<CardIllustration variant={panel.illustration} />` component (`components/CardIllustration.tsx`), not the old per-panel `PromiseVisual`/`PromiseArtifact` subcomponents this memory previously described — those names no longer appear in the codebase under this section.
 
 ## Scroll Mechanism
 
@@ -46,7 +50,7 @@ The inner viewport is `position: sticky; top: 0; height: 100vh; overflow: hidden
 - Mobile: currently the same scroll mechanism applies, but cards are very wide on small screens. Could add swipe momentum hint
 - Card hover: `whileHover={{ y: -9 }}` spring works well but could get a subtle shadow elevation boost alongside
 
-## Panel Data (hardcoded in Landing.tsx)
+## Panel Data (hardcoded in AboutMap.tsx, `promisePanels` array ~line 102)
 4 panels, each with: `eyebrow`, `title`, `desc`, `visual`, `artifact`, `tags[]`, `accent`
 
 | Panel | Eyebrow | Visual | Artifact | Accent |

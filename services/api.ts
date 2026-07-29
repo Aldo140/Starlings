@@ -268,6 +268,100 @@ const checkRateLimit = (): boolean => {
   return true; // Allow actions
 };
 
+// User-facing copy shown whenever the client-side rate limiter blocks an
+// action. Shared across every submission type so the guardrail reads
+// consistently site-wide instead of each endpoint inventing its own wording.
+const RATE_LIMIT_MESSAGE = 'Too many submissions too quickly. Please wait a moment and try again.';
+
+// ----------------------------------------------------
+// OFFLINE / RETRY QUEUE
+// Holds submissions that couldn't reach the backend because the network
+// request itself failed (offline, DNS hiccup, etc). Each queued item stores
+// the exact JSON body that would have been POSTed, tagged with a `kind` for
+// logging. Flushed on app load, on the browser's `online` event, and (for
+// posts) shortly after being queued in case the network recovers quickly.
+//
+// This is deliberately NOT used for rate-limit blocks — a rate-limit block
+// means the network is fine and we chose not to send the request, so the
+// honest thing is to tell the caller it didn't go through (see
+// RATE_LIMIT_MESSAGE) rather than silently queue-and-pretend. Network
+// failures are the only case where "tell the user it worked, actually
+// deliver it later" is the right tradeoff, matching this project's
+// no-friction-for-vulnerable-users posture.
+// ----------------------------------------------------
+const SYNC_QUEUE_KEY = 'starlings_sync_queue';
+
+type QueuedKind = 'post' | 'resource' | 'reflection';
+
+interface QueuedSubmission {
+  kind: QueuedKind;
+  payload: Record<string, unknown>;
+}
+
+const readQueue = (): QueuedSubmission[] => {
+  try {
+    const raw = localStorage.getItem(SYNC_QUEUE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Migrate legacy entries: before the queue was generalized beyond posts,
+    // it stored raw Post objects with no `kind`/`payload` wrapper.
+    return parsed.map((item: any): QueuedSubmission =>
+      item && typeof item === 'object' && 'kind' in item && 'payload' in item
+        ? (item as QueuedSubmission)
+        : { kind: 'post', payload: { ...item, action: 'addStory' } }
+    );
+  } catch (e) {
+    console.error('Error reading sync queue:', e);
+    return [];
+  }
+};
+
+const writeQueue = (queue: QueuedSubmission[]): void => {
+  try {
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    console.error('Failed to persist sync queue:', e);
+  }
+};
+
+const flushQueue = async (): Promise<void> => {
+  const queue = readQueue();
+  if (queue.length === 0) return;
+
+  const remaining: QueuedSubmission[] = [];
+  for (const item of queue) {
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(item.payload),
+      });
+      const result = await res.json();
+      if (!result.success) {
+        console.error(`Failed to sync queued ${item.kind}:`, result);
+        remaining.push(item);
+      }
+    } catch (error) {
+      console.error(`Network still unavailable, keeping queued ${item.kind}`, error);
+      remaining.push(item);
+    }
+  }
+
+  if (remaining.length === 0) {
+    localStorage.removeItem(SYNC_QUEUE_KEY);
+  } else {
+    writeQueue(remaining);
+  }
+};
+
+const queueSubmission = (kind: QueuedKind, payload: Record<string, unknown>): void => {
+  const queue = readQueue();
+  queue.push({ kind, payload });
+  writeQueue(queue);
+};
+
 const parseJsonResponse = async (res: Response): Promise<any> => {
   const contentType = res.headers.get('content-type') || '';
   const bodyText = await res.text();
@@ -418,10 +512,10 @@ export const apiService = {
     return inFlightRequest;
   },
 
-  async submitPost(postData: Partial<Post>): Promise<{ success: boolean; flagged: boolean }> {
+  async submitPost(postData: Partial<Post>): Promise<{ success: boolean; flagged: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: true, flagged: false }; // Silently drop, UI acts like success
+      return { success: false, flagged: false, error: RATE_LIMIT_MESSAGE };
     }
 
     const combinedText = postData.message || '';
@@ -442,12 +536,13 @@ export const apiService = {
       flagged: flagged,
     } as Post;
 
+    const payload = {
+      ...newPost,
+      action: "addStory",
+      ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
+    };
+
     try {
-      const payload = {
-        ...newPost,
-        action: "addStory",
-        ...(matchInfo && { flagged_severity: matchInfo.severity, flagged_category: matchInfo.category }),
-      };
       const res = await fetch(GAS_URL, {
         method: 'POST',
         redirect: 'follow',
@@ -461,63 +556,23 @@ export const apiService = {
       return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
     } catch (error) {
       console.error("Error submitting post, network issue detected:", error);
-      apiService.queueOfflinePost(newPost);
+      queueSubmission('post', payload);
       // Return success true so the UI thinks it succeeded and transitions to success state
       // The post is safely stored and will be synced later
       return { success: true, flagged };
     }
   },
 
+  /** @deprecated Use the generalized queue via submitPost's network-failure path. Kept only in case older code paths still call it directly. */
   queueOfflinePost(post: Post): void {
-    try {
-      const queueStr = localStorage.getItem('starlings_sync_queue');
-      const queue: Post[] = queueStr ? JSON.parse(queueStr) : [];
-      queue.push(post);
-      localStorage.setItem('starlings_sync_queue', JSON.stringify(queue));
-    } catch (e) {
-      console.error("Failed to queue post offline", e);
-    }
+    queueSubmission('post', { ...post, action: 'addStory' });
   },
 
-  async syncOfflinePosts(): Promise<void> {
+  async syncOfflineSubmissions(): Promise<void> {
     try {
-      const queueStr = localStorage.getItem('starlings_sync_queue');
-      if (!queueStr) return;
-
-      let queue: Post[] = JSON.parse(queueStr);
-      if (queue.length === 0) return;
-
-      const remainingQueue: Post[] = [];
-
-      for (const post of queue) {
-        try {
-          const payload = { ...post, action: "addStory" };
-          const res = await fetch(GAS_URL, {
-            method: 'POST',
-            redirect: 'follow',
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
-          });
-          const result = await res.json();
-          if (!result.success) {
-            console.error("Failed to sync post with server:", result);
-            remainingQueue.push(post);
-          }
-        } catch (error) {
-          console.error("Network still unavailable, keeping post in queue", error);
-          remainingQueue.push(post);
-        }
-      }
-
-      if (remainingQueue.length === 0) {
-        localStorage.removeItem('starlings_sync_queue');
-      } else {
-        localStorage.setItem('starlings_sync_queue', JSON.stringify(remainingQueue));
-      }
+      await flushQueue();
     } catch (e) {
-      console.error("Error syncing offline posts", e);
+      console.error("Error syncing offline submissions", e);
     }
   },
 
@@ -610,10 +665,10 @@ export const apiService = {
     }
   },
 
-  async submitResource(resourceData: Partial<Resource>): Promise<{ success: boolean }> {
+  async submitResource(resourceData: Partial<Resource>): Promise<{ success: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: true };
+      return { success: false, error: RATE_LIMIT_MESSAGE };
     }
 
     const payload = {
@@ -647,15 +702,17 @@ export const apiService = {
       const result = await res.json();
       return { success: result.success };
     } catch (e) {
-      console.error(e);
-      return { success: true }; // Optimistic fail
+      console.error("Error submitting resource, network issue detected:", e);
+      queueSubmission('resource', payload);
+      // Optimistic: the resource is safely queued and will be synced later.
+      return { success: true };
     }
   },
 
   async submitQuestion(question: string): Promise<{ success: boolean; flagged: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: false, flagged: false, error: 'Too many submissions too quickly. Please wait a moment and try again.' };
+      return { success: false, flagged: false, error: RATE_LIMIT_MESSAGE };
     }
 
     const backendTarget = await verifyBackendTarget();
@@ -703,10 +760,10 @@ export const apiService = {
     }
   },
 
-  async incrementInsight(resourceId: string, reactionType: 'helpful' | 'supportive' | 'exploring'): Promise<{ success: boolean }> {
+  async incrementInsight(resourceId: string, reactionType: 'helpful' | 'supportive' | 'exploring'): Promise<{ success: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: true }; // Predict true so UI doesn't crash, but it won't persist to GS
+      return { success: false, error: RATE_LIMIT_MESSAGE };
     }
 
     try {
@@ -724,10 +781,10 @@ export const apiService = {
     }
   },
 
-  async submitReflection(resourceId: string, reflection: string, imageUrl?: string): Promise<{ success: boolean; flagged: boolean }> {
+  async submitReflection(resourceId: string, reflection: string, imageUrl?: string): Promise<{ success: boolean; flagged: boolean; error?: string }> {
     if (!checkRateLimit()) {
       console.warn("Anti-abuse guardrail triggered: Action blocked due to rate limit.");
-      return { success: true, flagged: false };
+      return { success: false, flagged: false, error: RATE_LIMIT_MESSAGE };
     }
 
     const cleanReflection = reflection.trim();
@@ -737,17 +794,18 @@ export const apiService = {
       return { success: false, flagged: true };
     }
 
+    const payload = {
+      action: "addReflection",
+      id: Math.random().toString(36).substring(7),
+      timestamp: new Date().toISOString(),
+      status: PostStatus.PENDING,
+      resourceId,
+      reflection: cleanReflection,
+      image_url: imageUrl ? imageUrl.trim() : '',
+      flagged,
+    };
+
     try {
-      const payload = {
-        action: "addReflection",
-        id: Math.random().toString(36).substring(7),
-        timestamp: new Date().toISOString(),
-        status: PostStatus.PENDING,
-        resourceId,
-        reflection: cleanReflection,
-        image_url: imageUrl ? imageUrl.trim() : '',
-        flagged,
-      };
       const res = await fetch(GAS_URL, {
         method: 'POST',
         redirect: 'follow',
@@ -757,8 +815,10 @@ export const apiService = {
       const result = await res.json();
       return { success: result.success, flagged: result.flagged !== undefined ? result.flagged : flagged };
     } catch (e) {
-      console.error("Failed to submit reflection", e);
-      return { success: false, flagged };
+      console.error("Failed to submit reflection, network issue detected:", e);
+      queueSubmission('reflection', payload);
+      // Optimistic: the reflection is safely queued and will be synced later.
+      return { success: true, flagged };
     }
   },
 

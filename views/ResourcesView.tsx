@@ -63,7 +63,16 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
         if (type === 'helpful') setLiked(true);
         if (type === 'supportive') setSupportive(true);
         if (type === 'exploring') setExploring(true);
-        await apiService.incrementInsight(resource.id, type);
+        const result = await apiService.incrementInsight(resource.id, type);
+        if (!result.success) {
+            // Most likely the client-side rate-limit guardrail tripped — roll
+            // back the optimistic UI and unlock so the user can try again in
+            // a moment instead of the tap silently never counting.
+            insightLockRef.current[type] = false;
+            if (type === 'helpful') setLiked(false);
+            if (type === 'supportive') setSupportive(false);
+            if (type === 'exploring') setExploring(false);
+        }
     };
 
     const handleReflectionSubmit = async () => {
@@ -84,7 +93,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                 setReflectionText('');
                 setReflectionImageUrl('');
             } else {
-                setReflectionError('Something went wrong. Please try again.');
+                setReflectionError(result.error || 'Something went wrong. Please try again.');
             }
         } finally {
             setIsSubmittingReflection(false);

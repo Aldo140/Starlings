@@ -50,6 +50,30 @@
 // permanently, without anyone needing to remember to re-run that menu
 // action. THIS CHANGE MUST BE MANUALLY PASTED INTO THE LIVE Code.gs too.
 //
+// 2026-07-28 fix (reported live: new Notes/Resources/QA submissions
+// landing "at the bottom" past a description block, with Approve doing
+// nothing on any of them): doPost() used sheet.getLastRow() + 1 to place
+// new rows, which picks up ANY content sheet-wide — including the
+// moderator info block ApprovalWorkflow.gs writes starting at row
+// INFO_START_OFFSET (50). Every approval mechanism (approvalOnEdit,
+// approveCheckedRows, sweepApproved) explicitly ignores rows >= that
+// offset, so a submission placed past it could never be approved by any
+// method. doPost() now finds the first empty row inside the valid data
+// zone (row 2 through INFO_START_OFFSET - 1) instead. THIS CHANGE MUST BE
+// MANUALLY PASTED INTO THE LIVE Code.gs.
+//
+// 2026-07-28 fix: the health handler now also returns a "sheets" array
+// with per-tab normalizedHeaders. apiService.supportsResourceLocations()
+// on the frontend has depended on this shape since it was written, but
+// the live health handler never returned it — meaning the map-based
+// resource location gate was unconditionally false from day one,
+// blocking every resource submission that included a city with "location
+// fields have not been enabled in the moderation sheet," regardless of
+// whether Pending_Resources/Live_Resources actually had city/country/
+// lat/lng columns. THIS CHANGE MUST BE MANUALLY PASTED INTO THE LIVE
+// Code.gs — test `?action=health` afterward and confirm the response
+// includes a non-empty "sheets" array.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -93,10 +117,33 @@ function doGet(e) {
         // edit dropped this handler. Test `?action=health` after any Code.gs
         // change and confirm it returns this shape, not a story list.
         if (action === "health") {
+            var tabNames = ["Pending_Stories", "Live_Stories", "Pending_Resources", "Live_Resources", "Pending_QA", "Live_QA", "Pending_Reflections", "Live_Reflections", "Flagged_Words"];
+
+            // "sheets" with normalizedHeaders was added 2026-07-28 —
+            // apiService.supportsResourceLocations() (services/api.ts) reads
+            // data.sheets and checks Pending_Resources/Live_Resources for
+            // city/country/lat/lng headers before allowing a map-based
+            // resource submission. Without this field, Array.isArray(data.sheets)
+            // is false and supportsResourceLocations() ALWAYS returns false —
+            // every resource submission that included a location was blocked
+            // with "location fields have not been enabled in the moderation
+            // sheet," regardless of whether the sheet actually had those
+            // columns. THIS BLOCK MUST BE MANUALLY PASTED INTO THE LIVE
+            // Code.gs — see the deployment instructions at the top of this file.
+            var sheetsInfo = tabNames.map(function (name) {
+                var sh = doc.getSheetByName(name);
+                if (!sh) return { name: name, exists: false, normalizedHeaders: [] };
+                var lastCol = sh.getLastColumn();
+                var headerRow = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+                var normalizedHeaders = headerRow.map(function (h) { return String(h).trim().toLowerCase(); });
+                return { name: name, exists: true, normalizedHeaders: normalizedHeaders };
+            });
+
             return responseJSON({
                 success: true,
                 spreadsheetId: doc.getId(),
-                expectedTabs: ["Pending_Stories", "Live_Stories", "Pending_Resources", "Live_Resources", "Pending_QA", "Live_QA", "Pending_Reflections", "Live_Reflections", "Flagged_Words"]
+                expectedTabs: tabNames,
+                sheets: sheetsInfo
             });
         }
 
@@ -198,7 +245,40 @@ function doPost(e) {
             messageString.includes("kill myself") ||
             messageString.includes("overdose");
 
-        const nextRow = sheet.getLastRow() + 1;
+        // Row placement: never write past the moderator info block. Every
+        // Pending_* sheet has a written info/instructions block starting at
+        // ApprovalWorkflow.gs's INFO_START_OFFSET row (currently 50) — and
+        // sheet.getLastRow() returns the last row with ANY content
+        // sheet-wide, which includes that block (and anything below it).
+        // Blindly appending at getLastRow()+1 was landing new submissions
+        // past row 50 — and approvalOnEdit(), approveCheckedRows(), and
+        // sweepApproved() in ApprovalWorkflow.gs ALL explicitly refuse to
+        // act on rows >= INFO_START_OFFSET ("don't fire in the info
+        // block"). So a submission placed there was permanently
+        // un-approvable: the Approve checkbox rendered fine but ticking it
+        // did nothing, no matter which approval mechanism was used. Fixed
+        // 2026-07-28: find the first genuinely empty row inside the valid
+        // data zone (row 2 through INFO_START_OFFSET - 1) instead.
+        var infoOffset = (typeof INFO_START_OFFSET !== 'undefined') ? INFO_START_OFFSET : 50;
+        var zoneLastRow = infoOffset - 1;
+        var scanRows = Math.max(zoneLastRow - 1, 0);
+        var nextRow = -1;
+        if (scanRows > 0) {
+            var firstColValues = sheet.getRange(2, 1, scanRows, 1).getValues();
+            for (var r = 0; r < firstColValues.length; r++) {
+                if (String(firstColValues[r][0]).trim() === '') {
+                    nextRow = r + 2;
+                    break;
+                }
+            }
+        }
+        if (nextRow === -1) {
+            return responseError(new Error(
+                'The ' + targetSheetName + ' queue is full (no free row before the info block at row ' +
+                infoOffset + '). A moderator needs to approve or reject some pending items first.'
+            ));
+        }
+
         const newRow = headers.map(function (header) {
             if (header === 'timestamp') return new Date().toISOString();
             if (header === 'id')        return Utilities.getUuid();

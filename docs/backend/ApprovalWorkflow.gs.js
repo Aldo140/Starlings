@@ -101,6 +101,21 @@ function moveRowToLive(pendingSheet, row) {
     .map(function (h) { return String(h).trim(); });
   var rowValues = pendingSheet.getRange(row, 1, 1, lastCol).getValues()[0];
 
+  // Defensive guard (added 2026-07-28): if this row is already blank, bail
+  // out instead of copying an empty record into Live. This can happen when
+  // several checkboxes are ticked in quick top-to-bottom succession —
+  // deleteRow() below shifts every row beneath the approved one up by one,
+  // so a checkbox click that's still "in flight" (queued behind
+  // LockService, or fired while the sheet's on-screen row positions hadn't
+  // caught up with an earlier shift yet) can end up addressing a row that
+  // was already vacated by a previous move. Rather than silently write
+  // junk to Live_*, no-op. If this is the cause of an approval that
+  // "doesn't work," the real fix is approving bottom-to-top (or using the
+  // "✅ Approve Checked Rows" menu action, which already sorts descending
+  // for exactly this reason) instead of top-to-bottom individual clicks.
+  var isBlank = rowValues.every(function (v) { return String(v).trim() === ''; });
+  if (isBlank) return false;
+
   var statusIdx = pendingHeaders.indexOf('status');
   if (statusIdx >= 0) rowValues[statusIdx] = 'APPROVED';
 

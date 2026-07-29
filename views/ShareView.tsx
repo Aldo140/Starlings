@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api.ts';
 import { LocationSearchResult, ResourceType } from '../types.ts';
-import { HELP_OPTIONS, ICONS } from '../constants.tsx';
+import { HELP_OPTIONS, ICONS, supportsResourceImage } from '../constants.tsx';
 import LoadingBar from '../components/LoadingBar.tsx';
+import InfoPopover from '../components/InfoPopover.tsx';
 
 // A beautifully styled custom checkbox component
 const CustomCheckbox = ({ checked, onChange, label, subtext, id }: { checked: boolean, onChange: (e: any) => void, label: string, subtext: string, id: string }) => (
@@ -54,6 +55,7 @@ const ShareView: React.FC = () => {
     resourceDescription: '',
     resourceAlias: '',
     resourceAnonymous: false,
+    resourceImageUrl: '',
 
     citySearch: '',
     selectedLocation: null as LocationSearchResult | null,
@@ -74,6 +76,12 @@ const ShareView: React.FC = () => {
       formData.selectedLocation.address.village ||
       ''
     : '';
+
+  const imageFieldRelevant = supportsResourceImage(formData.resourceType);
+  // A meme IS an image — there's no meaningful submission without one.
+  // Other image-friendly types (book, publication) treat the photo as a
+  // nice-to-have, not a requirement. Mirrors AddResourceView.tsx exactly.
+  const imageRequired = formData.resourceType === ResourceType.MEME;
 
   useEffect(() => {
     const query = formData.citySearch;
@@ -133,11 +141,13 @@ const ShareView: React.FC = () => {
         selectedCity !== '' &&
         (formData.promptA.trim() !== '' || formData.promptB.trim() !== '');
     } else {
+      // Location is optional for resources — unlike a note, a resource
+      // recommendation doesn't need to be tied to a place (e.g. a website,
+      // book, or app that anyone anywhere can use).
       return formData.resourceTitle.trim() !== '' &&
         formData.resourceUrl.trim() !== '' &&
-        formData.selectedLocation !== null &&
-        selectedCity !== '' &&
-        formData.resourceDescription.trim().split(/\s+/).filter(Boolean).length <= 500;
+        formData.resourceDescription.trim().split(/\s+/).filter(Boolean).length <= 500 &&
+        (!imageRequired || formData.resourceImageUrl.trim() !== '');
     }
   };
 
@@ -176,21 +186,27 @@ const ShareView: React.FC = () => {
       });
     } else {
       // Resource flow — always writes to Live_Resources via submitResource().
-      // Resources submitted from the map require a city. The city/lat/lng go
-      // into the structured resource fields so the moderator can approve one
-      // record that appears both on the map and in Map-Based Resources. We never
-      // pack resource fields into
-      // a message string or call submitPost() — that caused URL flagging and
+      // A city is optional here (unlike Share a Note): only resources tied
+      // to a specific local service need one. When a city IS provided, the
+      // city/lat/lng go into the structured resource fields so the
+      // moderator can approve one record that appears both on the map and
+      // in Map-Based Resources. We never pack resource fields into a
+      // message string or call submitPost() — that caused URL flagging and
       // placed records in the wrong sheet.
       const authorInfo = formData.resourceAuthor ? ` | Author: ${formData.resourceAuthor}` : '';
       const recommendedBy = formData.resourceAnonymous ? 'Anonymous' : (formData.resourceAlias || 'Anonymous');
       const combinedDesc = `${authorInfo}\n${formData.resourceDescription} (Recommended by ${recommendedBy})`.trim();
 
-      const locationSupported = await apiService.supportsResourceLocations();
-      if (!locationSupported) {
-        setErrorMessage('Map-based resource submissions are temporarily unavailable because location fields have not been enabled in the moderation sheet.');
-        setIsSubmitting(false);
-        return;
+      // Only gate on location support when the user actually attached a
+      // location — most resources won't have one, and shouldn't be blocked
+      // by a location-feature check that doesn't apply to them.
+      if (formData.selectedLocation) {
+        const locationSupported = await apiService.supportsResourceLocations();
+        if (!locationSupported) {
+          setErrorMessage('Adding a city to this resource is temporarily unavailable because location fields have not been enabled in the moderation sheet. You can still submit without a city.');
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       result = await apiService.submitResource({
@@ -200,6 +216,7 @@ const ShareView: React.FC = () => {
         description: combinedDesc,
         alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
         category: 'community',
+        imageUrl: imageFieldRelevant ? formData.resourceImageUrl.trim() : undefined,
         ...(formData.selectedLocation && {
           city: selectedCity,
           country: formData.selectedLocation.address.country,
@@ -212,6 +229,8 @@ const ShareView: React.FC = () => {
     if (result.success) {
       setIsSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (result.error) {
+      setErrorMessage(result.error);
     }
     setIsSubmitting(false);
   };
@@ -306,12 +325,16 @@ const ShareView: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-12 md:space-y-16">
           <section className="space-y-4">
             <div className="flex justify-between items-baseline">
-              <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">What City are you sharing from?</label>
-              <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Required</span>
+              <label htmlFor="citySearch" className="block text-[#1e3a34] font-black text-xl italic">
+                {shareType === 'note' ? 'What City are you sharing from?' : 'Does this resource serve a specific city?'}
+              </label>
+              <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                {shareType === 'note' ? 'Required' : 'Optional'}
+              </span>
             </div>
             {shareType === 'resource' && (
               <p className="text-sm text-gray-500">
-                Resources recommended from the map must serve a specific local area. Global websites, books, or media belong on the Resources page instead.
+                Only add a city if this is a local, in-person service (a clinic, support group, or community centre). Skip it for websites, books, apps, or other resources anyone can access.
               </p>
             )}
             <div className="relative">
@@ -489,6 +512,35 @@ const ShareView: React.FC = () => {
                   </select>
                 </div>
               </section>
+
+              {imageFieldRelevant && (
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="resourceImageUrl" className="block text-[#1e3a34] font-black text-xl italic">
+                      Photo {imageRequired ? <span className="text-[#e57c6e]">*</span> : null}
+                    </label>
+                    {!imageRequired && (
+                      <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
+                    )}
+                    <InfoPopover label="How to get an image link">
+                      <p className="font-black uppercase tracking-widest text-[9px] text-[#7ec8ba] mb-1.5">
+                        Getting a photo link
+                      </p>
+                      Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
+                      <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                    </InfoPopover>
+                  </div>
+                  <input
+                    id="resourceImageUrl"
+                    type="url"
+                    required={imageRequired}
+                    placeholder="Paste an image link..."
+                    className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
+                    value={formData.resourceImageUrl}
+                    onChange={(e) => setFormData(prev => ({ ...prev, resourceImageUrl: e.target.value }))}
+                  />
+                </section>
+              )}
 
               <section className="space-y-4">
                 <div className="flex justify-between items-baseline">

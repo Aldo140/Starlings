@@ -256,3 +256,19 @@ All Uiverse.io CSS animations live in the `<style>` block of `index.html`. They 
 
 **Why:** Knowing these patterns prevents inconsistency and avoids introducing styles or z-index values that conflict with existing layers.
 **How to apply:** When adding a new component, follow the card border/shadow/padding conventions above. When adding new icons, update `constants.tsx` ICONS export. When writing animations, start from the `ease = [0.16, 1, 0.3, 1]` constant and spring configs documented here.
+
+## Submission Pipeline Conventions (services/api.ts, added 2026-07-28)
+
+All four write endpoints (`submitPost`, `submitResource`, `submitReflection`, `submitQuestion`) and `incrementInsight` share one failure-handling contract now — don't reintroduce per-endpoint inconsistency here.
+
+**Two distinct failure modes, two distinct behaviors:**
+- **Client-side rate-limit block** (`checkRateLimit()` returns false — 5 actions/10s guardrail): return `{ success: false, error: RATE_LIMIT_MESSAGE }` honestly. Do NOT silently return `success: true` and drop the data — that was the pre-2026-07-28 bug (three of four endpoints lied here while `submitQuestion` was the only honest one). `RATE_LIMIT_MESSAGE` is a shared top-of-file constant — reuse it, don't hardcode new wording per endpoint.
+- **Network/fetch failure** (catch block — offline, DNS, etc.): queue the exact payload via `queueSubmission(kind, payload)` and return `{ success: true, ... }` optimistically. The network is the problem, not the user's behavior, so the UI should still show success — the generalized queue (`SYNC_QUEUE_KEY = 'starlings_sync_queue'`, `QueuedSubmission = { kind: 'post'|'resource'|'reflection', payload }`) guarantees eventual delivery via `apiService.syncOfflineSubmissions()`, called from `App.tsx` on mount and on the `online` event.
+
+`incrementInsight` (reactions) is the one exception: rate-limit block is honest like everything else, but network failures are NOT queued (a stale "like" replayed later after the user has moved on has more downside — silent double-counting risk — than value). Its caller (`ResourcesView.tsx` `handleInsightClick`) already rolls back the optimistic UI state and unlocks the reaction on `!result.success` so the tap doesn't just silently vanish.
+
+**When adding a new submission-writing function to `apiService`:** follow this same two-mode contract. Return type must include `error?: string`. Don't invent a third failure behavior without a documented reason (see `incrementInsight` above for what a justified exception looks like).
+
+**Queue migration note:** `readQueue()` in `services/api.ts` transparently upgrades pre-2026-07-28 queue entries (raw `Post` objects, no `kind` wrapper) into the new `{ kind: 'post', payload }` shape on read — don't assume the queue only ever contained the new format when debugging a user's stuck localStorage queue.
+
+**Known duplication risk:** `views/ShareView.tsx` (the "Recommend a Resource" tab) and `views/AddResourceView.tsx` are two independent implementations of "submit a resource" against the same `apiService.submitResource()`. They already drifted once — `AddResourceView.tsx` got a `supportsResourceImage()`-gated photo field (commit `5c74b19`) that `ShareView.tsx` didn't, until it was patched to match on 2026-07-28. If you add a field to one resource form, check the other.

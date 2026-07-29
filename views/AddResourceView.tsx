@@ -149,6 +149,8 @@ const AddResourceView: React.FC = () => {
         if (result.success) {
             setIsSuccess(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else if (result.error) {
+            setErrorMessage(result.error);
         }
         setIsSubmitting(false);
     };

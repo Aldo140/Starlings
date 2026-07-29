@@ -7,4 +7,4 @@
 - [Animation Placement Feedback](feedback_animation_placement.md) — Animations must define section identity, not decorate it (key user feedback 2026-05-17)
 - [Client Bug Report 2026-07-13](project_client_bugreport_2026-07-13.md) — Agnes's 4 bugs (duplicate approvals, reflections approve/photo, QA cap-at-4), root causes + fix status
 - [Scope From Client Questions](feedback_scope_from_client_questions.md) — re-read the client's literal wording, not the developer's mid-conversation reaction, before expanding scope (built-then-reverted reflections public display, 2026-07-14)
-- [Client Bug Report 2026-07-28](project_client_bugreport_2026-07-28.md) — INFO_START_OFFSET row-collision broke Approve on new Notes/Resources/QA; health handler missing sheets/normalizedHeaders broke location gate; reflections last-approval race (needs full live script to fix properly)
+- [Client Bug Report 2026-07-28](project_client_bugreport_2026-07-28.md) — INFO_START_OFFSET row collision, health handler sheets/normalizedHeaders, doPost case/style-tolerant field lookup (resourceId + submitterEmail), approvalOnEdit batch-rescan race fix

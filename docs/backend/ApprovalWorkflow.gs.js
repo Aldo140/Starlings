@@ -49,6 +49,19 @@
 //    numbers are UNCHANGED and still used by formatOneTab() elsewhere in
 //    the live file for conditional formatting — only the approval-moving
 //    logic below was made header-driven.
+//
+// 4. STRAY BLANK "APPROVED" ROW WHEN APPROVING SEVERAL AT ONCE (reported
+//    live 2026-07-29) — approvalOnEdit() used to move only the single row
+//    the triggering edit fired on. Ticking checkboxes fast queues
+//    multiple onEdit executions behind the LockService lock; a queued
+//    execution can run AFTER an earlier one in the same batch already
+//    deleteRow()'d a row above it, shifting everything below up — so the
+//    stale row number captured by the queued execution no longer points
+//    at what the user actually clicked. Fixed by having approvalOnEdit()
+//    re-scan and move every currently-ticked row (bottom-to-top) instead
+//    of trusting the single stale row — see moveAllCheckedRows_(), now
+//    shared with approveCheckedRows() (the bulk menu button), which
+//    always worked this way and never had the bug.
 // ------------------------------------------------------------------
 
 const INFO_GAP_ROWS = 3;
@@ -138,6 +151,36 @@ function moveRowToLive(pendingSheet, row) {
 }
 
 // ============================================================
+// SHARED: MOVE EVERY CURRENTLY-TICKED ROW ON A PENDING TAB
+// ============================================================
+// Re-reads the whole Approve column fresh and moves every row that's
+// CURRENTLY ticked, bottom-to-top (so deleteRow() inside moveRowToLive
+// never invalidates a not-yet-processed row's index). Returns the count
+// actually moved. Shared by approveCheckedRows() (the bulk menu button)
+// and, as of 2026-07-29, approvalOnEdit() (individual checkbox clicks) —
+// see the comment on approvalOnEdit() for why unifying them matters.
+function moveAllCheckedRows_(sheet, approveCol) {
+  var lastRow = sheet.getLastRow();
+  var searchEndRow = Math.min(lastRow, INFO_START_OFFSET - 1);
+  if (searchEndRow < 2) return 0;
+  var checks = sheet.getRange(2, approveCol, searchEndRow - 1, 1).getValues();
+
+  var rowsToMove = [];
+  for (var i = 0; i < checks.length; i++) {
+    var cv = checks[i][0];
+    if (cv === true || cv === 'TRUE' || cv === 'true') rowsToMove.push(i + 2);
+  }
+  if (rowsToMove.length === 0) return 0;
+
+  rowsToMove.sort(function (a, b) { return b - a; });
+  var moved = 0;
+  rowsToMove.forEach(function (r) {
+    if (moveRowToLive(sheet, r)) moved++;
+  });
+  return moved;
+}
+
+// ============================================================
 // INSTALLABLE onEdit HOOK — registered by setupApprovalTrigger()
 // ============================================================
 function approvalOnEdit(e) {
@@ -155,24 +198,49 @@ function approvalOnEdit(e) {
     var statusCol = findHeaderCol_(sheet, 'status');
     var col = e.range.getColumn();
 
-    // Two trigger paths: the Approve checkbox was ticked, OR status
-    // (column named "status") was set to APPROVED directly.
-    var shouldMove = false;
     if (approveCol > 0 && col === approveCol) {
-      var val = e.value;
-      if (val === true || val === 'TRUE' || val === 'true') shouldMove = true;
-    } else if (statusCol > 0 && col === statusCol) {
-      var val2 = e.value;
-      if (typeof val2 === 'string' && val2.trim().toUpperCase() === 'APPROVED') shouldMove = true;
+      // 2026-07-29 fix (reported live: approving several rows in a row by
+      // clicking individual checkboxes sometimes left a stray blank
+      // "APPROVED" row in Live_* between two real approvals): this used to
+      // just call moveRowToLive(sheet, row) for the ONE row this edit
+      // fired on. But ticking several checkboxes quickly queues multiple
+      // onEdit executions behind the LockService lock below — by the time
+      // a queued execution actually acquires the lock and runs, an
+      // EARLIER execution in the same batch may have already deleted a
+      // row above it, shifting everything below up by one. The row
+      // position captured in THIS event (e.range.getRow()) doesn't get
+      // re-adjusted for that, so it can end up moving whatever now sits
+      // at that stale position — sometimes a blank row, which
+      // moveRowToLive's blank-row guard silently no-ops, but which could
+      // also be a different real row.
+      //
+      // Fix: instead of trusting the single stale row number, re-scan and
+      // move every row CURRENTLY ticked (bottom-to-top — see
+      // moveAllCheckedRows_) whenever any Approve-column edit fires. This
+      // makes individual clicks behave exactly like the safe
+      // "✅ Approve Checked Rows" bulk button, and makes redundant queued
+      // executions for the same rapid batch safely no-op (nothing left
+      // ticked) instead of operating on a stale row.
+      var lock = LockService.getDocumentLock();
+      try { lock.waitLock(10000); } catch (lockErr) { return; }
+      try {
+        moveAllCheckedRows_(sheet, approveCol);
+      } finally {
+        lock.releaseLock();
+      }
+      return;
     }
-    if (!shouldMove) return;
 
-    var lock = LockService.getDocumentLock();
-    try { lock.waitLock(5000); } catch (lockErr) { return; }
-    try {
-      moveRowToLive(sheet, row);
-    } finally {
-      lock.releaseLock();
+    if (statusCol > 0 && col === statusCol) {
+      var val2 = e.value;
+      if (typeof val2 !== 'string' || val2.trim().toUpperCase() !== 'APPROVED') return;
+      var lock2 = LockService.getDocumentLock();
+      try { lock2.waitLock(10000); } catch (lockErr2) { return; }
+      try {
+        moveRowToLive(sheet, row);
+      } finally {
+        lock2.releaseLock();
+      }
     }
   } catch (err) {
     console.error('approvalOnEdit error: ' + err.message);
@@ -204,33 +272,21 @@ function approveCheckedRows() {
     SpreadsheetApp.getUi().alert('Run this from a Pending_* tab.');
     return;
   }
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
 
   var approveCol = findHeaderCol_(sheet, 'Approve');
   if (approveCol < 1) {
     SpreadsheetApp.getUi().alert('No "Approve" column found on this tab.');
     return;
   }
-  var searchEndRow = Math.min(lastRow, INFO_START_OFFSET - 1);
-  if (searchEndRow < 2) return;
-  var checks = sheet.getRange(2, approveCol, searchEndRow - 1, 1).getValues();
 
-  var rowsToMove = [];
-  for (var i = 0; i < checks.length; i++) {
-    var cv = checks[i][0];
-    if (cv === true || cv === 'TRUE' || cv === 'true') rowsToMove.push(i + 2);
-  }
-  if (rowsToMove.length === 0) {
+  // 2026-07-29: now shares moveAllCheckedRows_ with approvalOnEdit() —
+  // same scan-and-move-bottom-to-top logic, just triggered from the menu
+  // instead of a single checkbox edit.
+  var moved = moveAllCheckedRows_(sheet, approveCol);
+  if (moved === 0) {
     SpreadsheetApp.getUi().alert('No rows are ticked.');
     return;
   }
-
-  rowsToMove.sort(function (a, b) { return b - a; });
-  var moved = 0;
-  rowsToMove.forEach(function (r) {
-    if (moveRowToLive(sheet, r)) moved++;
-  });
 
   SpreadsheetApp.getUi().alert(moved + ' row(s) approved and moved to ' + cfg.pair + '.');
 }

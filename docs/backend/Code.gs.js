@@ -74,6 +74,24 @@
 // Code.gs — test `?action=health` afterward and confirm the response
 // includes a non-empty "sheets" array.
 //
+// 2026-07-29 fix (reported live: reflection rows appear in
+// Pending_Reflections on submit, but the reflection isn't linkable to a
+// resource — "no data is transferred"): doPost()'s row-building used
+// postData[header], a case-sensitive EXACT match between the sheet's
+// literal header text and the frontend's JS field name. The frontend
+// sends "resourceId" (camelCase) — if the sheet's actual header differs
+// even slightly in case (e.g. "resourceid", "ResourceId"), the lookup
+// silently returns undefined and that cell writes blank, while
+// id/timestamp/status/flagged still populate fine (they're hardcoded
+// branches), making the row LOOK complete except for that one field.
+// Same root cause silently drops "submitterEmail" (frontend) into
+// Pending_Resources' actual "submitter_email" header (found while fixing
+// this — camelCase vs snake_case, not just a case difference) on every
+// "Apply to Post" partner submission. doPost() now falls back to a
+// normalized match (case-insensitive, non-alphanumeric characters
+// stripped) whenever the exact key misses. THIS CHANGE MUST BE MANUALLY
+// PASTED INTO THE LIVE Code.gs.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -279,13 +297,39 @@ function doPost(e) {
             ));
         }
 
+        // Case/style-tolerant lookup: hand-typed sheet headers drift from the
+        // frontend's exact JS field names (e.g. "resourceId" written as
+        // "resourceId "/"ResourceId"/"resourceid" in the sheet, or
+        // "submitterEmail" written as "submitter_email"). postData[header]
+        // is a case-sensitive exact match — when it misses, the row still
+        // gets created (id/timestamp/status/flagged always populate via the
+        // hardcoded branches above) but that one column silently writes
+        // blank, which is exactly what was reported live 2026-07-29:
+        // reflections appearing in Pending_Reflections with no resourceId,
+        // so the reflection could never be linked back to its resource.
+        // Fixed by also trying a normalized match (case + all
+        // non-alphanumeric characters stripped) whenever the exact key
+        // isn't found. This is a general fix, not reflection-specific — it
+        // also silently fixes "submitterEmail" (frontend) vs
+        // "submitter_email" (Pending_Resources' actual header), which had
+        // the same silent-blank bug on every "Apply to Post" submission.
+        function normalizeKey_(s) {
+            return String(s).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+        var normalizedPostData = {};
+        for (var pk in postData) {
+            if (postData.hasOwnProperty(pk)) normalizedPostData[normalizeKey_(pk)] = postData[pk];
+        }
+
         const newRow = headers.map(function (header) {
             if (header === 'timestamp') return new Date().toISOString();
             if (header === 'id')        return Utilities.getUuid();
             if (header === 'status')    return 'PENDING';
             if (header === 'flagged')   return isFlagged;
-            if (typeof postData[header] === 'object') return JSON.stringify(postData[header] || []);
-            return postData[header] || "";
+            var val = postData[header];
+            if (val === undefined) val = normalizedPostData[normalizeKey_(header)];
+            if (typeof val === 'object') return JSON.stringify(val || []);
+            return val || "";
         });
 
         sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);

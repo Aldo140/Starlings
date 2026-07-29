@@ -81,6 +81,24 @@
 //    columnToLetter(), and buildInstructionsTab() were not part of that
 //    recovery (either not extracted due to size, or genuinely missing
 //    pieces) — see their own comments for what happened to each.
+//
+// 7. NEWEST-FIRST IN LIVE, AND A DATA-LEAK RISK CAUGHT ALONG THE WAY
+//    (2026-07-30) — moveRowToLive() used liveSheet.appendRow(), so newly
+//    approved rows landed at the very bottom of Live_*, requiring a
+//    scroll past everything else to see what just got approved. Changed
+//    to insert at row 2 (right under the header) instead, only actually
+//    inserting a new row when row 2 already has data (an empty Live
+//    sheet just gets written into directly — no wasted blank row).
+//    While working on this, found that TAB_INFO (added in fix #6) had
+//    entries for Live_* tabs too — writing an info block there would
+//    have been a real problem: doGet() in Code.gs.js reads Live_*'s
+//    ENTIRE data range with no INFO_START_OFFSET bound (unlike
+//    everything else in this file), so an info block row would leak
+//    into the public API response. Confirmed concretely for
+//    Live_Resources: getApprovedResources() in services/api.ts has no
+//    id/title validity filter, so a leaked info-block row would render
+//    as a real, garbage resource card on the live Resources page.
+//    TAB_INFO is now Pending_*-only.
 // ------------------------------------------------------------------
 
 const INFO_GAP_ROWS = 3;
@@ -125,6 +143,19 @@ const COLOR_KEY = [
 // (as of this date), which is actually more accurate than the May
 // original would be — Pending_Reflections/Live_Reflections and the
 // city/country/lat/lng resource fields didn't exist yet in May.
+//
+// Pending_* ONLY — deliberately does NOT include Live_* tabs. Found
+// while working on the newest-first insert change below: doGet() in
+// Code.gs.js (the public API every page on the site reads through)
+// pulls the ENTIRE data range off Live_* sheets with no lower bound —
+// unlike everything else in this file, it has no INFO_START_OFFSET cap.
+// An info block written into a Live_* sheet would leak straight into
+// public data. Concretely confirmed for Live_Resources: getApprovedResources()
+// in services/api.ts has no id/title validity filter (unlike posts/QA/
+// reflections, which all require a non-empty content field and would
+// have filtered an info block row out) — so an info block there would
+// show up as real garbage resource cards ("Purpose", "How to use", etc.)
+// on the actual public Resources page. Keep this Pending_*-only.
 const TAB_INFO = {
   'Pending_Stories': {
     title: 'Pending Notes — Moderation Queue',
@@ -132,19 +163,10 @@ const TAB_INFO = {
     steps: [
       '1. Read the message for names, addresses, phone numbers, or crisis language the automatic filters may have missed.',
       '2. Tick the checkbox in the Approve column — it moves the row to Live_Stories and clears it from this tab automatically, no other steps needed.',
-      '3. Approving several at once? Use ⭐ Starlings > Approve Checked Rows instead of clicking one at a time.',
+      '3. Approving several at once? Use 🐦 Starlings > Approve Checked Rows instead of clicking one at a time.',
       '4. To reject a note instead of approving it, just delete the row.'
     ],
     insight: 'New submissions always land in the first open row above this info block, never below it — this block can never get mistaken for a pending row.'
-  },
-  'Live_Stories': {
-    title: 'Live Notes — Public Support Map',
-    purpose: 'Approved notes currently visible on the public Support Map.',
-    steps: [
-      'Reference/read view — moderation happens on Pending_Stories, not here.',
-      'To remove a note from the public map, delete its row here directly.'
-    ],
-    insight: 'Editing a row here does not re-trigger approval logic — this tab is the published record itself.'
   },
   'Pending_Resources': {
     title: 'Pending Resources — Moderation Queue',
@@ -157,15 +179,6 @@ const TAB_INFO = {
     ],
     insight: 'Resource type (video, book, tool, etc.) comes straight from what the submitter picked on the form — spot-check it actually matches the link.'
   },
-  'Live_Resources': {
-    title: 'Live Resources — Public Resources Page',
-    purpose: 'Approved resources currently visible on the Resources page, and on the Support Map if they carry a city.',
-    steps: [
-      'Reference/read view — moderation happens on Pending_Resources.',
-      'helpful_count / supportive_count / exploring_count update automatically from visitor reactions — don’t hand-edit them.'
-    ],
-    insight: 'A resource’s id is what links it to its reflections on Pending_Reflections/Live_Reflections — don’t change an id after it’s live.'
-  },
   'Pending_QA': {
     title: 'Pending Questions — Moderation Queue',
     purpose: 'Questions submitted anonymously from the homepage, waiting for an answer before they go live.',
@@ -176,14 +189,6 @@ const TAB_INFO = {
     ],
     insight: 'Approving without writing an answer first publishes an unanswered question — double-check the answer column isn’t blank before ticking Approve.'
   },
-  'Live_QA': {
-    title: 'Live Q&A — Public Homepage Section',
-    purpose: 'Approved question-and-answer pairs shown in the homepage Q&A section.',
-    steps: [
-      'Reference/read view — moderation happens on Pending_QA.'
-    ],
-    insight: 'Answers support basic auto-formatting (numbered lists, bullets) on the live site — plain text with line breaks is enough, no manual markup needed.'
-  },
   'Pending_Reflections': {
     title: 'Pending Reflections — Moderation Queue',
     purpose: 'Short peer reflections left on individual resources, plus an optional photo link, waiting for review before showing under "What others shared" on that resource’s card.',
@@ -193,14 +198,6 @@ const TAB_INFO = {
       '3. Tick Approve to publish to Live_Reflections.'
     ],
     insight: 'resourceId links a reflection back to the specific resource it was left on — if it’s ever blank, the reflection can’t be displayed publicly even once approved.'
-  },
-  'Live_Reflections': {
-    title: 'Live Reflections — Public "What Others Shared"',
-    purpose: 'Approved reflections currently shown publicly on their resource’s card.',
-    steps: [
-      'Reference/read view — moderation happens on Pending_Reflections.'
-    ],
-    insight: 'Photos here are just links (not uploaded files) — if one ever breaks, it’s almost always because the original host removed or changed the image.'
   }
 };
 
@@ -313,7 +310,16 @@ function moveRowToLive(pendingSheet, row) {
     return byHeader.hasOwnProperty(h) ? byHeader[h] : '';
   });
 
-  liveSheet.appendRow(liveRow);
+  // Newest-first (changed 2026-07-30, was appendRow — bottom of sheet):
+  // put the newest approval at row 2, right under the header, instead of
+  // the end of the sheet. Only actually inserts a new row when row 2
+  // already holds data — if Live is empty (or has only a header), row 2
+  // is already free, so this writes straight into it instead of leaving
+  // a pointless blank row above real data.
+  if (liveSheet.getLastRow() >= 2) {
+    liveSheet.insertRowBefore(2);
+  }
+  liveSheet.getRange(2, 1, 1, liveRow.length).setValues([liveRow]);
   pendingSheet.deleteRow(row);
   return true;
 }
@@ -687,7 +693,7 @@ function buildInstructionsTab() {
   sheet = ss.insertSheet(name, 0);
 
   var rows = [
-    ['⭐ Starlings — How This Sheet Works', ''],
+    ['🐦 Starlings — How This Sheet Works', ''],
     ['', ''],
     ['Overview', ''],
     ['Each content type (Notes, Resources, Q&A, Reflections) has a Pending_* tab and a Live_* tab.', ''],

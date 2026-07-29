@@ -1,25 +1,23 @@
 // ============================================================
 // STARLINGS - APPROVAL WORKFLOW, FORMATTING, INSIGHTS
 // ============================================================
-// THIS FILE PARTIALLY MIRRORS THE REAL DEPLOYED "ApprovalWorkflow.gs"
-// FILE. Reconstructed 2026-07-14 from what's actually deployed — see the
-// note at the top of the sibling docs/backend/Code.gs.js for context on
-// why the previous version of this documentation (gas-backend.js) was
-// stale and untrustworthy.
+// THIS FILE MIRRORS THE REAL DEPLOYED "ApprovalWorkflow.gs" FILE.
+// Most of it (onOpen, polishSheet, formatOneTab, writeInfoBlock,
+// applyEverything, refreshAllInfoBlocks) was recovered 2026-07-30 from
+// the live Apps Script project's OWN version history (Version 8,
+// 2026-05-14, 1:51 AM) — pulled directly out of the live editor by the
+// user, not reconstructed from memory or guessed. TAB_INFO, COLOR_KEY,
+// columnToLetter(), and buildInstructionsTab() below are NOT from that
+// recovery — see the notes on each for why.
 //
-// ⚠️ THIS FILE IS DELIBERATELY INCOMPLETE. It only reproduces the
-// functions directly involved in the approve → move-to-Live workflow,
-// which is what's been debugged and fixed here. The real live file also
-// has (not reproduced below, exists only in the live Apps Script
-// project): onOpen()'s full custom menu, polishSheet(), formatOneTab(),
-// writeInfoBlock(), TAB_INFO / COLOR_KEY content, buildInstructionsTab(),
-// openPublicSite(), goToInstructions(), approveCurrentRow(),
-// reflagActiveTab(), findDuplicateIdsInActiveTab(),
-// clearOldRejectedInActiveTab(), columnToLetter(). Don't assume this
-// file is a complete copy of the live script — if you need one of those
-// functions, pull it fresh from the live Apps Script editor rather than
-// guessing from an old doc (that's exactly the mistake that made the
-// previous version of this documentation useless).
+// ⚠️ STILL NOT REPRODUCED HERE (exist only in the live Apps Script
+// project, were never part of the recovered onOpen() menu so nothing in
+// this repo depends on them): openPublicSite(), goToInstructions(),
+// approveCurrentRow(), reflagActiveTab(), findDuplicateIdsInActiveTab(),
+// clearOldRejectedInActiveTab(). If you need one of those, pull it fresh
+// from the live editor (Extensions > Apps Script > version history) —
+// don't guess from an old doc, that's exactly the mistake that made the
+// previous version of this documentation (gas-backend.js) useless.
 //
 // ------------------------------------------------------------------
 // 2026-07-14 fixes applied here (see Code.gs.js for the other half):
@@ -44,11 +42,9 @@
 //    at some point), that math silently points at the wrong column and
 //    ticking the real Approve checkbox does nothing. Fixed by looking up
 //    "Approve" / "status" by their actual header text every time
-//    (findHeaderCol_), the same way this file's own formatOneTab()
-//    already did for its own purposes. TAB_CONFIG's flaggedCol/liveCols
-//    numbers are UNCHANGED and still used by formatOneTab() elsewhere in
-//    the live file for conditional formatting — only the approval-moving
-//    logic below was made header-driven.
+//    (findHeaderCol_). TAB_CONFIG's flaggedCol/liveCols numbers are
+//    UNCHANGED and still used by formatOneTab() for conditional
+//    formatting — only the approval-moving logic was made header-driven.
 //
 // 4. STRAY BLANK "APPROVED" ROW WHEN APPROVING SEVERAL AT ONCE (reported
 //    live 2026-07-29) — approvalOnEdit() used to move only the single row
@@ -67,24 +63,34 @@
 //    2026-07-30) — moveRowToLive() used to append to Live unconditionally
 //    whenever it was called, with no check for whether that same id was
 //    already there. An EARLIER version of this backend had exactly this
-//    check (liveRowHasId_(), mentioned in this project's own bug-tracking
-//    notes from 2026-07-13) but it didn't survive the 2026-07-14 rewrite
-//    of this file. Re-added: moveRowToLive() now refuses to append a row
-//    whose id is already present in Live — it just cleans up the stale
-//    Pending row instead. This makes double-processing a row (whatever
-//    the exact cause — a tight race between two rapid clicks, a leftover
-//    duplicate onEdit trigger from an old deployment that was never fully
-//    cleaned up per fix #1 above, a moderator re-ticking an
-//    already-approved row) structurally harmless instead of chasing every
-//    possible trigger for it.
+//    check (liveRowHasId_()) but it didn't survive the 2026-07-14
+//    rewrite of this file. Re-added: moveRowToLive() now refuses to
+//    append a row whose id is already present in Live — it just cleans
+//    up the stale Pending row instead. Makes double-processing a row
+//    structurally harmless instead of chasing every possible trigger
+//    for it.
+//
+// 6. CUSTOM MENU STOPPED WORKING ENTIRELY (reported live 2026-07-30) —
+//    root cause confirmed: an earlier paste replaced this whole file
+//    with a version that never had onOpen()/formatOneTab()/polishSheet()/
+//    writeInfoBlock() in it (this repo's own prior "deliberately
+//    incomplete" disclaimer), deleting them from the live project too.
+//    Fixed by recovering the real originals from the live project's
+//    version history (see file header) and merging them back in here,
+//    alongside everything from fixes #1–#5 above. TAB_INFO, COLOR_KEY,
+//    columnToLetter(), and buildInstructionsTab() were not part of that
+//    recovery (either not extracted due to size, or genuinely missing
+//    pieces) — see their own comments for what happened to each.
 // ------------------------------------------------------------------
 
 const INFO_GAP_ROWS = 3;
 const INFO_START_OFFSET = 50;
 
-// TAB CONFIG — flaggedCol/liveCols are still used by formatOneTab() (not
-// reproduced here) for conditional formatting. moveRowToLive/approvalOnEdit
-// below no longer rely on these numbers for locating Approve/status.
+// TAB CONFIG — flaggedCol/liveCols are used by formatOneTab() below for
+// conditional formatting. moveRowToLive()/approvalOnEdit() don't rely on
+// these numbers for locating Approve/status — those are header-driven
+// (findHeaderCol_) so column drift can't silently break them (see fix #3
+// above for why that distinction matters).
 const TAB_CONFIG = {
   'Pending_Stories':      { flaggedCol: 11, kind: 'pending', pair: 'Live_Stories',      liveCols: 11 },
   'Live_Stories':         { flaggedCol: 11, kind: 'live',    pair: 'Pending_Stories' },
@@ -96,6 +102,106 @@ const TAB_CONFIG = {
   // why the Approve checkbox on Pending_Reflections never did anything.
   'Pending_Reflections':  { flaggedCol: 6,  kind: 'pending', pair: 'Live_Reflections',  liveCols: 6 },
   'Live_Reflections':     { flaggedCol: 6,  kind: 'live',    pair: 'Pending_Reflections' }
+};
+
+// Reconstructed 2026-07-30, NOT part of the version-history recovery —
+// writeInfoBlock() references COLOR_KEY but the live snapshot that was
+// pulled didn't include this constant's definition. Written to match
+// formatOneTab()'s three actual conditional-formatting rules below
+// exactly (pink=flagged, yellow=stale, grey=stuck-approved), in the same
+// order writeInfoBlock() consumes them (COLOR_KEY.slice(1), one entry per
+// rule). If the real original wording still exists in version history
+// and you'd rather have that verbatim, it can be swapped in later — this
+// is functionally accurate either way.
+const COLOR_KEY = [
+  'Color key:',
+  'Pink/red background — flagged for review (crisis language, personal info, or a suspicious link).',
+  'Yellow background — timestamp is more than 7 days old and still sitting here pending.',
+  'Grey background — status says APPROVED but the row has not moved to Live yet (run Sweep to catch it).'
+];
+
+// Reconstructed 2026-07-30, NOT part of the version-history recovery —
+// same situation as COLOR_KEY. Content below reflects the CURRENT system
+// (as of this date), which is actually more accurate than the May
+// original would be — Pending_Reflections/Live_Reflections and the
+// city/country/lat/lng resource fields didn't exist yet in May.
+const TAB_INFO = {
+  'Pending_Stories': {
+    title: 'Pending Notes — Moderation Queue',
+    purpose: 'Anonymous notes submitted from the Share page, waiting for a human check before they go live on the public Support Map.',
+    steps: [
+      '1. Read the message for names, addresses, phone numbers, or crisis language the automatic filters may have missed.',
+      '2. Tick the checkbox in the Approve column — it moves the row to Live_Stories and clears it from this tab automatically, no other steps needed.',
+      '3. Approving several at once? Use ⭐ Starlings > Approve Checked Rows instead of clicking one at a time.',
+      '4. To reject a note instead of approving it, just delete the row.'
+    ],
+    insight: 'New submissions always land in the first open row above this info block, never below it — this block can never get mistaken for a pending row.'
+  },
+  'Live_Stories': {
+    title: 'Live Notes — Public Support Map',
+    purpose: 'Approved notes currently visible on the public Support Map.',
+    steps: [
+      'Reference/read view — moderation happens on Pending_Stories, not here.',
+      'To remove a note from the public map, delete its row here directly.'
+    ],
+    insight: 'Editing a row here does not re-trigger approval logic — this tab is the published record itself.'
+  },
+  'Pending_Resources': {
+    title: 'Pending Resources — Moderation Queue',
+    purpose: 'Community-recommended and partner-submitted resources (links, books, videos, tools, etc.) waiting for review.',
+    steps: [
+      '1. Check the link is safe and the description does not contain identifying details.',
+      '2. Tick Approve to publish to Live_Resources.',
+      '3. "Apply to Post" partner applications include a submitter email and qualifications — check both before approving.',
+      '4. city/country/lat/lng are only filled in for resources tied to a specific local service — blank is normal for most resources.'
+    ],
+    insight: 'Resource type (video, book, tool, etc.) comes straight from what the submitter picked on the form — spot-check it actually matches the link.'
+  },
+  'Live_Resources': {
+    title: 'Live Resources — Public Resources Page',
+    purpose: 'Approved resources currently visible on the Resources page, and on the Support Map if they carry a city.',
+    steps: [
+      'Reference/read view — moderation happens on Pending_Resources.',
+      'helpful_count / supportive_count / exploring_count update automatically from visitor reactions — don’t hand-edit them.'
+    ],
+    insight: 'A resource’s id is what links it to its reflections on Pending_Reflections/Live_Reflections — don’t change an id after it’s live.'
+  },
+  'Pending_QA': {
+    title: 'Pending Questions — Moderation Queue',
+    purpose: 'Questions submitted anonymously from the homepage, waiting for an answer before they go live.',
+    steps: [
+      '1. Write the answer directly into the "answer" column.',
+      '2. Tick Approve once the answer is ready — the question AND your answer both move to Live_QA together.',
+      '3. A blank answer will still publish if approved — always fill in "answer" first.'
+    ],
+    insight: 'Approving without writing an answer first publishes an unanswered question — double-check the answer column isn’t blank before ticking Approve.'
+  },
+  'Live_QA': {
+    title: 'Live Q&A — Public Homepage Section',
+    purpose: 'Approved question-and-answer pairs shown in the homepage Q&A section.',
+    steps: [
+      'Reference/read view — moderation happens on Pending_QA.'
+    ],
+    insight: 'Answers support basic auto-formatting (numbered lists, bullets) on the live site — plain text with line breaks is enough, no manual markup needed.'
+  },
+  'Pending_Reflections': {
+    title: 'Pending Reflections — Moderation Queue',
+    purpose: 'Short peer reflections left on individual resources, plus an optional photo link, waiting for review before showing under "What others shared" on that resource’s card.',
+    steps: [
+      '1. Check the reflection text for identifying details or crisis language.',
+      '2. If image_url is filled in, open it and confirm it’s an actual image link, not a page link.',
+      '3. Tick Approve to publish to Live_Reflections.'
+    ],
+    insight: 'resourceId links a reflection back to the specific resource it was left on — if it’s ever blank, the reflection can’t be displayed publicly even once approved.'
+  },
+  'Live_Reflections': {
+    title: 'Live Reflections — Public "What Others Shared"',
+    purpose: 'Approved reflections currently shown publicly on their resource’s card.',
+    steps: [
+      'Reference/read view — moderation happens on Pending_Reflections.'
+    ],
+    insight: 'Photos here are just links (not uploaded files) — if one ever breaks, it’s almost always because the original host removed or changed the image.'
+  }
 };
 
 /** Finds a column by its exact header text (row 1), 1-based. -1 if not found. */
@@ -119,6 +225,21 @@ function liveRowHasId_(liveSheet, id) {
   if (liveIdIdx < 0) return false;
   var ids = liveSheet.getRange(2, liveIdIdx + 1, liveSheet.getLastRow() - 1, 1).getValues();
   return ids.some(function (r) { return String(r[0]).trim() === id; });
+}
+
+// Written fresh 2026-07-30 — not part of the version-history recovery,
+// but there's only one standard way to convert a 1-based column number
+// to its spreadsheet letter (1->A, 26->Z, 27->AA, ...), so this doesn't
+// need to be extracted from the live script to be trusted. Used by
+// formatOneTab() and writeInfoBlock() below.
+function columnToLetter(column) {
+  var letter = '';
+  while (column > 0) {
+    var remainder = (column - 1) % 26;
+    letter = String.fromCharCode(65 + remainder) + letter;
+    column = Math.floor((column - 1) / 26);
+  }
+  return letter;
 }
 
 // ============================================================
@@ -309,46 +430,290 @@ function setupApprovalTrigger() {
 }
 
 // ============================================================
-// CUSTOM MENU — restores a working "⭐ Starlings" toolbar menu
+// CUSTOM MENU (recovered 2026-07-30 from live version history,
+// Version 8, 2026-05-14 — verbatim, not modified)
 // ============================================================
-// Added 2026-07-30 (reported live: the custom Starlings menu buttons —
-// approve, formatting, etc. — stopped working). This file has always
-// been a DELIBERATELY INCOMPLETE mirror (see the file header): the real
-// onOpen() that builds the live menu, plus formatOneTab(), polishSheet(),
-// writeInfoBlock(), and several other functions, only ever existed in
-// the live Apps Script project and were never reproduced here. If an
-// earlier paste replaced the ENTIRE live ApprovalWorkflow.gs with just
-// this repo's tracked subset (instead of merging), onOpen() and those
-// formatting functions would have been deleted — exactly matching the
-// menu breaking.
-//
-// This function does NOT touch or guess at any of that missing code — it
-// only wires up menu items for functions we KNOW exist in this repo:
-// approve, sweep, the text-color repair, and reinstalling the trigger.
-//
-// RUN THIS RIGHT NOW to get a working menu back immediately: select
-// "buildStarlingsMenu" in the function dropdown and click ▶ Run. The
-// menu appears in the spreadsheet immediately — no need to reopen it.
-//
-// To make the menu rebuild automatically every time the sheet is opened
-// (instead of running this by hand each session), it would need to be
-// named onOpen(e) — that reserved name is what Apps Script auto-runs on
-// open. This file deliberately does NOT claim that name automatically:
-// if the live project's original onOpen() still exists somewhere (it
-// might not have been deleted after all), a SECOND onOpen() anywhere in
-// the project causes a project-wide "onOpen has already been declared"
-// error that breaks every trigger and every menu, not just this one. If
-// you confirm (Ctrl+F search "function onOpen" across every file in the
-// live editor) that none exists, it's then safe to duplicate this
-// function's body into one named onOpen(e) yourself.
-function buildStarlingsMenu() {
+// This is the real onOpen() that builds the "🐦 Starlings" toolbar menu.
+// It runs automatically every time the spreadsheet is opened (onOpen is
+// a reserved Apps Script trigger name). If the menu still doesn't appear
+// after pasting this file in, do a full page reload of the spreadsheet
+// tab (not just re-run something in the script editor) — onOpen() only
+// fires on an actual open/reload.
+function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('⭐ Starlings')
-    .addItem('✅ Approve Checked Rows', 'approveCheckedRows')
-    .addItem('🧹 Sweep Approved (catch missed rows)', 'sweepApproved')
+    .createMenu('🐦 Starlings')
+    .addItem('Approve Checked Rows', 'approveCheckedRows')
     .addSeparator()
-    .addItem('🔧 Reinstall Approval Trigger', 'setupApprovalTrigger')
+    .addItem('Apply Formatting + Info to All Tabs', 'applyEverything')
+    .addItem('Refresh Info Blocks Only', 'refreshAllInfoBlocks')
+    .addSeparator()
+    .addItem('Sweep: move all APPROVED rows now', 'sweepApproved')
+    .addSeparator()
+    .addItem('Rebuild Instructions Tab', 'buildInstructionsTab')
     .addToUi();
+}
+
+// ============================================================
+// FORMATTING (recovered 2026-07-30 from live version history)
+// ============================================================
+function polishSheet(sheet, skipFilter) {
+  sheet.setFrozenRows(1);
+  const lastCol = sheet.getLastColumn();
+  if (lastCol > 0) {
+    sheet.getRange(1, 1, 1, lastCol).setFontWeight('bold');
+    sheet.autoResizeColumns(1, lastCol);
+  }
+  if (!skipFilter) {
+    const existing = sheet.getFilter();
+    if (existing) existing.remove();
+    const lastRow = Math.max(sheet.getLastRow(), 2);
+    sheet.getRange(1, 1, lastRow, lastCol).createFilter();
+  }
+  const bandings = sheet.getBandings();
+  bandings.forEach(function (b) { b.remove(); });
+  const bandRows = Math.max(sheet.getLastRow(), 2);
+  sheet.getRange(1, 1, bandRows, lastCol)
+    .applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
+}
+
+function formatOneTab(sheet, cfg) {
+  polishSheet(sheet, false);
+  let lastCol = sheet.getLastColumn();
+
+  if (cfg.kind === 'pending') {
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    let approveCol = headers.indexOf('Approve') + 1;
+    if (approveCol === 0) {
+      approveCol = cfg.flaggedCol + 1;
+      if (sheet.getMaxColumns() < approveCol) {
+        sheet.insertColumnsAfter(sheet.getMaxColumns(), approveCol - sheet.getMaxColumns());
+      }
+      sheet.getRange(1, approveCol).setValue('Approve').setFontWeight('bold');
+    }
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 2) {
+      // Only over actual data rows, not info block area.
+      const dataEnd = Math.min(lastRow, INFO_START_OFFSET - 1);
+      if (dataEnd >= 2) {
+        const r = sheet.getRange(2, approveCol, dataEnd - 1, 1);
+        const vals = r.getValues();
+        // 2026-07-30: the recovered original set `mutated` but never
+        // flipped it to true, so this normalization pass silently never
+        // wrote back (setValues was dead code — insertCheckboxes() below
+        // still ran regardless, so this mostly didn't matter in
+        // practice, but fixed it since it's clearly not what was
+        // intended: normalize string "TRUE"/"FALSE" values before they
+        // become real checkboxes).
+        let mutated = false;
+        for (let i = 0; i < vals.length; i++) {
+          const v = vals[i][0];
+          if (v !== true && v !== false) {
+            vals[i][0] = typeof v === 'string' && v.toUpperCase() === 'TRUE';
+            mutated = true;
+          }
+        }
+        if (mutated) r.setValues(vals);
+        r.insertCheckboxes();
+      }
+    }
+    lastCol = sheet.getLastColumn();
+  }
+
+  // Conditional formatting only on data range, bounded above info block.
+  const dataEndRow = INFO_START_OFFSET - 1;
+  const range = sheet.getRange(2, 1, dataEndRow - 1, lastCol);
+  const flagLetter = columnToLetter(cfg.flaggedCol);
+
+  const rules = [];
+  rules.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenFormulaSatisfied('=$' + flagLetter + '2=TRUE')
+    .setBackground('#f4c7c3')
+    .setRanges([range])
+    .build());
+  rules.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenFormulaSatisfied('=AND($B2<>"",IFERROR(DATEVALUE(LEFT($B2&"",10)),0)<TODAY()-7)')
+    .setBackground('#fff2cc')
+    .setRanges([range])
+    .build());
+  if (cfg.kind === 'pending') {
+    rules.push(SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=UPPER($C2)="APPROVED"')
+      .setBackground('#d9d9d9')
+      .setRanges([range])
+      .build());
+  }
+  sheet.setConditionalFormatRules(rules);
+}
+
+function writeInfoBlock(sheet, info) {
+  const cfg = TAB_CONFIG[sheet.getName()];
+  const lastCol = sheet.getLastColumn();
+  const startRow = INFO_START_OFFSET;
+
+  // Clear any previous info block area (40 rows).
+  const clearRows = Math.min(40, sheet.getMaxRows() - startRow + 1);
+  if (clearRows > 0) {
+    sheet.getRange(startRow, 1, clearRows, lastCol)
+      .breakApart().clearContent().clearFormat();
+  }
+
+  let r = startRow;
+
+  sheet.getRange(r, 1).setValue(info.title)
+    .setFontSize(14).setFontWeight('bold').setBackground('#1c4587').setFontColor('#ffffff');
+  sheet.getRange(r, 1, 1, lastCol).merge();
+  r += 1;
+
+  sheet.getRange(r, 1).setValue('Purpose').setFontWeight('bold').setBackground('#cfe2f3');
+  sheet.getRange(r, 2, 1, lastCol - 1).merge().setValue(info.purpose).setWrap(true);
+  r += 1;
+
+  sheet.getRange(r, 1).setValue('How to use').setFontWeight('bold').setBackground('#cfe2f3');
+  r += 1;
+  info.steps.forEach(function (step) {
+    sheet.getRange(r, 2, 1, lastCol - 1).merge().setValue(step).setWrap(true);
+    r += 1;
+  });
+
+  sheet.getRange(r, 1).setValue('Color key').setFontWeight('bold').setBackground('#cfe2f3');
+  r += 1;
+  COLOR_KEY.slice(1).forEach(function (line, idx) {
+    const cell = sheet.getRange(r, 2, 1, lastCol - 1).merge();
+    cell.setValue(line).setWrap(true);
+    if (idx === 0) cell.setBackground('#f4c7c3');
+    if (idx === 1) cell.setBackground('#fff2cc');
+    if (idx === 2) cell.setBackground('#d9d9d9');
+    r += 1;
+  });
+
+  sheet.getRange(r, 1).setValue('Key insight').setFontWeight('bold').setBackground('#cfe2f3');
+  sheet.getRange(r, 2, 1, lastCol - 1).merge().setValue(info.insight).setWrap(true);
+  r += 1;
+
+  sheet.getRange(r, 1).setValue('Live counters').setFontWeight('bold').setBackground('#cfe2f3');
+  r += 1;
+
+  const flagLetter = columnToLetter(cfg.flaggedCol);
+  const endData = startRow - 1;
+  const counters = [
+    ['Total rows pending', '=COUNTA(A2:A' + endData + ')'],
+    ['Flagged (needs care)', '=COUNTIF(' + flagLetter + '2:' + flagLetter + endData + ', TRUE)'],
+    ['Older than 7 days', '=SUMPRODUCT((B2:B' + endData + '<>"")*(IFERROR(DATEVALUE(LEFT(B2:B' + endData + '&"",10)),TODAY())<TODAY()-7))'],
+    ['Already APPROVED (stuck)', '=COUNTIF(C2:C' + endData + ', "APPROVED")']
+  ];
+  counters.forEach(function (pair) {
+    sheet.getRange(r, 1).setValue(pair[0]);
+    sheet.getRange(r, 2).setFormula(pair[1]).setFontWeight('bold');
+    r += 1;
+  });
+}
+
+function applyEverything() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const results = [];
+
+  Object.keys(TAB_CONFIG).forEach(function (tabName) {
+    const sheet = ss.getSheetByName(tabName);
+    if (!sheet) { results.push(tabName + ': MISSING'); return; }
+    try {
+      formatOneTab(sheet, TAB_CONFIG[tabName]);
+      results.push(tabName + ': formatted');
+    } catch (e) {
+      results.push(tabName + ': ERR ' + e.message);
+    }
+  });
+
+  const fw = ss.getSheetByName('Flagged_Words');
+  if (fw) {
+    try {
+      polishSheet(fw, true);
+      results.push('Flagged_Words: polished');
+    } catch (e) {
+      results.push('Flagged_Words: ERR ' + e.message);
+    }
+  }
+
+  Object.keys(TAB_INFO).forEach(function (tabName) {
+    const sheet = ss.getSheetByName(tabName);
+    if (!sheet) return;
+    try {
+      writeInfoBlock(sheet, TAB_INFO[tabName]);
+      results.push(tabName + ': info block written');
+    } catch (e) {
+      results.push(tabName + ': info ERR ' + e.message);
+    }
+  });
+
+  try {
+    buildInstructionsTab();
+    results.push('Instructions tab: built');
+  } catch (e) {
+    results.push('Instructions tab: ERR ' + e.message);
+  }
+
+  try {
+    setupApprovalTrigger();
+    results.push('auto-approve trigger: installed');
+  } catch (e) {
+    results.push('auto-approve trigger: ERR ' + e.message);
+  }
+
+  SpreadsheetApp.getUi().alert('Done.\n\n' + results.join('\n'));
+}
+
+function refreshAllInfoBlocks() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Object.keys(TAB_INFO).forEach(function (tabName) {
+    const sheet = ss.getSheetByName(tabName);
+    if (sheet) writeInfoBlock(sheet, TAB_INFO[tabName]);
+  });
+  SpreadsheetApp.getUi().alert('Info blocks refreshed.');
+}
+
+// Written fresh 2026-07-30 — the real buildInstructionsTab() from version
+// history is ~33,700 characters (effectively the rest of that file) and
+// wasn't extracted; grinding it out through this session's text-recovery
+// method would have meant 150+ small extraction calls. This is a
+// smaller, current, functional replacement so applyEverything() and the
+// "Rebuild Instructions Tab" menu item don't break. If you want the exact
+// original restored verbatim later, it's still sitting in that same
+// version-8 snapshot in the live project's version history — recoverable
+// any time, not lost.
+function buildInstructionsTab() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var name = 'Instructions';
+  var sheet = ss.getSheetByName(name);
+  if (sheet) ss.deleteSheet(sheet);
+  sheet = ss.insertSheet(name, 0);
+
+  var rows = [
+    ['⭐ Starlings — How This Sheet Works', ''],
+    ['', ''],
+    ['Overview', ''],
+    ['Each content type (Notes, Resources, Q&A, Reflections) has a Pending_* tab and a Live_* tab.', ''],
+    ['Submissions from the website always land in Pending_*. Approving a row moves it to Live_*, which is what the public site actually reads from.', ''],
+    ['', ''],
+    ['Approving content', ''],
+    ['Tick the checkbox in the Approve column on any Pending_* tab — the row moves to Live_* and disappears from Pending_* automatically, instantly.', ''],
+    ['Approving several rows at once? Use 🐦 Starlings > Approve Checked Rows instead of clicking checkboxes one by one — same result, handles multiple rows safely in one pass.', ''],
+    ['To reject something instead of approving it, just delete the row from the Pending_* tab.', ''],
+    ['', ''],
+    ['If something looks stuck', ''],
+    ['Run 🐦 Starlings > Sweep: move all APPROVED rows now — it catches any row whose status says APPROVED but never actually moved to Live.', ''],
+    ['', ''],
+    ['Formatting', ''],
+    ['🐦 Starlings > Apply Formatting + Info to All Tabs re-applies checkboxes, column banding, conditional color-coding, and the info block at the bottom of every tab.', ''],
+    ['🐦 Starlings > Refresh Info Blocks Only just rewrites the instructions/color-key block at the bottom of each tab, without touching formatting.', ''],
+    ['', ''],
+    ['Reading each tab’s own info block', ''],
+    ['Scroll down on any Pending_*/Live_* tab — there’s a color-coded reference block explaining what that specific tab is for, starting around row ' + INFO_START_OFFSET + '.', '']
+  ];
+
+  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
+  sheet.getRange(1, 1).setFontSize(16).setFontWeight('bold');
+  sheet.setColumnWidth(1, 640);
+  sheet.setColumnWidth(2, 200);
+  sheet.getRange(1, 1, rows.length, 1).setWrap(true);
 }
 
 // ============================================================

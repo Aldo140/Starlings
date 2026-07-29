@@ -92,6 +92,18 @@
 // stripped) whenever the exact key misses. THIS CHANGE MUST BE MANUALLY
 // PASTED INTO THE LIVE Code.gs.
 //
+// 2026-07-29 fix #2 (reported live: submitted reflections showing up with
+// invisible white text in the sheet): doPost() now forces black font
+// color on every new row it writes, instead of relying on the one-time
+// "🎨 Apply Formatting" menu action (ApprovalWorkflow.gs) or whatever
+// formatting a previously-deleted row at that position left behind — see
+// the comment on that line for the full explanation. THIS CHANGE MUST BE
+// MANUALLY PASTED INTO THE LIVE Code.gs. For rows that are ALREADY sitting
+// in the sheet with invisible text right now, run the new one-time
+// fixInvisibleText() function in ApprovalWorkflow.gs (Apps Script editor >
+// select it in the function dropdown > ▶ Run) — it forces black text
+// across every existing data row on every tab, once.
+//
 // INSTRUCTIONS FOR DEPLOYMENT:
 // 1. In your existing "Starlings Support Map Data" Google Sheet
 // 2. Create the following exact tabs (case-sensitive):
@@ -332,7 +344,26 @@ function doPost(e) {
             return val || "";
         });
 
-        sheet.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+        const newRowRange = sheet.getRange(nextRow, 1, 1, newRow.length);
+        newRowRange.setValues([newRow]);
+
+        // Force real, readable (black) text on every new row. Reported live
+        // 2026-07-29: submitted reflections were appearing in the sheet with
+        // invisible white text. Root cause is the same shape as the
+        // checkbox gap right below — the one-time "🎨 Apply Formatting"
+        // menu action (in ApprovalWorkflow.gs, not reproduced here) only
+        // ever styled whatever row range existed when it was last run, and
+        // a row can also inherit stale formatting left behind by a
+        // previously approved-and-deleted row at that same position
+        // (deleteRow shifts rows up but doesn't reset their formatting to
+        // this row's actual content). Either way the text becomes
+        // invisible — same color as the background. Don't rely on manual
+        // formatting for legibility; set it explicitly on every write, the
+        // same self-formatting approach already used for the Approve
+        // checkbox below. Only sets font color, not background — this
+        // deliberately doesn't touch any background/status color-coding
+        // the live sheet's formatting may use.
+        newRowRange.setFontColor('#000000');
 
         // The checkbox look on "Approve" comes from checkbox data validation,
         // which is only ever applied manually (the 🎨 "Apply Formatting"

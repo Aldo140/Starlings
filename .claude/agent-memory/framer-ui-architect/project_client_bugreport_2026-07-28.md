@@ -48,6 +48,16 @@ Independent of the backend bug, `views/ShareView.tsx`'s "Recommend a Resource" t
 
 Both fixes are in `docs/backend/Code.gs.js` / `ApprovalWorkflow.gs.js` in this repo only — **not yet confirmed deployed live** as of this writing. Standard deploy: paste both files into the live Apps Script editor, Deploy > Manage Deployments > Edit > New version > Deploy.
 
+## Update 2026-07-29 (same day, later) — submitted reflections showing invisible white text
+
+Reported live: reflection text is present in the sheet but rendered in white font, invisible against the (presumably white/default) cell background. Not caused by anything in this repo's mirrored code (no `setFontColor` calls existed anywhere in `doPost()`/`moveRowToLive()` before this fix) — the likely cause is the same shape of bug as the historical checkbox gap: the one-time "🎨 Apply Formatting" menu action (in the NOT-reproduced `formatOneTab()`) only ever styled whatever row range existed when it was last run, and/or a row inherits stale formatting left behind by a previously approved-and-deleted row at that same position (`deleteRow` shifts rows up but doesn't reset formatting to match new content).
+
+**Fixed in repo, two parts:**
+1. `Code.gs.js` `doPost()` now calls `.setFontColor('#000000')` on every newly-written row, right after `setValues()` — same "self-format on every write, don't rely on a one-time manual pass" philosophy as the existing checkbox-insertion fix. Deliberately only touches font color, not background — doesn't risk stripping any intentional background/status color-coding from the unseen `formatOneTab()`.
+2. New one-time utility `fixInvisibleText()` added to `ApprovalWorkflow.gs.js` — run once from the Apps Script editor's function dropdown to force black text across every EXISTING data row on all 8 tabs (fixes rows already sitting there with invisible text, e.g. reflections submitted before the doPost fix was live). Menu-callable-utility pattern matches existing `sweepApproved()`.
+
+**Still needs manual action:** paste both files into the live Apps Script project, redeploy, then run `fixInvisibleText()` once to repair anything already invisible in the sheet.
+
 ## Ground-truth ledger (2026-07-28)
 
 | Item | Status | Confidence |

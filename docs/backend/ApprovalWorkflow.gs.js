@@ -292,6 +292,34 @@ function approveCheckedRows() {
 }
 
 // ============================================================
+// ONE-TIME REPAIR: fix already-invisible (white-on-white) text
+// ============================================================
+// Added 2026-07-29 alongside the doPost() fix in Code.gs.js that forces
+// black text on every NEW row going forward. This function is for
+// whatever's ALREADY sitting in the sheet right now with invisible text
+// (e.g. reflections submitted before that fix was deployed). Run it once
+// from the Apps Script editor: select "fixInvisibleText" in the function
+// dropdown next to the ▶ Run button, then Run. Only touches font color
+// (not backgrounds/borders/conditional formatting), and only data rows
+// (row 2 downward) — the header row is left alone. Safe to re-run.
+function fixInvisibleText() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var tabNames = ['Pending_Stories', 'Live_Stories', 'Pending_Resources', 'Live_Resources',
+    'Pending_QA', 'Live_QA', 'Pending_Reflections', 'Live_Reflections'];
+  var results = [];
+  tabNames.forEach(function (name) {
+    var sheet = ss.getSheetByName(name);
+    if (!sheet) { results.push(name + ': MISSING'); return; }
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) { results.push(name + ': no data rows'); return; }
+    sheet.getRange(2, 1, lastRow - 1, lastCol).setFontColor('#000000');
+    results.push(name + ': fixed ' + (lastRow - 1) + ' row(s)');
+  });
+  SpreadsheetApp.getUi().alert('Text color repaired.\n\n' + results.join('\n'));
+}
+
+// ============================================================
 // SWEEP: catch any already-APPROVED rows that didn't move yet
 // ============================================================
 // NOTE: this one still assumes "status" is column C (index 3) — lower

@@ -62,6 +62,21 @@
 //    of trusting the single stale row — see moveAllCheckedRows_(), now
 //    shared with approveCheckedRows() (the bulk menu button), which
 //    always worked this way and never had the bug.
+//
+// 5. SECOND APPROVAL IN A ROW DUPLICATES IN LIVE (reported live
+//    2026-07-30) — moveRowToLive() used to append to Live unconditionally
+//    whenever it was called, with no check for whether that same id was
+//    already there. An EARLIER version of this backend had exactly this
+//    check (liveRowHasId_(), mentioned in this project's own bug-tracking
+//    notes from 2026-07-13) but it didn't survive the 2026-07-14 rewrite
+//    of this file. Re-added: moveRowToLive() now refuses to append a row
+//    whose id is already present in Live — it just cleans up the stale
+//    Pending row instead. This makes double-processing a row (whatever
+//    the exact cause — a tight race between two rapid clicks, a leftover
+//    duplicate onEdit trigger from an old deployment that was never fully
+//    cleaned up per fix #1 above, a moderator re-ticking an
+//    already-approved row) structurally harmless instead of chasing every
+//    possible trigger for it.
 // ------------------------------------------------------------------
 
 const INFO_GAP_ROWS = 3;
@@ -92,6 +107,18 @@ function findHeaderCol_(sheet, headerName) {
     if (String(headers[i]).trim() === headerName) return i + 1;
   }
   return -1;
+}
+
+/** True if `id` already exists in liveSheet's "id" column. Used by moveRowToLive's idempotency guard. */
+function liveRowHasId_(liveSheet, id) {
+  var lastCol = liveSheet.getLastColumn();
+  if (lastCol < 1 || liveSheet.getLastRow() < 2) return false;
+  var liveHeaders = liveSheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  var liveIdIdx = liveHeaders.indexOf('id');
+  if (liveIdIdx < 0) return false;
+  var ids = liveSheet.getRange(2, liveIdIdx + 1, liveSheet.getLastRow() - 1, 1).getValues();
+  return ids.some(function (r) { return String(r[0]).trim() === id; });
 }
 
 // ============================================================
@@ -128,6 +155,26 @@ function moveRowToLive(pendingSheet, row) {
   // for exactly this reason) instead of top-to-bottom individual clicks.
   var isBlank = rowValues.every(function (v) { return String(v).trim() === ''; });
   if (isBlank) return false;
+
+  // Idempotency guard by id (re-added 2026-07-30 — an earlier version of
+  // this backend had this as liveRowHasId_() but it didn't carry over
+  // into the 2026-07-14 rewrite of this file). Reported live: approving
+  // two entries back-to-back sometimes leaves the second one duplicated
+  // in Live_*. Rather than chase every possible way a row could get
+  // processed more than once (a tight race between two rapid clicks, a
+  // leftover duplicate onEdit trigger from before an old deployment was
+  // fully cleaned up, a moderator re-ticking an already-approved row,
+  // etc. — see the top-of-file fix #1 note about that exact historical
+  // failure mode), make double-processing structurally harmless: refuse
+  // to append a row whose id is already present in Live. If it's already
+  // there, this was a redundant/duplicate move attempt — just clean up
+  // the stale Pending row (it was correctly approved already) and stop.
+  var idIdx = pendingHeaders.indexOf('id');
+  var rowId = idIdx >= 0 ? String(rowValues[idIdx]).trim() : '';
+  if (rowId && liveRowHasId_(liveSheet, rowId)) {
+    pendingSheet.deleteRow(row);
+    return false;
+  }
 
   var statusIdx = pendingHeaders.indexOf('status');
   if (statusIdx >= 0) rowValues[statusIdx] = 'APPROVED';

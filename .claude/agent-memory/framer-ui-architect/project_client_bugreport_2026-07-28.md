@@ -58,6 +58,12 @@ Reported live: reflection text is present in the sheet but rendered in white fon
 
 **Still needs manual action:** paste both files into the live Apps Script project, redeploy, then run `fixInvisibleText()` once to repair anything already invisible in the sheet.
 
+## Update 2026-07-30 — approving 2+ entries back-to-back duplicates the second one in Live
+
+Reported live: approve entry 1, it's fine; approve entry 2 right after, it ends up duplicated in the Live tab. Root cause reasoning couldn't be pinned to one exact mechanism (a genuine race between two rapid clicks racing the LockService lock, a leftover duplicate `onEdit` trigger from before the original 2026-07-14 dedup fix was fully cleaned up live per its own instructions, or something else) — rather than keep chasing the precise trigger, went with a structural fix: `moveRowToLive()` used to append to Live unconditionally every time it ran, with no check for whether that row's `id` was already there. **An earlier version of this backend had exactly this check** — `liveRowHasId_()`, referenced in this project's own 2026-07-13 bug-tracking notes ("moveApprovedRow_ now has an idempotency guard...") — but it did not survive the 2026-07-14 rewrite of `ApprovalWorkflow.gs.js` into its current header-driven form. Re-added as `liveRowHasId_()` + a guard in `moveRowToLive()`: refuses to append a row whose `id` is already present in Live, just cleans up the stale Pending row instead. Makes double-processing of the same row harmless no matter what causes it.
+
+**Worth checking live, if this keeps happening:** open Extensions > Apps Script > Triggers (clock icon in the sidebar) and confirm there's exactly ONE `approvalOnEdit` installable trigger — a leftover duplicate trigger from an old deployment would explain double-processing directly. This repo's `setupApprovalTrigger()` deletes prior `approvalOnEdit` triggers before adding a new one, but only if it's actually re-run after a redeploy.
+
 ## Ground-truth ledger (2026-07-28)
 
 | Item | Status | Confidence |

@@ -346,7 +346,6 @@ function buildStarlingsMenu() {
     .createMenu('⭐ Starlings')
     .addItem('✅ Approve Checked Rows', 'approveCheckedRows')
     .addItem('🧹 Sweep Approved (catch missed rows)', 'sweepApproved')
-    .addItem('🩹 Fix Invisible Text', 'fixInvisibleText')
     .addSeparator()
     .addItem('🔧 Reinstall Approval Trigger', 'setupApprovalTrigger')
     .addToUi();

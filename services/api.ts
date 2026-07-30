@@ -136,6 +136,16 @@ const getBannedMatchInfo = (text: string): { severity: number; category: string 
   return null;
 };
 
+// Filter out empty / incomplete rows before any further processing — same
+// guard getApprovedPosts/getApprovedQA/getApprovedReflections already have.
+// Live_Resources can contain rows with no id or title (blank sheet padding,
+// or a moderator "info block" ApprovalWorkflow.gs writes past the real data
+// for reference). Without this, normalizeResource() defaults a blank row to
+// type 'website' / category 'community', so it silently rendered as a real
+// (but empty) card in the Website bucket on the public Resources page.
+const isValidRawResource = (r: any): boolean =>
+  !!r && String(r.id ?? '').trim() !== '' && String(r.title ?? '').trim() !== '';
+
 export const normalizeResource = (resource: any): Resource => {
   const rawCategory = (resource.category || '').toLowerCase().trim();
   const category = rawCategory === 'general' || rawCategory === 'partner' ? rawCategory : 'community';
@@ -631,7 +641,7 @@ export const apiService = {
           const res = await fetch(`${GAS_URL}?action=getResources`);
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            const mappedData: Resource[] = data.map(normalizeResource);
+            const mappedData: Resource[] = data.filter(isValidRawResource).map(normalizeResource);
             const unique = new Map<string, Resource>();
             // Put mappedData in FIRST, then inject launch seed resources if they don't overwrite
             mappedData.forEach(r => unique.set(r.id, r));
@@ -651,7 +661,7 @@ export const apiService = {
 
       if (Array.isArray(data) && data.length > 0) {
         const unique = new Map<string, Resource>();
-        data.map(normalizeResource).forEach(r => unique.set(r.id, r));
+        data.filter(isValidRawResource).map(normalizeResource).forEach(r => unique.set(r.id, r));
         SEED_RESOURCES.forEach(m => { if (!unique.has(m.id)) unique.set(m.id, m as Resource); });
         const finalArr = Array.from(unique.values());
         setCachedResources(finalArr);
@@ -928,7 +938,7 @@ export const apiService = {
       const data = await res.json();
       if (!Array.isArray(data)) return [];
 
-      const items: ReflectionItem[] = data
+      const rawItems: ReflectionItem[] = data
         .filter((item: any) => item && item.resourceId && item.reflection)
         .map((item: any) => ({
           id: item.id || Math.random().toString(36).substring(7),
@@ -939,6 +949,16 @@ export const apiService = {
           imageUrl: item.image_url || item.imageUrl || undefined,
           flagged: item.flagged === true || item.flagged === 'TRUE',
         }));
+
+      // Dedupe by id — same guard getApprovedPosts already has. A known backend
+      // race (see docs/backend/ApprovalWorkflow.gs.js moveRowToLive) can append
+      // the same reflection row into Live_Reflections twice under rapid
+      // approval clicks; that shows up here as the same id repeated, inflating
+      // per-resource reflection counts and repeating identical text in the list.
+      const uniqueReflectionsMap = new globalThis.Map<string, ReflectionItem>();
+      rawItems.forEach(item => uniqueReflectionsMap.set(item.id, item));
+      const items = Array.from(uniqueReflectionsMap.values());
+
       setCachedReflections(items);
       return items;
     } catch (e) {

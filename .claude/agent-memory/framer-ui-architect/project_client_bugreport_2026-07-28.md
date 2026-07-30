@@ -1,6 +1,6 @@
 ---
 name: project_client_bugreport_2026-07-28
-description: Root cause + fixes for "approve does nothing" across Notes/Resources/QA, the reflections last-approval race, and the location-required-for-resources UX bug
+description: Root cause + fixes for "approve does nothing" across Notes/Resources/QA, the reflections last-approval race, the location-required-for-resources UX bug, and the Resources-page empty-card leak (getApprovedResources had no validity filter)
 type: project
 ---
 
@@ -86,6 +86,18 @@ Requested: newly approved rows should land at the top of Live_* (row 2, under th
 **Caught while implementing this, not something the user reported:** my own `TAB_INFO` reconstruction from earlier today (fix #6) had entries for `Live_*` tabs. That would have been a real bug once `applyEverything()`/`refreshAllInfoBlocks()` got run live — `doGet()` in `Code.gs.js` reads a Live sheet's *entire* data range with no `INFO_START_OFFSET` bound (unlike everywhere else in this file), so an info block written at row 50 of a Live tab would leak into the public API response. Confirmed concretely for `Live_Resources`: `getApprovedResources()`/`normalizeResource()` in `services/api.ts` has no id/title validity filter (unlike posts/QA/reflections, which all require a non-empty content field and would have filtered a leaked info-block row out) — so this would have shown up as real, garbage resource cards ("Purpose", "How to use", etc.) on the actual public Resources page. `TAB_INFO` is now Pending_*-only. **Lesson for future TAB_INFO/reconstruction work:** always check what `doGet()` actually bounds before writing anything into a Live_* sheet — it's the one function in this whole file that doesn't respect `INFO_START_OFFSET`.
 
 **Confirmed via live screenshot (2026-07-30):** Triggers page shows exactly ONE `approvalOnEdit` trigger ("From spreadsheet - On edit", Deployment: Head, 0% error rate) — ruled out a leftover duplicate trigger as the cause. Also confirms the trigger's deployment is "Head," meaning it always runs whatever code is currently saved in the editor — no separate versioned "Deploy" needed for `approvalOnEdit`/`moveRowToLive` changes to take effect (deployments only matter for the `doGet`/`doPost` web app URL). Given no duplicate trigger, the duplication was almost certainly the rapid-click race described above — which the `liveRowHasId_` guard catches regardless of exact timing, so no further trigger-side investigation needed unless duplicates recur after this fix is live.
+
+## Update 2026-07-29 (later) — Resources page showing empty cards, confirmed via live API (not just theorized)
+
+Reported: "I see 14 posts, a lot of empty posts show up, even though there's no extra entries on the google sheet." Investigated by hitting the live GAS endpoint directly (`curl "$GAS_URL?action=<x>"`) rather than reading code alone — this matters because it separates "leaked into the API response" from "actually reaches the UI," which code-reading alone can't answer.
+
+**Stories (the "14 posts" the map shows) are correct and NOT the bug.** Live `getStories` returns 64 raw rows: 14 real + 50 junk (34 blank + a 16-row moderator info block sitting in `Live_Stories` past row 49). `getApprovedPosts()`'s existing `id && message` filter (added [[project_stack]]-era, commit `3f0d3f1`, 2026-06-08) already strips 100% of the junk before it reaches the map. Same clean result independently confirmed for `getQA` (62 raw → 5 real, filtered by `question && answer`) and `getReflections` (63 raw → 5 real, filtered by `resourceId && reflection`).
+
+**Resources was the actual leak.** `getApprovedResources()` (`services/api.ts`) had `data.map(normalizeResource)` with **zero validity filter** — the one thing the 2026-07-30-dated entry above ("data-leak bug caught before it shipped") predicted as a risk but never confirmed as deployed. Live `getResources` returns 64 raw rows, only 8 real; the other ~56 (blank padding + the same kind of leaked info block) all deduped by id into ~11 garbage `Resource` objects. `normalizeResource` defaults a blank row to `type: 'website'`, `category: 'community'` — so these rendered as real, blank cards mixed into the "Website" bucket on the live public Resources page. This is what the user was actually seeing when they said "empty posts."
+
+**Fixed:** added `isValidRawResource` (requires non-empty `id` and `title`) in `services/api.ts`, applied via `.filter(isValidRawResource)` before `.map(normalizeResource)` in both the cached-background-sync branch and the main fetch branch of `getApprovedResources()` — same shape as the filters Stories/QA/Reflections already had. Verified against the real live payload: 64 raw → 8 real, matching the actual resource count. `npm run check` passes (typecheck + 22 tests + build). This is a pure frontend fix — no backend redeploy needed, unlike most of the fixes above.
+
+**Still open, not fixed here:** the underlying leaked info-block rows are still physically sitting in `Live_Stories`, `Live_Resources`, and `Live_QA` (rows ~50+) in the actual Google Sheet — this fix only stops them from reaching the UI. Cosmetic/hygiene cleanup (deleting those rows in the sheet) is optional but would be good moderator-facing tidiness; not attempted here since it requires direct sheet access this session didn't have.
 
 ## Ground-truth ledger (2026-07-28)
 

@@ -91,7 +91,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           message: contactForm.message,
           _replyto: contactForm.email,
           _cc: CONTACT_CC,
-          _subject: 'Starlings Support Map — New Contact',
+          _subject: 'Starlings Support Map: New Contact',
           _template: 'table',
           _url: 'https://starlingsmap.ca/',
         }),
@@ -343,7 +343,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <span className="text-sm font-black text-white">Quick exit</span>
                   <span className={`text-[10px] font-bold ${quickExitEnabled ? 'text-[#f3a79c]' : 'text-white/35'}`}>{quickExitEnabled ? 'On' : 'Off'}</span>
                 </span>
-                <span className="mt-1 block text-[11px] font-medium leading-snug text-white/55">Keep a one-tap exit to Google in the top bar.</span>
+                <span className="mt-1 block text-[11px] font-medium leading-snug text-white/55">Keep a one tap exit to Google in the top bar.</span>
               </span>
               <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${quickExitEnabled ? 'bg-[#e57c6e]' : 'bg-white/15'}`} aria-hidden="true">
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${quickExitEnabled ? 'translate-x-6' : 'translate-x-1'}`} />

@@ -342,7 +342,7 @@ const ShareView: React.FC = () => {
             </div>
             {shareType === 'resource' && (
               <p className="text-sm text-gray-500">
-                Only add a city if this is a local, in-person service (a clinic, support group, or community centre). Skip it for websites, books, apps, or other resources anyone can access.
+                Only add a city if this is a local, in person service such as a clinic, support group, or community centre. Skip it for websites, books, apps, or other resources anyone can access.
               </p>
             )}
             <div className="relative">
@@ -558,7 +558,7 @@ const ShareView: React.FC = () => {
                         Getting a photo link
                       </p>
                       Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
-                      <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                      <span className="font-bold text-white">shareable image link</span> instead of the page link and paste it below.
                     </InfoPopover>
                   </div>
                   <input

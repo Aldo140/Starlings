@@ -122,7 +122,7 @@ const AddResourceView: React.FC = () => {
         if (mode === 'recommend' && formData.includeOnMap) {
             const locationSupported = await apiService.supportsResourceLocations();
             if (!locationSupported) {
-                setErrorMessage('Map-based resource submissions are temporarily unavailable because the resource location columns have not been enabled in the moderation sheet.');
+                setErrorMessage('Map based resource submissions are temporarily unavailable because the resource location columns have not been enabled in the moderation sheet.');
                 setIsSubmitting(false);
                 return;
             }
@@ -176,7 +176,7 @@ const AddResourceView: React.FC = () => {
                 <p className="text-gray-500 font-medium md:text-lg mb-8 max-w-lg mx-auto">
                     {mode === 'apply'
                         ? 'Thank you for applying to share your resource. Our team will carefully review your application and qualifications within the next 48 hours. You will be notified via email whether your resource has been approved or rejected.'
-                        : 'Thank you for sharing this recommendation! To ensure high-quality, safe content for our community, your submission will be reviewed by our moderation team within the next 48 hours before being approved or rejected.'}
+                        : 'Thank you for sharing this recommendation! To ensure high quality, safe content for our community, your submission will be reviewed by our moderation team within the next 48 hours before being approved or rejected.'}
                 </p>
                 <button
                     onClick={() => navigate('/resources')}
@@ -285,7 +285,7 @@ const AddResourceView: React.FC = () => {
                                         Getting a photo link
                                     </p>
                                     Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
-                                    <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                                    <span className="font-bold text-white">shareable image link</span> instead of the page link and paste it below.
                                 </InfoPopover>
                             </div>
                             <input
@@ -324,7 +324,7 @@ const AddResourceView: React.FC = () => {
                                 className="mt-1 h-5 w-5 rounded border-gray-300 text-[#448a7d]"
                             />
                             <span>
-                                <span className="block text-[#1e3a34] font-black text-lg italic">This is a local, map-based resource</span>
+                                <span className="block text-[#1e3a34] font-black text-lg italic">This is a local, map based resource</span>
                                 <span className="block text-sm text-gray-500 mt-1">
                                     Choose this only for a service tied to a real city, such as a clinic, support group, or community centre.
                                 </span>
@@ -340,7 +340,7 @@ const AddResourceView: React.FC = () => {
                                     <span className="text-xs text-[#e57c6e] font-bold uppercase tracking-widest">Required for map</span>
                                 </div>
                                 <p className="text-sm text-gray-500">
-                                    The approved resource will appear in Map-Based Resources and on the Support Map.
+                                    The approved resource will appear in Map Based Resources and on the Support Map.
                                 </p>
 
                                 {formData.selectedLocation ? (
@@ -460,7 +460,7 @@ const AddResourceView: React.FC = () => {
                                     <div>
                                         <h3 className="text-[#1e3a34] font-black italic text-lg leading-tight">Partner Details</h3>
                                         <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                                            To ensure high-quality content, we require professionals and organizations to provide contact info and qualifications. You must adhere to all privacy and safety laws.
+                                            To ensure high quality content, we require professionals and organizations to provide contact info and qualifications. You must adhere to all privacy and safety laws.
                                         </p>
                                     </div>
                                 </div>

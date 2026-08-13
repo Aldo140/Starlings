@@ -60,7 +60,7 @@ const MobileMapLoading: React.FC = () => {
     },
     {
       title: 'Checking nearby support',
-      detail: 'Still working — slower connections can take a moment.',
+      detail: 'Still working. Slower connections can take a moment.',
     },
   ];
 
@@ -790,7 +790,7 @@ const MapView: React.FC = () => {
             >
               <span>
                 <span className="block text-sm font-black">Explore all resources</span>
-                <span className="mt-0.5 block text-xs font-medium text-[#1e3a34]/65">{globalResourceCount > 0 ? `${globalResourceCount} online or global resources aren't pinned to a city.` : 'Find online and Canada-wide support.'}</span>
+                <span className="mt-0.5 block text-xs font-medium text-[#1e3a34]/65">{globalResourceCount > 0 ? `${globalResourceCount} online or global resources aren't pinned to a city.` : 'Find online and support across Canada.'}</span>
               </span>
               <span aria-hidden="true" className="ml-3 text-xl">→</span>
             </button>

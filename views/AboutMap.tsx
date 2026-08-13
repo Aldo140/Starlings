@@ -153,14 +153,14 @@ const AboutMap: React.FC = () => {
       city: 'Calgary',
       type: 'Story',
       text: 'Leaving a note on my mirror helped me remember their choices were not my fault.',
-      tag: 'Self-talk',
+      tag: 'Self talk',
       pin: 'left-[57%] top-[13%] rotate-[-3deg]',
       revealAt: 0,
     },
     {
       city: 'Edmonton',
       type: 'Resource',
-      text: 'A youth drop-in nearby helped me find a quiet place after school.',
+      text: 'A youth drop in nearby helped me find a quiet place after school.',
       tag: 'Safe place',
       pin: 'left-[4%] top-[31%] rotate-[2deg]',
       revealAt: 2,
@@ -192,7 +192,7 @@ const AboutMap: React.FC = () => {
     {
       city: 'Fort McMurray',
       type: 'Resource',
-      text: 'The library became my after-school reset spot. Quiet, warm, and nobody asked questions.',
+      text: 'The library became my reset spot after school. Quiet, warm, and nobody asked questions.',
       tag: 'Quiet place',
       pin: 'right-[18%] bottom-[10%] rotate-[3deg]',
       revealAt: 7,
@@ -221,7 +221,7 @@ const AboutMap: React.FC = () => {
               <span className="block text-[#7ec8ba]">around young people.</span>
             </h1>
             <p className="mt-8 max-w-[39rem] text-base font-medium leading-8 text-[#dbe8e4] md:text-lg">
-              Starlings Community is a not-for-profit strengthening support around young people growing up with parental or familial substance-use challenges through peer-led and evidence-informed strategies.
+              Starlings Community is a not for profit strengthening support around young people growing up with parental or familial substance use challenges through peer led and evidence informed strategies.
             </p>
             <a
               href="https://www.starlings.ca"
@@ -256,7 +256,7 @@ const AboutMap: React.FC = () => {
                 1 <span className="text-[#e57c6e]">in</span> 4
               </p>
               <p className="mt-5 max-w-[19rem] text-sm font-bold leading-6 text-[#1e3a34]/70">
-                young people grow up with parental or familial substance-use challenges.
+                young people grow up with parental or familial substance use challenges.
               </p>
             </div>
           </motion.div>
@@ -278,7 +278,7 @@ const AboutMap: React.FC = () => {
               <span className="block text-[#7ec8ba]">around young people.</span>
             </h1>
             <p className="mt-7 max-w-[37rem] text-base font-medium leading-7 text-[#e2eeeb] sm:text-lg sm:leading-8">
-              Starlings Community is a not-for-profit strengthening support around young people growing up with parental or familial substance-use challenges through peer-led and evidence-informed strategies.
+              Starlings Community is a not for profit strengthening support around young people growing up with parental or familial substance use challenges through peer led and evidence informed strategies.
             </p>
           </motion.div>
 
@@ -303,7 +303,7 @@ const AboutMap: React.FC = () => {
                 1 <span className="text-[#e57c6e]">in</span> 4
               </p>
               <p className="mt-4 max-w-[22rem] text-sm font-bold leading-6 text-[#365a53]">
-                young people grow up with parental or familial substance-use challenges.
+                young people grow up with parental or familial substance use challenges.
               </p>
             </div>
 
@@ -350,7 +350,7 @@ const AboutMap: React.FC = () => {
           >
             <span className="text-[9px] font-black uppercase tracking-[0.45em] text-[#448a7d]">Starlings Community</span>
             <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#e57c6e' }} aria-hidden="true" />
-            <span className="text-[9px] font-black uppercase tracking-[0.45em] text-[#1e3a34]/40">Not-for-Profit</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.45em] text-[#1e3a34]/40">Not for Profit</span>
           </motion.div>
 
           {/* Salutation */}
@@ -362,7 +362,7 @@ const AboutMap: React.FC = () => {
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.65, delay: 0.08, ease: EASE_OUT_EXPO }}
           >
-            For every young person growing up in a home shaped by substance use —
+            For every young person growing up in a home shaped by substance use.
           </motion.p>
 
           {/* Main two-column grid: heading + body left | offerings right */}
@@ -391,9 +391,9 @@ const AboutMap: React.FC = () => {
                 className="text-[#1e3a34]/60 font-light leading-[1.78]"
                 style={{ fontSize: 'clamp(0.9rem, 1.65vw, 0.98rem)', maxWidth: '40ch' }}
               >
-                The Support Map is one part of what we do. Starlings Community builds peer-led programs,
-                community circles, and evidence-informed resources — all designed for youth, all free,
-                all rooted in lived experience.
+                The Support Map is one part of what we do. Starlings Community builds peer led programs,
+                community circles, and evidence informed resources. They are designed for youth,
+                available at no cost, and rooted in lived experience.
               </p>
             </motion.div>
 
@@ -509,7 +509,7 @@ const AboutMap: React.FC = () => {
             viewport={{ once: true, margin: '-20px' }}
             transition={{ duration: 0.5, delay: 0.58, ease: EASE_OUT_EXPO }}
           >
-            {(['Peer-Led', 'Evidence-Informed', 'Youth-First', 'Not-for-Profit'] as const).map((tag) => (
+            {(['Peer Led', 'Evidence Informed', 'Youth First', 'Not for Profit'] as const).map((tag) => (
               <span
                 key={tag}
                 className="text-[9px] font-black uppercase tracking-[0.22em] text-[#1e3a34]/30 px-3 py-1.5 rounded-full"
@@ -751,7 +751,7 @@ const AboutMap: React.FC = () => {
                     transition={{ duration: 0.52, delay: 0.56, ease: EASE_OUT_EXPO }}
                   >
                     {[
-                      ['No sign-up wall', 'write without an account'],
+                      ['No sign up wall', 'write without an account'],
                       ['Read by a person', 'before it reaches the map'],
                       ['Answered by peers', 'not a loud public feed'],
                       ['Care stays free', 'resources remain open'],
@@ -1148,7 +1148,7 @@ const AboutMap: React.FC = () => {
                   animate={galleryInView ? { opacity: 1, y: 0 } : {}}
                   transition={{ duration: 0.55, delay: 0.38, ease: EASE_OUT_EXPO }}
                 >
-                  No sign-in. No judgement. Just a community shaped by youth who&apos;ve lived this — and chose to leave a light on.
+                  No account required. No judgement. Just a community shaped by youth who&apos;ve lived this and chose to leave a light on.
                 </motion.p>
 
                 {/* Scroll hint — enhanced */}

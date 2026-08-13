@@ -282,7 +282,7 @@ export const FormattedText: React.FC<FormattedTextProps> = ({ text, className = 
           case 'attribution':
             return (
               <p key={key} className="pt-1.5 text-[10px] font-bold italic text-[#448a7d]/70">
-                — {block.text}
+                Written by {block.text}
               </p>
             );
           default:

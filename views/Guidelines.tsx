@@ -297,7 +297,7 @@ const SAFETY_ITEMS: SafetyItemData[] = [
     title: 'Crisis Content',
     badge: 'Critical',
     tone: 'critical',
-    short: 'Mentions of immediate self-harm, plans, or danger to self/others.',
+    short: 'Mentions of immediate self harm, plans, or danger to self or others.',
     more: 'If a post indicates imminent danger we may flag it for immediate review and share resources. We prioritise safety while respecting privacy.',
   },
   {
@@ -322,7 +322,7 @@ const SAFETY_ITEMS: SafetyItemData[] = [
     badge: 'Low',
     tone: 'muted',
     short: 'Promoting brands, paid services, or unrelated web links.',
-    more: 'This space is for peer support and personal reflection — overt promotion is removed to keep the community trustworthy.',
+    more: 'This space is for peer support and personal reflection. Overt promotion is removed to keep the community trustworthy.',
   },
 ];
 
@@ -520,7 +520,7 @@ const Guidelines: React.FC = () => {
             className="text-lg md:text-xl text-gray-500 font-light leading-relaxed"
           >
             Every note on Starlings passes through human review before it reaches the map.
-            Here's what we welcome — and what we protect each other from.
+            Here&apos;s what we welcome and what we protect each other from.
           </motion.p>
         </div>
       </section>
@@ -682,7 +682,7 @@ const Guidelines: React.FC = () => {
               </h2>
             </div>
             <p className="text-white/55 font-light leading-relaxed max-w-sm text-base">
-              Every note is reviewed by a human moderator. We only map your note to the city level — never IP addresses or device data.
+              Every note is reviewed by a human moderator. We only map your note to the city level, never IP addresses or device data.
             </p>
           </motion.div>
 
@@ -842,12 +842,12 @@ const Guidelines: React.FC = () => {
                   {
                     num: '01',
                     title: 'You submit',
-                    desc: 'Your note enters the queue anonymously — no account, no trace.',
+                    desc: 'Your note enters the queue anonymously with no account and no trace.',
                   },
                   {
                     num: '02',
                     title: 'We review',
-                    desc: 'A human moderator checks within 48–72 hours.',
+                    desc: 'A human moderator checks within 48 to 72 hours.',
                   },
                   {
                     num: '03',

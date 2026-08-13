@@ -208,7 +208,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                                             Getting a photo link
                                         </p>
                                         Upload your photo somewhere like Google Photos or Imgur, open it, then copy the{' '}
-                                        <span className="font-bold text-white">shareable image link</span> — not the page link — and paste it below.
+                                        <span className="font-bold text-white">shareable image link</span> instead of the page link and paste it below.
                                     </InfoPopover>
                                 </div>
                                 <input
@@ -309,7 +309,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
 const MobileResourcesHero: React.FC = () => (
     <section className="relative -mx-4 -mt-5 mb-0 flex min-h-[calc(100svh-8.75rem)] flex-col overflow-hidden bg-[#17342e] text-white">
         <div className="flex min-h-12 items-center justify-between gap-4 bg-[#e57c6e] px-5 py-3 text-[#17342e] [@media(max-height:720px)]:min-h-10 [@media(max-height:720px)]:py-2">
-            <p className="text-sm font-black leading-tight">A community-built resource guide</p>
+            <p className="text-sm font-black leading-tight">A community built resource guide</p>
             <span className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
                 <span className="h-2 w-2 rounded-full bg-[#17342e]" />
                 <span className="h-2 w-2 rounded-full bg-white" />
@@ -743,7 +743,7 @@ const ResourcesView: React.FC = () => {
         { id: ResourceType.WEBSITE, label: 'Websites', icon: <Globe className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-teal-500', bg: 'bg-gradient-to-br from-teal-400 to-teal-600 shadow-teal-500/30' },
         { id: ResourceType.MEME, label: 'Memes & Images', icon: <ImageIcon className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-orange-500', bg: 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/30' },
         { id: OTHER_BUCKET_ID, label: 'Other Resources', icon: <Shapes className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-slate-500', bg: 'bg-gradient-to-br from-slate-400 to-slate-700 shadow-slate-500/30' },
-        { id: MAP_BASED_BUCKET_ID, label: 'Map-Based Resources', icon: <MapPin className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-emerald-600', bg: 'bg-gradient-to-br from-emerald-400 to-teal-700 shadow-emerald-500/30' },
+        { id: MAP_BASED_BUCKET_ID, label: 'Map Based Resources', icon: <MapPin className="w-8 h-8 xl:w-10 xl:h-10" />, bgIcon: <div />, color: 'text-emerald-600', bg: 'bg-gradient-to-br from-emerald-400 to-teal-700 shadow-emerald-500/30' },
     ];
 
     // MEMOIZED: Compute bucket resources only when resources array changes
@@ -848,7 +848,7 @@ const ResourcesView: React.FC = () => {
                                             className="mb-3 text-center font-cabinet font-black leading-[1.06] tracking-tight text-white"
                                             style={{ fontSize: 'clamp(1.9rem, 7.2vw, 2.6rem)' }}
                                         >
-                                            <span className="block">Starlings&#8209;trained</span>
+                                            <span className="block">Starlings trained</span>
                                             <span className="block text-[#e57c6e] italic">care partner</span>
                                         </h2>
 
@@ -856,10 +856,10 @@ const ResourcesView: React.FC = () => {
 
                                         {/* Description — fuller copy, matches the desktop version */}
                                         <p className="text-[13px] font-medium leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '94%' }}>
-                                            Starlings&#8209;trained organizations offering{' '}
+                                            Starlings trained organizations offering{' '}
                                             <span className="font-semibold" style={{ color: '#7ec5b8' }}>specialized, verified care</span>{' '}
                                             for youth and adults who have grown up with parental substance use.
-                                            Listed by location — each partner is independent and responsible for their care.
+                                            Listed by location. Each partner is independent and responsible for their care.
                                         </p>
 
                                         {/* Verified badge + become-a-partner CTA */}
@@ -1069,7 +1069,7 @@ const ResourcesView: React.FC = () => {
                                             className="font-cabinet font-black text-white italic tracking-tight leading-[1.05]"
                                             style={{ fontSize: 'clamp(1.85rem, 2.6vw, 3.1rem)' }}
                                         >
-                                            Starlings&#8209;trained{' '}
+                                            Starlings trained{' '}
                                             <span className="cp-words-slot">
                                                 <span className="cp-words-word">care partner</span>
                                                 <span className="cp-words-word">care organization</span>
@@ -1081,10 +1081,10 @@ const ResourcesView: React.FC = () => {
                                         </h2>
                                         <div className="w-10 h-px my-5" style={{ background: 'rgba(68,138,125,0.35)' }} />
                                         <p className="text-white/45 text-[13px] font-medium leading-relaxed mb-5">
-                                            Starlings-trained organizations offering{' '}
+                                            Starlings trained organizations offering{' '}
                                             <span className="text-[#7ec5b8] font-semibold">specialized, verified care</span>{' '}
                                             for youth and adults who have grown up with parental substance use.
-                                            Listed by location — each partner is independent and responsible for their care.
+                                            Listed by location. Each partner is independent and responsible for their care.
                                         </p>
                                         <div className="flex items-center gap-3 flex-wrap">
                                             <span className="inline-block text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-[#448a7d] text-white rounded-full">
@@ -1326,7 +1326,7 @@ const ResourcesView: React.FC = () => {
                                                 exit={{ opacity: 0, y: -4 }}
                                                 transition={{ duration: 0.25 }}
                                             >
-                                                Peer-recommended by the community.
+                                                Peer recommended by the community.
                                             </motion.p>
                                         )}
                                     </AnimatePresence>
@@ -1631,7 +1631,7 @@ const ResourcesView: React.FC = () => {
                                                         Explore community resources.
                                                     </h3>
                                                     <p className="mt-4 max-w-lg text-base font-medium leading-relaxed text-[#1e3a34]/55">
-                                                        Books, tools, media, and local support—organized so you can find what feels useful right now.
+                                                        Books, tools, media, and local support organized so you can find what feels useful right now.
                                                     </p>
                                                     <div className="mt-8 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.16em] text-[#448a7d]">
                                                         <motion.span
@@ -1660,7 +1660,7 @@ const ResourcesView: React.FC = () => {
                                                         <div>
                                                             <h3 className="text-3xl font-black text-[#1e3a34] italic tracking-tight">{activeBucket.label}</h3>
                                                             <p className="text-sm text-gray-500 font-medium">
-                                                                {activeResources.length} peer-recommended resource{activeResources.length !== 1 ? 's' : ''}
+                                                                {activeResources.length} peer recommended resource{activeResources.length !== 1 ? 's' : ''}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -1716,7 +1716,7 @@ const ResourcesView: React.FC = () => {
                                     
                                     <div className="space-y-3 md:space-y-6">
                                         <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl break-words [overflow-wrap:anywhere]">
-                                            Starlings-Aligned Partners
+                                            Starlings Aligned Partners
                                         </h2>
                                         
                                         <div className="space-y-3 md:space-y-4 max-w-3xl">
@@ -1724,7 +1724,7 @@ const ResourcesView: React.FC = () => {
                                                 Organizations reviewed by Starlings that offer <span className="text-[#e57c6e] font-black">resources and support</span> for youth and adults affected by parental substance use.
                                             </p>
                                             <p className="text-sm md:text-lg text-gray-600 font-medium leading-relaxed">
-                                                They are independent and not affiliated with or trained by Starlings. <span className="font-black">Inclusion does not imply endorsement</span> — we encourage you to explore what feels right for you.
+                                                They are independent and not affiliated with or trained by Starlings. <span className="font-black">Inclusion does not imply endorsement.</span> We encourage you to explore what feels right for you.
                                             </p>
                                             <div className="flex items-center gap-2 pt-2">
                                                 <span className="inline-block text-xs md:text-sm font-black uppercase tracking-widest px-4 md:px-5 py-2 md:py-2.5 bg-[#e57c6e] text-white rounded-full shadow-md">◆ Reviewed</span>
@@ -1829,7 +1829,7 @@ const ResourcesView: React.FC = () => {
                                             </div>
                                             <div>
                                                 <h3 className="text-2xl md:text-4xl font-black text-white drop-shadow-lg tracking-tight leading-tight mb-0.5 md:mb-1">{bucket.label} Collection</h3>
-                                                <p className="text-white/90 font-medium text-xs md:text-sm leading-snug hidden sm:block">Browse {bucketResources.length} peer-recommended resources dynamically sorted from the community.</p>
+                                                <p className="text-white/90 font-medium text-xs md:text-sm leading-snug hidden sm:block">Browse {bucketResources.length} peer recommended resources dynamically sorted from the community.</p>
                                                 <p className="text-white/90 font-medium text-xs leading-snug sm:hidden">{bucketResources.length} resources</p>
                                             </div>
                                         </div>

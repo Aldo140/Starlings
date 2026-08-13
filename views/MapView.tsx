@@ -196,6 +196,17 @@ interface CityGroup {
   mappable: boolean;
 }
 
+type RefreshFeedback = 'idle' | 'checking' | 'updated' | 'recent' | 'error';
+
+const MAP_REFRESH_COOLDOWN_MS = 20_000;
+const REFRESH_FEEDBACK_DURATION_MS = 2_400;
+const REFRESH_FEEDBACK_COPY: Record<Exclude<RefreshFeedback, 'idle'>, string> = {
+  checking: 'Checking for new posts',
+  updated: 'Map is up to date',
+  recent: 'Checked just now',
+  error: 'Refresh did not finish',
+};
+
 /**
  * Resolves a post's display city and canonical coordinates.
  *
@@ -265,6 +276,7 @@ const MapView: React.FC = () => {
   const [allResourceCount, setAllResourceCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshFeedback, setRefreshFeedback] = useState<RefreshFeedback>('idle');
   const [searchTerm, setSearchTerm] = useState('');
   const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'stories' | 'resources'>('all');
@@ -277,7 +289,23 @@ const MapView: React.FC = () => {
   const [locationFocus, setLocationFocus] = useState<{ lat: number, lng: number, requestId: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const locationRequestId = useRef(0);
+  const lastCompletedRefreshAt = useRef(0);
+  const refreshInFlight = useRef(false);
+  const refreshFeedbackTimer = useRef<number | undefined>(undefined);
   const navigate = useNavigate();
+
+  const showRefreshFeedback = (feedback: RefreshFeedback, autoDismiss = true) => {
+    if (refreshFeedbackTimer.current !== undefined) {
+      window.clearTimeout(refreshFeedbackTimer.current);
+    }
+    setRefreshFeedback(feedback);
+    if (autoDismiss) {
+      refreshFeedbackTimer.current = window.setTimeout(() => {
+        setRefreshFeedback('idle');
+        refreshFeedbackTimer.current = undefined;
+      }, REFRESH_FEEDBACK_DURATION_MS);
+    }
+  };
 
   const selectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
@@ -316,6 +344,7 @@ const MapView: React.FC = () => {
           if (locatedResources.length > 0) setMappableResources(locatedResources);
         });
         await Promise.all([postsRequest, resourcesRequest]);
+        if (!cancelled) lastCompletedRefreshAt.current = Date.now();
 
         // A first-time visitor may have no story cache during an Apps Script
         // cold start. Retry in place; never require a manual page refresh.
@@ -337,6 +366,12 @@ const MapView: React.FC = () => {
       cancelled = true;
       if (retryTimer !== undefined) window.clearTimeout(retryTimer);
     };
+  }, []);
+
+  useEffect(() => () => {
+    if (refreshFeedbackTimer.current !== undefined) {
+      window.clearTimeout(refreshFeedbackTimer.current);
+    }
   }, []);
 
   const handleNearMe = () => {
@@ -376,7 +411,20 @@ const MapView: React.FC = () => {
   };
 
   const handleRefresh = async () => {
+    if (refreshInFlight.current) {
+      showRefreshFeedback('checking', false);
+      return;
+    }
+
+    const elapsedSinceRefresh = Date.now() - lastCompletedRefreshAt.current;
+    if (lastCompletedRefreshAt.current > 0 && elapsedSinceRefresh < MAP_REFRESH_COOLDOWN_MS) {
+      showRefreshFeedback('recent');
+      return;
+    }
+
+    refreshInFlight.current = true;
     setRefreshing(true);
+    showRefreshFeedback('checking', false);
     try {
       const postsRequest = apiService.getApprovedPosts(true).then(freshPosts => {
         const validPosts = freshPosts.filter(post => !isLegacyResourcePost(post));
@@ -388,9 +436,13 @@ const MapView: React.FC = () => {
         if (locatedResources.length > 0) setMappableResources(locatedResources);
       });
       await Promise.all([postsRequest, resourcesRequest]);
+      lastCompletedRefreshAt.current = Date.now();
+      showRefreshFeedback('updated');
     } catch (error) {
       console.error('Refresh failed:', error);
+      showRefreshFeedback('error');
     } finally {
+      refreshInFlight.current = false;
       setRefreshing(false);
     }
   };
@@ -664,6 +716,42 @@ const MapView: React.FC = () => {
             onFocus={() => setIsMobileSearchFocused(true)}
             onBlur={() => setIsMobileSearchFocused(false)}
           />
+          <AnimatePresence initial={false}>
+            {!isMobileSearchFocused && !hasActiveSearch && refreshFeedback !== 'idle' && (
+              <motion.div
+                key={refreshFeedback}
+                role="status"
+                aria-live="polite"
+                initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className={`absolute left-1 top-full z-30 mt-2 flex min-h-9 items-center gap-2 rounded-full px-3.5 py-2 text-[11px] font-black shadow-md ${
+                  refreshFeedback === 'error'
+                    ? 'bg-[#9f453d] text-white'
+                    : 'bg-[#17342e] text-white'
+                }`}
+              >
+                {refreshFeedback === 'checking' ? (
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/35 border-t-white" aria-hidden="true" />
+                ) : refreshFeedback === 'updated' ? (
+                  <svg className="h-3.5 w-3.5 text-[#7ec8ba]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m5 12 4 4L19 6" />
+                  </svg>
+                ) : refreshFeedback === 'recent' ? (
+                  <svg className="h-3.5 w-3.5 text-[#7ec8ba]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                ) : (
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                    <path d="M12 7v6M12 17h.01" />
+                  </svg>
+                )}
+                <span>{REFRESH_FEEDBACK_COPY[refreshFeedback]}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {searchTerm && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden z-40 border border-gray-100 flex flex-col pointer-events-auto">
               {filteredGroups.length > 0 ? (

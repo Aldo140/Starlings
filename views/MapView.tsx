@@ -293,6 +293,7 @@ const MapView: React.FC = () => {
   const refreshInFlight = useRef(false);
   const refreshFeedbackTimer = useRef<number | undefined>(undefined);
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
 
   const showRefreshFeedback = (feedback: RefreshFeedback, autoDismiss = true) => {
     if (refreshFeedbackTimer.current !== undefined) {
@@ -604,6 +605,12 @@ const MapView: React.FC = () => {
 
   const hasActiveSearch = searchTerm.trim().length > 0;
   const showMobileSearchIcon = isMobileSearchFocused || hasActiveSearch;
+  const showMobileRefreshCheck = refreshFeedback === 'checking' || refreshFeedback === 'updated' || refreshFeedback === 'recent';
+  const mobileRefreshLabel = refreshFeedback === 'checking'
+    ? 'Map refresh started'
+    : showMobileRefreshCheck
+      ? 'Map refresh confirmed'
+      : 'Refresh map posts';
   const totalMappedItems = groupedItems.reduce((sum, group) => sum + group.count, 0);
   const globalResourceCount = Math.max(0, allResourceCount - mappableResources.length);
   const mapGroups = filteredGroups.filter(group => group.mappable);
@@ -687,24 +694,51 @@ const MapView: React.FC = () => {
               onClick={handleRefresh}
               disabled={refreshing}
               className="absolute left-1 top-1 z-10 flex h-10 w-10 items-center justify-center rounded-lg text-[#448a7d] transition-colors hover:bg-[#e8f3f1] active:bg-[#d5e9e5] disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#448a7d] focus-visible:ring-offset-1"
-              aria-label={refreshing ? 'Refreshing map posts' : 'Refresh map posts'}
-              title={refreshing ? 'Refreshing map posts' : 'Refresh map posts'}
+              aria-label={mobileRefreshLabel}
+              title={mobileRefreshLabel}
             >
-              <svg
-                className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 6v5h-5" />
-                <path d="M4 18v-5h5" />
-                <path d="M6.1 9a7 7 0 0 1 11.6-2.6L20 11" />
-                <path d="m4 13 2.3 4.6A7 7 0 0 0 17.9 15" />
-              </svg>
+              <AnimatePresence mode="wait" initial={false}>
+                {showMobileRefreshCheck ? (
+                  <motion.svg
+                    key="refresh-check"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.65, rotate: -12 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
+                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <path d="m5 12 4 4L19 6" />
+                  </motion.svg>
+                ) : (
+                  <motion.svg
+                    key="refresh-ready"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <path d="M20 6v5h-5" />
+                    <path d="M4 18v-5h5" />
+                    <path d="M6.1 9a7 7 0 0 1 11.6-2.6L20 11" />
+                    <path d="m4 13 2.3 4.6A7 7 0 0 0 17.9 15" />
+                  </motion.svg>
+                )}
+              </AnimatePresence>
             </button>
           )}
           <input

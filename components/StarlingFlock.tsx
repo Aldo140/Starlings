@@ -158,17 +158,23 @@ class Boid {
 
 type StarlingFlockProps = {
     variant?: 'landing' | 'quiet';
+    paused?: boolean;
 };
 
-export const StarlingFlock: React.FC<StarlingFlockProps> = ({ variant = 'landing' }) => {
+export const StarlingFlock: React.FC<StarlingFlockProps> = ({ variant = 'landing', paused = false }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const scrollYRef = useRef(0);
     const targetScrollYRef = useRef(0);
     const pausedRef = useRef(false);
     const focusedInputRef = useRef(false);
     const visibleFocusZonesRef = useRef(new Set<Element>());
+    const externallyPausedRef = useRef(paused);
     const fastScrollUntilRef = useRef(0);
     const lastScrollSampleRef = useRef({ y: 0, time: 0 });
+
+    useEffect(() => {
+        externallyPausedRef.current = paused;
+    }, [paused]);
 
     useEffect(() => {
         scrollYRef.current = window.scrollY;
@@ -276,7 +282,7 @@ export const StarlingFlock: React.FC<StarlingFlockProps> = ({ variant = 'landing
 
         const animate = (now: number) => {
             animationFrameId = requestAnimationFrame(animate);
-            if (document.hidden || pausedRef.current || now - lastFrame < minimumFrameGap) return;
+            if (document.hidden || pausedRef.current || externallyPausedRef.current || now - lastFrame < minimumFrameGap) return;
             const elapsed = lastFrame > 0 ? now - lastFrame : 1000 / 30;
             const timeScale = Math.min(elapsed / (1000 / 30), 1.5);
             lastFrame = now;
@@ -344,7 +350,7 @@ export const StarlingFlock: React.FC<StarlingFlockProps> = ({ variant = 'landing
         <canvas
             ref={canvasRef}
             className="starling-flock-canvas fixed inset-0 z-0 h-full w-full pointer-events-none mix-blend-multiply transition-opacity duration-300"
-            style={{ position: 'fixed', top: 0, left: 0, opacity: variant === 'quiet' ? 0.12 : 0.25 }}
+            style={{ position: 'fixed', top: 0, left: 0, opacity: paused ? 0 : variant === 'quiet' ? 0.12 : 0.25 }}
             aria-hidden="true"
         />
     );

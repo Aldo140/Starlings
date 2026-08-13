@@ -196,29 +196,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           profile; forms, guidelines, and the map remain visually still. */}
       {(location.pathname === '/' || location.pathname === '/resources') && ambientReady && (
         <React.Suspense fallback={null}>
-          <StarlingFlock variant={location.pathname === '/resources' ? 'quiet' : 'landing'} />
+          <StarlingFlock variant={location.pathname === '/resources' ? 'quiet' : 'landing'} paused={isMenuOpen} />
         </React.Suspense>
       )}
 
-      {/* Mobile full-screen nav overlay */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            key="mobile-menu-overlay"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.32, ease: EASE_OUT_EXPO }}
-            className="lg:hidden fixed inset-0 z-[9999] bg-[#0f2620] overflow-y-auto flex flex-col"
-            style={{ scrollbarWidth: 'none' }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Site navigation"
-          >
-            {/* Atmospheric orbs */}
-            <div className="absolute top-0 right-0 w-72 h-72 bg-[#448a7d]/30 rounded-full blur-[90px] -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#e57c6e]/18 rounded-full blur-[70px] translate-y-1/3 -translate-x-1/3 pointer-events-none" />
-            <div className="absolute top-1/2 right-4 w-40 h-40 bg-[#448a7d]/12 rounded-full blur-[50px] -translate-y-1/2 pointer-events-none" />
+      {/* Mobile full-screen nav overlay. Keep it mounted so tapping the menu
+          never has to construct and animate a large subtree on a phone. */}
+      <div
+        className={`fixed inset-0 z-[9999] flex flex-col overflow-y-auto bg-[#0f2620] transition-opacity duration-150 lg:hidden ${
+          isMenuOpen ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
+        }`}
+        style={{ scrollbarWidth: 'none' }}
+        role="dialog"
+        aria-modal={isMenuOpen ? true : undefined}
+        aria-hidden={!isMenuOpen}
+        inert={!isMenuOpen}
+        aria-label="Site navigation"
+      >
 
             {/* Dot grid */}
             <div
@@ -230,12 +224,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             />
 
             {/* Top bar */}
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.08, ease: EASE_OUT_EXPO }}
-              className="flex items-center justify-between px-6 pt-7 pb-3 relative z-10 flex-shrink-0"
-            >
+            <div className="flex items-center justify-between px-6 pt-7 pb-3 relative z-10 flex-shrink-0">
               <Link
                 to="/"
                 onClick={() => { setIsMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -269,29 +258,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </svg>
                 </button>
               </div>
-            </motion.div>
+            </div>
 
             {/* Eyebrow */}
-            <motion.p
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.15, ease: EASE_OUT_EXPO }}
-              className="px-6 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#448a7d] relative z-10 flex-shrink-0"
-            >
+            <p className="px-6 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.22em] text-[#448a7d] relative z-10 flex-shrink-0">
               Navigate
-            </motion.p>
+            </p>
 
             {/* Nav links */}
             <nav className="flex-1 px-5 pt-2 relative z-10">
               {navLinks.map((link, i) => {
                 const isActive = location.pathname === link.path;
                 return (
-                  <motion.div
-                    key={link.path}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.48, ease: EASE_OUT_EXPO, delay: 0.18 + i * 0.075 }}
-                  >
+                  <div key={link.path}>
                     <Link
                       to={link.path}
                       onClick={() => setIsMenuOpen(false)}
@@ -324,7 +303,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         {link.illustration}
                       </div>
                     </Link>
-                  </motion.div>
+                  </div>
                 );
               })}
             </nav>
@@ -359,12 +338,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </button>
 
             {/* CTA */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: EASE_OUT_EXPO, delay: 0.18 + navLinks.length * 0.075 }}
-              className="px-5 pt-5 pb-10 relative z-10 flex-shrink-0"
-            >
+            <div className="px-5 pt-5 pb-10 relative z-10 flex-shrink-0">
               <Link
                 to="/share"
                 onClick={() => setIsMenuOpen(false)}
@@ -378,10 +352,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <p className="text-center text-[10px] text-white/22 font-medium mt-3 tracking-wide">
                 Anonymous &amp; always free
               </p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+      </div>
 
       <div className="bg-[#ADEBB3] border-b border-[#448a7d]/25 py-3 px-4 flex-shrink-0 text-center z-50">
         <p className="text-xs md:text-sm font-semibold text-[#1e3a34]">

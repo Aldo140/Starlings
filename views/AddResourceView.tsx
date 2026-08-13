@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { apiService } from '../services/api.ts';
+import { apiService, isValidWebUrl, normalizeUrlInput } from '../services/api.ts';
 import { LocationSearchResult, ResourceType } from '../types.ts';
 import { ICONS, supportsResourceImage } from '../constants.tsx';
 import InfoPopover from '../components/InfoPopover.tsx';
@@ -95,7 +95,7 @@ const AddResourceView: React.FC = () => {
     };
 
     const isFormValid = () => {
-        if (!formData.title.trim() || !formData.url.trim() || wordCount > 500) return false;
+        if (!formData.title.trim() || !isValidWebUrl(formData.url) || wordCount > 500) return false;
         if (mode === 'recommend' && formData.includeOnMap && (!formData.selectedLocation || !selectedCity)) return false;
         if (imageRequired && !formData.imageUrl.trim()) return false;
         if (mode === 'apply') {
@@ -106,9 +106,18 @@ const AddResourceView: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!isFormValid()) return;
-
         setErrorMessage('');
+        if (!isFormValid()) {
+            if (formData.url.trim() && !isValidWebUrl(formData.url)) {
+                setErrorMessage('Enter a valid website, such as website.com or https://website.com.');
+            }
+            return;
+        }
+        const moderatedText = `${formData.title} ${formData.description} ${formData.qualifications}`;
+        if (apiService.hasBannedContent(moderatedText)) {
+            setErrorMessage('Please remove contact details, identifying information, or flagged language before submitting this resource.');
+            return;
+        }
         setIsSubmitting(true);
         if (mode === 'recommend' && formData.includeOnMap) {
             const locationSupported = await apiService.supportsResourceLocations();
@@ -135,7 +144,7 @@ const AddResourceView: React.FC = () => {
 
         const result = await apiService.submitResource({
             title: formData.title,
-            url: formData.url,
+            url: normalizeUrlInput(formData.url),
             type: formData.type,
             description: combinedDesc,
             alias: aliasValue,
@@ -229,12 +238,14 @@ const AddResourceView: React.FC = () => {
                         <label htmlFor="url" className="block text-[#1e3a34] font-black text-xl italic">Link / URL <span className="text-[#e57c6e]">*</span></label>
                         <input
                             id="url"
-                            type="url"
+                            type="text"
+                            inputMode="url"
                             required
-                            placeholder="https://..."
+                            placeholder="website.com or https://website.com"
                             className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
                             value={formData.url}
                             onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                            onBlur={() => setFormData(prev => ({ ...prev, url: normalizeUrlInput(prev.url) }))}
                         />
                     </div>
 

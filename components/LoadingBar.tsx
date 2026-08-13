@@ -11,6 +11,8 @@ interface LoadingBarProps {
    * For page-level fixed bar use: "fixed top-0 left-0 right-0 z-[4998]"
    */
   className?: string;
+  /** Optional responsive visibility/positioning classes for the status pill. */
+  statusPillClassName?: string;
 }
 
 /**
@@ -26,6 +28,7 @@ interface LoadingBarProps {
 const LoadingBar: React.FC<LoadingBarProps> = ({
   isLoading,
   className = 'absolute top-0 left-0 right-0 z-10',
+  statusPillClassName = 'fixed bottom-5 right-5 z-[5002]',
 }) => {
   const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(0);   // 0 – 1
@@ -123,7 +126,7 @@ const LoadingBar: React.FC<LoadingBarProps> = ({
 
       {/* ── Bouncing cube floating pill — bottom-right corner (alexruix) ── */}
       <motion.div
-        className="fixed bottom-5 right-5 z-[5002] pointer-events-none"
+        className={`${statusPillClassName} pointer-events-none`}
         initial={{ opacity: 0, y: 12, scale: 0.9 }}
         animate={{ opacity: fading ? 0 : 1, y: fading ? 8 : 0, scale: fading ? 0.92 : 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}

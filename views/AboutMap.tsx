@@ -202,45 +202,122 @@ const AboutMap: React.FC = () => {
   return (
     <div>
 
-      {/* ── Section 1: Mission Statement Hero ─────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[#1e3a34] py-24 md:py-36">
-        {/* Ambient dot-matrix texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(68,138,125,0.065) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-        <motion.div
-          className="relative z-10 max-w-4xl mx-auto px-6"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.85, ease: EASE_OUT_EXPO }}
-        >
-          <p className="text-[#448a7d] font-black text-[9px] uppercase tracking-[0.5em] mb-4">Our Mission</p>
-          <h1
-            className="font-cabinet font-black italic tracking-tight leading-[0.95] text-white mb-8"
-            style={{ fontSize: 'clamp(2.8rem, 7vw, 5rem)' }}
+      {/* ── Section 1: Mission poster ─────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-[#1e3a34] lg:bg-[linear-gradient(90deg,#1e3a34_0%,#1e3a34_64%,#d4eae6_64%,#d4eae6_100%)]">
+        <div className="mx-auto hidden max-w-7xl lg:grid lg:min-h-[34rem] lg:grid-cols-[1.65fr_0.9fr]">
+          <motion.div
+            className="relative flex flex-col justify-center px-6 py-20 sm:px-10 md:py-24 lg:px-12 lg:py-28 xl:pr-24"
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.8, ease: EASE_OUT_EXPO }}
           >
-            About Starlings.
-          </h1>
-          <p
-            className="text-white/70 font-light leading-relaxed max-w-2xl"
-            style={{ fontSize: 'clamp(1rem, 2.2vw, 1.2rem)' }}
-          >
-            Starlings Community is a not for profit whose mission is to strengthen the community of support around the 1 in 4 young people growing up with parental/familial substance use challenges through peer led and evidence informed strategies.{' '}
+            <div className="absolute left-6 top-0 h-1 w-24 bg-[#e57c6e] sm:left-10 lg:left-12" aria-hidden="true" />
+            <h1
+              className="font-cabinet font-black leading-[0.98] tracking-[-0.035em] text-white"
+              style={{ fontSize: 'clamp(2.8rem, 6vw, 4.8rem)' }}
+            >
+              <span className="block">We strengthen support</span>
+              <span className="block text-[#7ec8ba]">around young people.</span>
+            </h1>
+            <p className="mt-8 max-w-[39rem] text-base font-medium leading-8 text-[#dbe8e4] md:text-lg">
+              Starlings Community is a not-for-profit strengthening support around young people growing up with parental or familial substance-use challenges through peer-led and evidence-informed strategies.
+            </p>
             <a
               href="https://www.starlings.ca"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#448a7d] underline decoration-[#448a7d]/40 underline-offset-2 hover:text-white transition-colors"
+              className="mt-9 inline-flex min-h-11 w-fit items-center gap-3 rounded-full bg-[#e57c6e] px-6 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 hover:bg-[#d46a5c] active:translate-y-0"
             >
-              Learn more about Starlings ↗
+              Meet Starlings Community
+              <span aria-hidden="true">↗</span>
             </a>
-          </p>
-        </motion.div>
+          </motion.div>
+
+          <motion.div
+            className="relative -mx-0 flex min-h-[25rem] flex-col justify-between overflow-hidden bg-[#d4eae6] px-6 py-12 text-[#1e3a34] sm:px-10 lg:bg-transparent lg:px-12 lg:py-16"
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.82, delay: 0.1, ease: EASE_OUT_EXPO }}
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}logo-star.avif`}
+              alt="Starlings Community"
+              width="242"
+              height="84"
+              decoding="async"
+              className="h-auto w-full max-w-[242px]"
+            />
+
+            <div className="mt-16 lg:mt-20">
+              <div className="h-px w-full bg-[#1e3a34]/18" aria-hidden="true" />
+              <p className="mt-7 font-cabinet font-black leading-none tracking-[-0.04em]" style={{ fontSize: 'clamp(4.5rem, 9vw, 7.5rem)' }}>
+                1 <span className="text-[#e57c6e]">in</span> 4
+              </p>
+              <p className="mt-5 max-w-[19rem] text-sm font-bold leading-6 text-[#1e3a34]/70">
+                young people grow up with parental or familial substance-use challenges.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Phone/tablet composition: intentionally separate from desktop. */}
+        <div className="lg:hidden">
+          <motion.div
+            className="relative px-5 pb-12 pt-16 sm:px-10 sm:pb-16 sm:pt-20"
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+          >
+            <div className="absolute left-5 top-0 h-1 w-20 bg-[#e57c6e] sm:left-10" aria-hidden="true" />
+            <p className="mb-5 text-[10px] font-black uppercase tracking-[0.28em] text-[#7ec8ba]">About Starlings</p>
+            <h1 className="font-cabinet text-[clamp(2.7rem,12vw,4.5rem)] font-black leading-[0.96] tracking-[-0.035em] text-white">
+              Support grows stronger
+              <span className="block text-[#7ec8ba]">around young people.</span>
+            </h1>
+            <p className="mt-7 max-w-[37rem] text-base font-medium leading-7 text-[#e2eeeb] sm:text-lg sm:leading-8">
+              Starlings Community is a not-for-profit strengthening support around young people growing up with parental or familial substance-use challenges through peer-led and evidence-informed strategies.
+            </p>
+          </motion.div>
+
+          <motion.div
+            className="bg-[#d4eae6] px-5 py-10 text-[#1e3a34] sm:px-10 sm:py-12"
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.08, ease: EASE_OUT_EXPO }}
+          >
+            <img
+              src={`${import.meta.env.BASE_URL}logo-star.avif`}
+              alt="Starlings Community"
+              width="242"
+              height="84"
+              decoding="async"
+              className="h-auto w-full max-w-[210px]"
+            />
+
+            <div className="mt-10 border-t border-[#1e3a34]/20 pt-7">
+              <p className="font-cabinet text-[clamp(4.2rem,22vw,6.5rem)] font-black leading-none tracking-[-0.04em]">
+                1 <span className="text-[#e57c6e]">in</span> 4
+              </p>
+              <p className="mt-4 max-w-[22rem] text-sm font-bold leading-6 text-[#365a53]">
+                young people grow up with parental or familial substance-use challenges.
+              </p>
+            </div>
+
+            <a
+              href="https://www.starlings.ca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 flex min-h-12 w-full items-center justify-between rounded-full bg-[#1e3a34] px-6 py-3 text-sm font-black text-white transition-colors active:bg-[#2d5a52] sm:w-fit sm:gap-5"
+            >
+              Meet Starlings Community
+              <span aria-hidden="true">↗</span>
+            </a>
+          </motion.div>
+        </div>
       </section>
 
       {/* ── Section 1.5: Starlings Offerings — Editorial Broadcast ──────────── */}

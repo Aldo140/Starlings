@@ -47,6 +47,17 @@ const escapeHtml = (value: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 
+// Faithful vector rendering of the four-part Starlings brand mark from
+// public/favicon.png. Using vectors keeps the real emblem crisp on map pins
+// without bringing along the favicon's black raster background.
+const starlingSvg = (size: number) => `
+  <svg width="${size}" height="${size}" viewBox="0 0 128 128" aria-hidden="true" style="display:block;overflow:visible">
+    <path d="M31 31h20c15 0 25 10 25 24 0 15-11 25-26 25-12 0-19-5-19-19V31Z" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M55 84c0-15 10-25 25-25 14 0 24 10 24 25v20H80c-15 0-25-8-25-20Z" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="94" cy="39" r="10" fill="none" stroke="currentColor" stroke-width="8"/>
+    <circle cx="38" cy="96" r="7" fill="none" stroke="currentColor" stroke-width="8"/>
+  </svg>`;
+
 const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId, flyToLocation }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
@@ -330,7 +341,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
               <div style="
                 position: absolute;
                 inset: 5px;
-                border-radius: 44% 56% 54% 46% / 52% 42% 58% 48%;
+                border-radius: 18px;
                 background: linear-gradient(135deg, ${COLORS.teal500}, ${COLORS.coral400});
                 opacity: 0.2;
                 animation: ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -368,10 +379,10 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
                 border: 2px solid white;
                 box-shadow: 0 8px 16px rgba(30,58,52,0.18);
               "></div>
-              <div role="button" tabindex="0" aria-label="${cluster.groups.length} grouped pins containing ${cluster.postCount} posts" style="
+              <div role="button" tabindex="0" aria-label="${cluster.groups.length} grouped locations containing ${cluster.postCount} items" style="
                 width: ${iconSize - 14}px;
                 height: ${iconSize - 14}px;
-                border-radius: 44% 56% 54% 46% / 52% 42% 58% 48%;
+                border-radius: 16px;
                 background: linear-gradient(135deg, ${COLORS.teal500} 0%, ${COLORS.teal500} 48%, ${COLORS.coral400} 49%, ${COLORS.coral400} 100%);
                 border: 3px solid white;
                 color: white;
@@ -383,8 +394,8 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
                 cursor: pointer;
                 position: relative;
               " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
-                <span style="font-weight: 900; font-size: ${hasSelectedGroup ? '18px' : '16px'}; line-height: 1;">${cluster.groups.length}</span>
-                <span style="font-weight: 900; font-size: 7px; line-height: 1; letter-spacing: 0.16em; text-transform: uppercase; opacity: 0.9; margin-top: 3px;">pins</span>
+                <div style="color:white;transform:translateY(-2px)">${starlingSvg(hasSelectedGroup ? 34 : 30)}</div>
+                <span style="position:absolute;right:-5px;top:-6px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:${COLORS.teal900};border:2px solid white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;line-height:1;">${cluster.postCount}</span>
               </div>
               <div style="
                 position: absolute;
@@ -401,7 +412,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
                 white-space: nowrap;
-              ">${cluster.postCount} posts · ${label}${cluster.groups.length > 3 ? ' +' : ''}</div>
+              ">${cluster.postCount} items · ${label}${cluster.groups.length > 3 ? ' +' : ''}</div>
             </div>
           `,
           iconSize: [iconSize, iconSize],
@@ -444,7 +455,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
             <div style="
               position: absolute;
               inset: 0;
-              border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%;
+              border-radius: 16px;
               ${backgroundStyle}
               opacity: 0.4;
               animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -461,7 +472,7 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
               height: ${isSelected ? '56px' : '46px'};
               ${backgroundStyle}
               border: 3px solid white;
-              border-radius: 46% 54% 52% 48% / 50% 44% 56% 50%;
+              border-radius: 14px;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -472,30 +483,17 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
               cursor: pointer;
             " onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
               <div style="
-                position: absolute;
-                top: 8px;
-                right: 9px;
-                width: 7px;
-                height: 7px;
-                border-radius: 999px;
-                background: rgba(255,255,255,0.45);
-              "></div>
-              <div style="
-                width: ${isSelected ? '30px' : '24px'};
-                height: ${isSelected ? '30px' : '24px'};
-                border-radius: 40% 60% 52% 48% / 48% 42% 58% 52%;
-                background: rgba(255,255,255,0.25);
+                width: ${isSelected ? '38px' : '32px'};
+                height: ${isSelected ? '38px' : '32px'};
                 backdrop-filter: blur(4px);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
-                font-weight: 800;
-                font-size: ${isSelected ? '14px' : '12px'};
-                letter-spacing: 0.04em;
               ">
-                ${group.count}
+                ${starlingSvg(isSelected ? 38 : 32)}
               </div>
+              <span style="position:absolute;right:-5px;top:-6px;min-width:22px;height:22px;padding:0 5px;border-radius:999px;background:${COLORS.teal900};border:2px solid white;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:10px;line-height:1;">${group.count}</span>
               <div style="
                 position: absolute;
                 bottom: -12px;

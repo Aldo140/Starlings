@@ -7,7 +7,7 @@ import { apiService, calculateDistance, CANADIAN_HUBS } from '../services/api.ts
 import { Post, MapItem, Resource } from '../types.ts';
 import { ICONS } from '../constants.tsx';
 import { Drawer } from 'vaul';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import LoadingBar from '../components/LoadingBar.tsx';
 
 /** Shimmer skeleton cards shown during initial data fetch */
@@ -38,6 +38,151 @@ const CitySkeleton: React.FC = () => (
     ))}
   </>
 );
+
+/** Mobile-only loading scene: community stories settle into map locations. */
+const MobileMapLoading: React.FC = () => {
+  const reduceMotion = useReducedMotion();
+  const [stage, setStage] = useState(0);
+  const pins = [
+    { x: 30, y: 54, delay: 0.08, color: '#448a7d' },
+    { x: 83, y: 27, delay: 0.28, color: '#e57c6e' },
+    { x: 137, y: 48, delay: 0.48, color: '#448a7d' },
+    { x: 190, y: 22, delay: 0.68, color: '#e57c6e' },
+  ];
+  const stages = [
+    {
+      title: 'Opening the community map',
+      detail: 'Preparing the places where stories have been shared.',
+    },
+    {
+      title: 'Placing community stories',
+      detail: 'Matching approved notes with their cities.',
+    },
+    {
+      title: 'Checking nearby support',
+      detail: 'Still working — slower connections can take a moment.',
+    },
+  ];
+
+  useEffect(() => {
+    const secondStage = window.setTimeout(() => setStage(1), 1600);
+    const thirdStage = window.setTimeout(() => setStage(2), 3800);
+    return () => {
+      window.clearTimeout(secondStage);
+      window.clearTimeout(thirdStage);
+    };
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`${stages[stage].title}. ${stages[stage].detail}`}
+      className="pointer-events-none absolute left-1/2 top-[42%] z-[1600] w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 md:hidden"
+    >
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.98 }}
+        transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+        className="overflow-hidden rounded-2xl bg-[#17342e] shadow-[0_8px_28px_-10px_rgba(23,52,46,0.58)]"
+      >
+        <div className="relative h-24 overflow-hidden bg-[#dcece8]" aria-hidden="true">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 220 88" fill="none">
+            <path d="M-8 70C24 62 22 23 56 26C88 29 94 68 126 58C157 49 166 11 228 18" stroke="#b7d6cf" strokeWidth="14" strokeLinecap="round" opacity=".45" />
+            <path d="M-8 70C24 62 22 23 56 26C88 29 94 68 126 58C157 49 166 11 228 18" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeDasharray="4 7" opacity=".9" />
+            <motion.path
+              d="M30 54C52 50 63 32 83 27C105 22 114 45 137 48C157 51 168 29 190 22"
+              stroke="#448a7d"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeDasharray="3 5"
+              initial={reduceMotion ? false : { pathLength: 0, opacity: 0.2 }}
+              animate={{ pathLength: 1, opacity: 0.75 }}
+              transition={{ duration: 1.45, ease: [0.16, 1, 0.3, 1] }}
+            />
+            {!reduceMotion && (
+              <motion.circle
+                r="3.5"
+                fill="#ffffff"
+                stroke="#448a7d"
+                strokeWidth="2"
+                animate={{
+                  cx: [30, 83, 137, 190],
+                  cy: [54, 27, 48, 22],
+                }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            )}
+            {pins.map((pin) => (
+              <motion.g
+                key={`${pin.x}-${pin.y}`}
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.2, y: -8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.36, delay: pin.delay, ease: [0.16, 1, 0.3, 1] }}
+                style={{ transformOrigin: `${pin.x}px ${pin.y}px` }}
+              >
+                <circle cx={pin.x} cy={pin.y} r="8" fill="white" />
+                <circle cx={pin.x} cy={pin.y} r="4.5" fill={pin.color} />
+              </motion.g>
+            ))}
+          </svg>
+
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <motion.div
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1e3a34] text-white shadow-md"
+              animate={reduceMotion ? undefined : { rotate: [0, -3, 3, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <svg className="h-7 w-7" viewBox="0 0 128 128" fill="none" aria-hidden="true">
+                <path d="M31 31h20c15 0 25 10 25 24 0 15-11 25-26 25-12 0-19-5-19-19V31Z" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
+                <path d="M55 84c0-15 10-25 25-25 14 0 24 10 24 25v20H80c-15 0-25-8-25-20Z" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
+                <circle cx="94" cy="39" r="10" stroke="currentColor" strokeWidth="8" />
+                <circle cx="38" cy="96" r="7" stroke="currentColor" strokeWidth="8" />
+              </svg>
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="px-5 pb-4 pt-4 text-left">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={stage}
+              initial={reduceMotion ? false : { opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="font-cabinet text-lg font-black leading-tight text-white">
+                {stages[stage].title}
+              </p>
+              <p className="mt-1.5 text-[11px] font-medium leading-relaxed text-[#d9e9e5]">
+                {stages[stage].detail}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/12" aria-hidden="true">
+            {reduceMotion ? (
+              <div className="h-full w-2/3 rounded-full bg-[#7ec8ba]" />
+            ) : (
+              <motion.div
+                className="h-full w-[42%] rounded-full bg-[#7ec8ba]"
+                animate={{ x: ['-105%', '245%'] }}
+                transition={{ duration: 1.15, repeat: Infinity, ease: 'linear' }}
+              />
+            )}
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[9px] font-bold text-[#a9cbc4]">
+            <span>Live community map</span>
+            <span>{stage + 1} of 3</span>
+          </div>
+          <span className="sr-only">Please wait.</span>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 interface CityGroup {
   id: string;
@@ -117,6 +262,7 @@ const isMappableResource = (resource: Resource): boolean =>
 const MapView: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [mappableResources, setMappableResources] = useState<Resource[]>([]);
+  const [allResourceCount, setAllResourceCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,7 +275,6 @@ const MapView: React.FC = () => {
   const [isLocationActive, setIsLocationActive] = useState(false);
   const [locationFocus, setLocationFocus] = useState<{ lat: number, lng: number, requestId: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  const preloadRequested = useRef(false);
   const locationRequestId = useRef(0);
   const navigate = useNavigate();
 
@@ -148,13 +293,18 @@ const MapView: React.FC = () => {
       // Fetch real data in background
       setRefreshing(true);
       try {
-        const [realPosts, realResources] = await Promise.all([
-          apiService.getApprovedPosts(true),
-          apiService.getApprovedResources(true),
-        ]);
-        setPosts(realPosts.filter(post => !isLegacyResourcePost(post)));
-        const withCoords = realResources.filter(isMappableResource);
-        setMappableResources(withCoords);
+        // Let stories reach the map as soon as their request completes. A slow
+        // resource-directory request must not hold already-loaded posts back.
+        const postsRequest = apiService.getApprovedPosts().then(realPosts => {
+          setPosts(realPosts.filter(post => !isLegacyResourcePost(post)));
+        });
+        // The map needs the current location fields, not a cache-only response.
+        // The API still falls back to the last known good data if live sync fails.
+        const resourcesRequest = apiService.getApprovedResources(true).then(realResources => {
+          setAllResourceCount(realResources.length);
+          setMappableResources(realResources.filter(isMappableResource));
+        });
+        await Promise.all([postsRequest, resourcesRequest]);
       } catch (error) {
         console.error('Fetch failed:', error);
       } finally {
@@ -162,30 +312,6 @@ const MapView: React.FC = () => {
       }
     };
     fetchPosts();
-  }, []);
-
-  // Ask for location permission as the page opens and cache the result. This
-  // intentionally does not move the map or reorder the list; that happens only
-  // after the visitor presses the location button.
-  useEffect(() => {
-    if (!navigator.geolocation || preloadRequested.current) return;
-    preloadRequested.current = true;
-    setIsLocating(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setIsLocating(false);
-      },
-      () => {
-        setIsLocating(false);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 5 * 60 * 1000,
-      }
-    );
   }, []);
 
   const handleNearMe = () => {
@@ -227,12 +353,14 @@ const MapView: React.FC = () => {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const [freshPosts, freshResources] = await Promise.all([
-        apiService.getApprovedPosts(true),
-        apiService.getApprovedResources(true),
-      ]);
-      setPosts(freshPosts.filter(post => !isLegacyResourcePost(post)));
-      setMappableResources(freshResources.filter(isMappableResource));
+      const postsRequest = apiService.getApprovedPosts(true).then(freshPosts => {
+        setPosts(freshPosts.filter(post => !isLegacyResourcePost(post)));
+      });
+      const resourcesRequest = apiService.getApprovedResources(true).then(freshResources => {
+        setAllResourceCount(freshResources.length);
+        setMappableResources(freshResources.filter(isMappableResource));
+      });
+      await Promise.all([postsRequest, resourcesRequest]);
     } catch (error) {
       console.error('Refresh failed:', error);
     } finally {
@@ -397,6 +525,7 @@ const MapView: React.FC = () => {
 
   const hasActiveSearch = searchTerm.trim().length > 0;
   const totalMappedItems = groupedItems.reduce((sum, group) => sum + group.count, 0);
+  const globalResourceCount = Math.max(0, allResourceCount - mappableResources.length);
   const mapGroups = filteredGroups.filter(group => group.mappable);
   const visiblePostCount = filteredGroups.reduce((sum, group) => sum + group.count, 0);
   const emptyStateTitle = filterMode === 'resources'
@@ -453,8 +582,12 @@ const MapView: React.FC = () => {
   return (
     <div className="relative flex h-full min-h-0 w-full flex-grow flex-col overflow-hidden bg-[#f0f4f3] md:flex-row">
 
-      {/* Global loading bar — fixed above nav, covers mobile + desktop */}
-      <LoadingBar isLoading={refreshing} className="fixed top-0 left-0 right-0 z-[5001]" />
+      {/* Desktop keeps the compact progress treatment. Mobile gets a map-specific scene below. */}
+      <LoadingBar
+        isLoading={refreshing}
+        className="fixed top-0 left-0 right-0 z-[5001] hidden md:block"
+        statusPillClassName="fixed bottom-5 right-5 z-[5002] hidden md:block"
+      />
 
       {/* FLOATING TOP BAR (Mobile Only) */}
       <div className="md:hidden absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-2 pointer-events-none">
@@ -529,7 +662,7 @@ const MapView: React.FC = () => {
                 <div className="flex items-center gap-2 text-[10px] font-black text-[#448a7d] uppercase tracking-widest bg-[#e8f3f1] px-3 py-1.5 rounded-full inline-flex">
                   <span>{groupedItems.length} Locations</span>
                   <span className="text-[#1e3a34]/20">•</span>
-                  <span>{totalMappedItems} Stories & Resources</span>
+                  <span>{totalMappedItems} Mapped items</span>
                   {refreshing && posts.length > 0 && (
                     <motion.span
                       className="w-1.5 h-1.5 rounded-full bg-[#448a7d] ml-0.5 shrink-0"
@@ -589,6 +722,18 @@ const MapView: React.FC = () => {
                 </button>
               )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/resources')}
+              className="flex w-full items-center justify-between rounded-2xl bg-[#e8f3f1] px-4 py-3 text-left text-[#1e3a34] transition-colors hover:bg-[#d5e9e5]"
+            >
+              <span>
+                <span className="block text-sm font-black">Explore all resources</span>
+                <span className="mt-0.5 block text-xs font-medium text-[#1e3a34]/65">{globalResourceCount > 0 ? `${globalResourceCount} online or global resources aren't pinned to a city.` : 'Find online and Canada-wide support.'}</span>
+              </span>
+              <span aria-hidden="true" className="ml-3 text-xl">→</span>
+            </button>
 
             {/* Framer Motion Segmented Filter */}
             <div className="relative flex p-1.5 bg-gray-100/80 rounded-2xl">
@@ -783,6 +928,18 @@ const MapView: React.FC = () => {
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{totalMappedItems} Total</span>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => navigate('/resources')}
+                  className="mb-3 flex min-h-11 w-full items-center justify-between rounded-2xl bg-white px-4 py-3 text-left text-[#1e3a34] shadow-sm"
+                >
+                  <span>
+                    <span className="block text-sm font-black">See all resources</span>
+                    <span className="block text-[11px] font-medium text-[#1e3a34]/60">Online and global support lives in the full directory.</span>
+                  </span>
+                  <span aria-hidden="true">→</span>
+                </button>
+
                 {/* Mobile Segmented Filter */}
                 <div className="relative flex p-1 bg-gray-100 rounded-2xl mb-2">
                   {['all', 'stories', 'resources'].map((tab) => (
@@ -863,6 +1020,10 @@ const MapView: React.FC = () => {
           selectedGroupId={selectedGroupId || undefined}
           flyToLocation={locationFocus || undefined}
         />
+
+        <AnimatePresence>
+          {refreshing && posts.length === 0 && <MobileMapLoading key="mobile-map-loading" />}
+        </AnimatePresence>
 
         <AnimatePresence>
           {selectedGroup && selectedItem && isDesktopPreviewVisible && (

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BANNED_PATTERNS } from '../constants.tsx';
-import { normalizeResource } from '../services/api.ts';
+import { isValidWebUrl, normalizeResource, normalizeUrlInput } from '../services/api.ts';
 
 const baseRaw = {
   id: 'test-id',
@@ -73,6 +73,19 @@ describe('normalizeResource', () => {
     expect(result.country).toBeUndefined();
     expect(result.lat).toBeUndefined();
     expect(result.lng).toBeUndefined();
+  });
+});
+
+describe('resource URL input', () => {
+  it('adds https to a domain entered without a protocol', () => {
+    expect(normalizeUrlInput('www.website.com')).toBe('https://www.website.com');
+    expect(normalizeUrlInput('website.ca/path')).toBe('https://website.ca/path');
+  });
+
+  it('preserves a complete URL and rejects incomplete hostnames', () => {
+    expect(normalizeUrlInput('http://example.org')).toBe('http://example.org');
+    expect(isValidWebUrl('example.org')).toBe(true);
+    expect(isValidWebUrl('not a website')).toBe(false);
   });
 });
 

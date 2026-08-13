@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html,
+body,
+#root {
+  max-width: 100%;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Map marker pulses are decorative. Static markers are clearer and cheaper on
+   phones, and all non-essential motion stops when reduced motion is requested. */
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .custom-marker-wrapper [style*="animation: ping"] {
+    animation: none !important;
+    opacity: 0.16 !important;
+  }
+
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-3xl {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Keep the rotating headline quiet on phones, but retain the live illustrated
+   bookshelf/city scan: it is the visual identity of the trained-partners area. */
+@media (max-width: 767px) {
+  /* Full-screen blend modes force expensive page-wide recompositing on every
+     scroll frame. Normal compositing keeps the flock on its own cheap layer. */
+  .starling-flock-canvas {
+    mix-blend-mode: normal !important;
+    contain: strict;
+    transform: translateZ(0);
+  }
+
+  .cp-words-word {
+    display: none;
+    animation: none !important;
+  }
+
+  .cp-words-word:first-child {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}

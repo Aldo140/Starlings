@@ -156,7 +156,7 @@ const Landing: React.FC = () => {
   ];
 
   const questionSection = (
-    <section ref={qaRef} id="ask-question" className="relative py-16 md:py-24 overflow-hidden">
+    <section ref={qaRef} id="ask-question" data-focus-zone className="relative py-16 md:py-24 overflow-hidden">
       {/* Frosted-glass backdrop — birds visible but blurred behind the section */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -397,13 +397,14 @@ const Landing: React.FC = () => {
                       <div className="scale-[2.5]">{ICONS.Heart}</div>
                     </div>
                     <h3 className="text-3xl font-black text-[#1e3a34] mb-4">Question Submitted</h3>
-                    <p className="text-gray-500 font-medium text-lg mb-10 max-w-sm mx-auto">We'll review your question and it may be answered to help others.</p>
+                    <p className="text-gray-500 font-medium text-lg mb-10 max-w-sm mx-auto">Your question has been sent for review. We review questions within 48–72 hours, although not every question can be answered.</p>
                     <button onClick={() => setQSuccess(false)} className="px-10 py-4 bg-gray-50 text-[#1e3a34] font-black rounded-full hover:bg-gray-100 border border-gray-200 transition-colors uppercase tracking-widest text-sm shadow-sm active:scale-95">Ask Another</button>
                   </div>
                 ) : (
                   <form onSubmit={handleQuestionSubmit} className="space-y-6 relative z-10">
                     <div className="space-y-3">
                       <label htmlFor="question" className="block text-[#1e3a34] font-black text-xl tracking-tight">What's on your mind?</label>
+                      <p className="mt-2 text-sm font-medium leading-relaxed text-[#1e3a34]/60">Questions are reviewed within 48–72 hours. Answers may take longer depending on peer and staff availability.</p>
                       <textarea
                         id="question"
                         required
@@ -1235,7 +1236,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* ── Before You Post / Quick Reference ── */}
-      <section className="relative overflow-hidden py-20 md:py-36" style={{ background: '#1e3a34' }}>
+      <section data-focus-zone className="relative overflow-hidden py-20 md:py-36" style={{ background: '#1e3a34' }}>
 
         {/* Ambient dot grid */}
         <div className="absolute inset-0 pointer-events-none"
@@ -1459,7 +1460,7 @@ const Landing: React.FC = () => {
       {/* Final CTA */}
       <section className="bg-[#1e3a34] py-16 md:py-40 max-[400px]:py-12 text-center text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-20 pointer-events-none">
-          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover mix-blend-overlay" alt="Nature" />
+          <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000" loading="lazy" decoding="async" className="w-full h-full object-cover mix-blend-overlay" alt="Mountain landscape" />
         </div>
         <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-[#1e3a34] to-transparent pointer-events-none z-[1]" />
         <div className="max-w-4xl mx-auto px-6 max-[400px]:px-4 relative z-10 space-y-6 md:space-y-10">

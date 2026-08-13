@@ -38,6 +38,22 @@ const hasMapLocation = (resource: Resource): boolean =>
 
 const REFLECTIONS_PREVIEW_COUNT = 2;
 
+const useMediaQuery = (query: string) => {
+    const [matches, setMatches] = useState(() =>
+        typeof window !== 'undefined' && window.matchMedia(query).matches
+    );
+
+    useEffect(() => {
+        const media = window.matchMedia(query);
+        const update = () => setMatches(media.matches);
+        update();
+        media.addEventListener('change', update);
+        return () => media.removeEventListener('change', update);
+    }, [query]);
+
+    return matches;
+};
+
 const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[] }> = memo(({ resource, reflections }) => {
     const [liked, setLiked] = useState(false);
     const [supportive, setSupportive] = useState(false);
@@ -125,10 +141,10 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
     const imageFieldRelevant = supportsResourceImage(resource.type);
 
     return (
-        <div className="p-6 md:p-8 bg-white rounded-[1.5rem] md:rounded-[2rem] border-2 border-gray-100 flex flex-col h-full hover:shadow-2xl hover:border-indigo-100/50 transition-shadow transition-colors group">
+        <article className="p-5 md:p-8 bg-white rounded-2xl border border-gray-100 flex flex-col h-full shadow-sm md:rounded-[2rem] md:border-2 md:shadow-none md:hover:shadow-xl md:hover:border-indigo-100/50 transition-shadow transition-colors group [content-visibility:auto] [contain-intrinsic-size:1px_560px]">
             {resource.type === ResourceType.MEME && resource.imageUrl && (
                 <div className="mb-6 rounded-2xl overflow-hidden shadow-inner border border-gray-100 bg-gray-50 flex items-center justify-center">
-                    <img src={resource.imageUrl} alt={resource.title} className="w-full max-h-64 object-contain" />
+                    <img src={resource.imageUrl} alt={resource.title} loading="lazy" decoding="async" className="w-full max-h-64 object-contain" />
                 </div>
             )}
 
@@ -139,7 +155,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                 </div>
             )}
 
-            <h4 className="font-black text-2xl text-[#1e3a34] mb-2 leading-tight">{resource.title}</h4>
+            <h4 className="font-black text-xl md:text-2xl text-[#1e3a34] mb-2 leading-tight break-words [overflow-wrap:anywhere]">{resource.title}</h4>
             {recommender && <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recommended by {recommender}</p>}
             {hasMapLocation(resource) && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-4 bg-emerald-50 text-emerald-700 rounded-lg w-fit border border-emerald-100">
@@ -149,7 +165,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
             )}
             <FormattedText
                 text={cleanDescription}
-                className="text-base font-medium text-gray-600 leading-relaxed"
+                className="text-base font-medium text-gray-600 leading-relaxed break-words [overflow-wrap:anywhere]"
                 wrapperClassName="mb-6 flex-grow"
             />
             {resource.url && (resource.type !== ResourceType.MEME || !resource.imageUrl) && (
@@ -159,13 +175,13 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
             <div className="border-t border-gray-200 pt-5 mt-auto">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-3">Peer Insights</p>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <button onClick={() => handleInsightClick('helpful')} disabled={liked} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${liked ? 'bg-red-50 text-red-600 border border-red-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('helpful')} disabled={liked} className={`min-h-11 px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${liked ? 'bg-red-50 text-red-600 border border-red-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         ❤️ Helpful {((resource.helpful_count || 0) + (liked ? 1 : 0)) > 0 ? `(${((resource.helpful_count || 0) + (liked ? 1 : 0))})` : ''}
                     </button>
-                    <button onClick={() => handleInsightClick('supportive')} disabled={supportive} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${supportive ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('supportive')} disabled={supportive} className={`min-h-11 px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${supportive ? 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         🤝 Supportive {((resource.supportive_count || 0) + (supportive ? 1 : 0)) > 0 ? `(${((resource.supportive_count || 0) + (supportive ? 1 : 0))})` : ''}
                     </button>
-                    <button onClick={() => handleInsightClick('exploring')} disabled={exploring} className={`px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${exploring ? 'bg-green-50 text-green-600 border border-green-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
+                    <button onClick={() => handleInsightClick('exploring')} disabled={exploring} className={`min-h-11 px-4 py-2 rounded-full text-xs font-black transition-colors disabled:cursor-default ${exploring ? 'bg-green-50 text-green-600 border border-green-200 shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-100'}`}>
                         🌱 Worth exploring {((resource.exploring_count || 0) + (exploring ? 1 : 0)) > 0 ? `(${((resource.exploring_count || 0) + (exploring ? 1 : 0))})` : ''}
                     </button>
                 </div>
@@ -227,7 +243,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                         </div>
                     </div>
                 ) : (
-                    <button onClick={() => setShowReflection(true)} className="text-xs text-gray-400 font-bold hover:text-[#448a7d] flex items-center gap-1.5 uppercase tracking-widest transition-colors">
+                    <button onClick={() => setShowReflection(true)} className="min-h-11 text-xs text-gray-500 font-bold hover:text-[#448a7d] flex items-center gap-1.5 uppercase tracking-widest transition-colors">
                         <MessageCircle className="w-4 h-4" /> Add reflection
                     </button>
                 )}
@@ -276,7 +292,7 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
                     </div>
                 )}
             </div>
-        </div>
+        </article>
     );
 }, (prevProps, nextProps) => {
     const prev = prevProps.resource;
@@ -290,7 +306,64 @@ const ResourceCard: React.FC<{ resource: Resource; reflections: ReflectionItem[]
         prevProps.reflections === nextProps.reflections;
 });
 
-const ResourcesHero: React.FC = () => {
+const MobileResourcesHero: React.FC = () => (
+    <section className="relative -mx-4 -mt-5 mb-0 flex min-h-[calc(100svh-8.75rem)] flex-col overflow-hidden bg-[#17342e] text-white">
+        <div className="flex min-h-12 items-center justify-between gap-4 bg-[#e57c6e] px-5 py-3 text-[#17342e] [@media(max-height:720px)]:min-h-10 [@media(max-height:720px)]:py-2">
+            <p className="text-sm font-black leading-tight">A community-built resource guide</p>
+            <span className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+                <span className="h-2 w-2 rounded-full bg-[#17342e]" />
+                <span className="h-2 w-2 rounded-full bg-white" />
+                <span className="h-2 w-2 rounded-full bg-[#f7d968]" />
+            </span>
+        </div>
+
+        <div className="relative flex flex-1 flex-col px-5 pb-7 pt-8 [@media(max-height:720px)]:pb-4 [@media(max-height:720px)]:pt-6">
+            <p className="mb-4 flex items-center gap-2 text-sm font-bold text-[#b9d8d2] [@media(max-height:720px)]:mb-3 [@media(max-height:720px)]:text-[13px]">
+                <span className="h-2 w-2 rounded-full bg-[#7ec8ba]" aria-hidden="true" />
+                Recommended by peers + partners
+            </p>
+            <h1 className="max-w-[11ch] font-cabinet text-[clamp(2.55rem,12vw,3.35rem)] font-black leading-[0.92] tracking-[-0.035em] text-white [@media(max-height:720px)]:text-[2.25rem]">
+                Made by community.
+                <span className="block text-[#f09a8e]">Shared with you.</span>
+            </h1>
+            <p className="mt-5 max-w-[30rem] text-[15px] font-medium leading-[1.6] text-[#dceae7] [@media(max-height:720px)]:mt-3 [@media(max-height:720px)]:text-sm [@media(max-height:720px)]:leading-[1.5]">
+                Explore resources recommended by people with lived experience and trusted community partners.
+            </p>
+
+            <div className="flex min-h-20 flex-1 items-center justify-end py-2 [@media(max-height:720px)]:min-h-12 [@media(max-height:720px)]:py-1" aria-hidden="true">
+                <img
+                    src={`${import.meta.env.BASE_URL}favicon.png`}
+                    alt=""
+                    width="256"
+                    height="256"
+                    decoding="async"
+                    className="h-auto w-32 opacity-[0.45] [@media(max-height:720px)]:w-24"
+                />
+            </div>
+
+            <div>
+                <Link
+                    to="/add-resource?mode=recommend"
+                    className="flex min-h-14 w-full items-center justify-between bg-white px-5 text-left text-sm font-black text-[#17342e] transition-colors active:bg-[#dcece8]"
+                >
+                    <span>Recommend a resource</span>
+                    <span className="flex h-8 w-8 items-center justify-center bg-[#e57c6e] text-[#17342e]" aria-hidden="true">
+                        {ICONS.Plus}
+                    </span>
+                </Link>
+                <Link
+                    to="/add-resource?mode=apply"
+                    className="mt-2 flex min-h-12 w-full items-center justify-between px-1 text-sm font-bold text-[#b9d8d2] transition-colors active:text-white"
+                >
+                    <span>Work with Starlings? Become a partner</span>
+                    <span className="ml-3 text-lg" aria-hidden="true">→</span>
+                </Link>
+            </div>
+        </div>
+    </section>
+);
+
+const DesktopResourcesHero: React.FC = () => {
     const heroRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
 
@@ -414,7 +487,7 @@ const ResourcesHero: React.FC = () => {
  * Full-width loading experience shown while Google Sheets data hot-swaps.
  * Uses the murmuration photo as background + animated starling silhouettes.
  */
-const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ syncing, count }) => {
+const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number; mobile?: boolean }> = ({ syncing, count, mobile = false }) => {
     const [phase, setPhase] = useState<'idle' | 'syncing' | 'done'>('idle');
 
     useEffect(() => {
@@ -426,6 +499,47 @@ const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ 
             return () => clearTimeout(t);
         }
     }, [syncing]);
+
+    if (mobile) {
+        return (
+            <AnimatePresence>
+                {phase !== 'idle' && (
+                    <motion.div
+                        key={phase}
+                        role="status"
+                        aria-live="polite"
+                        className="fixed inset-x-4 bottom-4 z-[4500] flex min-h-16 items-center gap-3 rounded-2xl bg-[#17342e] px-4 py-3 text-white shadow-[0_8px_28px_-10px_rgba(23,52,46,0.62)] md:hidden"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.28, ease: EASE_OUT_EXPO }}
+                    >
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#dcece8] text-[#1e3a34]" aria-hidden="true">
+                            {phase === 'syncing' ? (
+                                <>
+                                    <span className="absolute h-2 w-2 -translate-x-2 -translate-y-1 rounded-full bg-[#448a7d] animate-pulse" />
+                                    <span className="absolute h-2 w-2 translate-x-2 translate-y-1 rounded-full bg-[#e57c6e] animate-pulse [animation-delay:180ms]" />
+                                    <span className="h-px w-5 -rotate-[24deg] bg-[#1e3a34]/25" />
+                                </>
+                            ) : (
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                                    <path d="m5 12 4 4 10-10" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                            <p className="text-sm font-black leading-tight break-words">
+                                {phase === 'syncing' ? 'Refreshing community picks' : 'Resources are up to date'}
+                            </p>
+                            <p className="mt-1 text-[11px] font-medium leading-snug text-[#c7ddd8] break-words">
+                                {phase === 'syncing' ? 'You can start browsing while we check for new additions.' : count > 0 ? `${count} live resources ready to explore.` : 'Live resources are ready.'}
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        );
+    }
 
     return (
         <AnimatePresence>
@@ -553,6 +667,7 @@ const MurmurationSyncBanner: React.FC<{ syncing: boolean; count: number }> = ({ 
 };
 
 const ResourcesView: React.FC = () => {
+    const isMobileViewport = useMediaQuery('(max-width: 767px)');
     const [resources, setResources] = useState<Resource[]>([]);
     const [reflections, setReflections] = useState<ReflectionItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -587,7 +702,9 @@ const ResourcesView: React.FC = () => {
             try {
                 const data = await apiService.getApprovedResources(true);
                 setSyncedCount(data.length);
-                setResources(data);
+                // Preserve the immediately rendered fallback if a malformed
+                // response ever slips through; an empty sync is not an update.
+                if (data.length > 0) setResources(data);
             } catch (error) {
                 console.error('Failed to fetch resources', error);
             } finally {
@@ -631,15 +748,9 @@ const ResourcesView: React.FC = () => {
 
     // MEMOIZED: Compute bucket resources only when resources array changes
     //
-    // A resource's *format* (book, video, website, ...) always wins over the
-    // fact that it also happens to carry a city/lat/lng tag. Tagging a book
-    // with a location (e.g. "recommended by a Calgary reader") used to yank
-    // it out of the Books bucket entirely and strand it under "Map-Based
-    // Resources", which is confusing to maintain — the resource still shows
-    // its location badge on the card either way. "Map-Based Resources" is
-    // reserved for resources that don't fit any known format but do have a
-    // location (e.g. an in-person support group). "Other Resources" catches
-    // the remainder.
+    // Format and location are independent ways to browse. A located website,
+    // book, or video belongs in its format bucket AND Map-Based Resources.
+    // Other Resources only catches unknown formats without a map location.
     const communityBucketResources = useMemo(() => {
         const result: Record<string, Resource[]> = {};
         COMMUNITY_BUCKETS.forEach(bucket => {
@@ -647,7 +758,7 @@ const ResourcesView: React.FC = () => {
                 .filter(r => {
                     if (r.category !== 'community') return false;
                     const isKnownType = KNOWN_RESOURCE_TYPES.has(String(r.type));
-                    if (bucket.id === MAP_BASED_BUCKET_ID) return !isKnownType && hasMapLocation(r);
+                    if (bucket.id === MAP_BASED_BUCKET_ID) return hasMapLocation(r);
                     if (bucket.id === OTHER_BUCKET_ID) return !isKnownType && !hasMapLocation(r);
                     return isKnownType && r.type === bucket.id;
                 })
@@ -670,14 +781,20 @@ const ResourcesView: React.FC = () => {
     return (
         <>
             {/* Page-level loading bar — tracks the background Google Sheets hot-swap */}
-            <LoadingBar isLoading={syncing} className="fixed top-0 left-0 right-0 z-[5001]" />
+            {!isMobileViewport && (
+                <LoadingBar
+                    isLoading={syncing}
+                    className="fixed top-0 left-0 right-0 z-[5001]"
+                    statusPillClassName="fixed bottom-5 right-5 z-[5002]"
+                />
+            )}
 
-            <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 animate-reveal">
+            <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-clip px-4 py-5 md:overflow-visible md:py-12 animate-reveal">
 
-                <ResourcesHero />
+                {isMobileViewport ? <MobileResourcesHero /> : <DesktopResourcesHero />}
 
                 {/* Murmuration loading experience — slides in while Google Sheets data loads */}
-                <MurmurationSyncBanner syncing={syncing} count={syncedCount} />
+                <MurmurationSyncBanner syncing={syncing} count={syncedCount} mobile={isMobileViewport} />
 
                 {resources.length === 0 ? (
                     <div className="text-center py-20 bg-white/80 rounded-[3rem] border border-gray-100">
@@ -695,17 +812,14 @@ const ResourcesView: React.FC = () => {
                             {/* ── MOBILE: text zone keeps the live flashlight background; card
                                  zone below breaks full-bleed black — two visually distinct
                                  bands instead of one unified panel ── */}
-                            <div className="md:hidden">
+                            {isMobileViewport && <div className="md:hidden">
 
                                 {/* TOP: eyebrow / heading / description — flashlight bg, now
                                      full-bleed (matches the card band below) and taller, so the
                                      animation actually gets room to read. A bottom gradient fades
                                      the overlay toward black so the seam with the card band melts
                                      together instead of cutting hard. */}
-                                <div
-                                    className="relative overflow-hidden"
-                                    style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}
-                                >
+                                <div className="relative -mx-4 overflow-hidden">
                                     {/* Flashlight background — fills this zone only */}
                                     <div className="cp-flashlight" aria-hidden="true" />
                                     {/* Dark overlay */}
@@ -722,40 +836,23 @@ const ResourcesView: React.FC = () => {
 
                                     <div className="relative z-10 px-4 pt-7 pb-10">
 
-                                        {/* Eyebrow row: page label + count badge */}
-                                        <div className="flex items-center justify-between mb-5">
-                                            <div className="flex items-center gap-2">
-                                                <span className="block w-4 h-px flex-shrink-0" style={{ background: 'rgba(68,138,125,0.55)' }} />
-                                                <span className="text-[8px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgba(126,197,184,0.60)' }}>
-                                                    Peer &amp; Community Resources
-                                                </span>
-                                            </div>
-                                            <span
-                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.1em]"
-                                                style={{ background: 'rgba(68,138,125,0.12)', border: '1px solid rgba(68,138,125,0.22)', color: 'rgba(126,197,184,0.65)' }}
-                                            >
-                                                <span className="w-1 h-1 rounded-full inline-block" style={{ background: '#448a7d' }} />
-                                                {communityPartners.length} verified
-                                            </span>
+                                        {/* One quiet metadata line that belongs to the background. */}
+                                        <div className="mb-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[9px] font-black uppercase tracking-[0.18em] text-[#7ec5b8]/70">
+                                            <span>Peer &amp; Community Resources</span>
+                                            <span className="h-1 w-1 rounded-full bg-[#448a7d]" aria-hidden="true" />
+                                            <span>{communityPartners.length} verified</span>
                                         </div>
 
                                         {/* Heading */}
                                         <h2
-                                            className="font-cabinet font-black text-white tracking-tight leading-[1.06] mb-3"
+                                            className="mb-3 text-center font-cabinet font-black leading-[1.06] tracking-tight text-white"
                                             style={{ fontSize: 'clamp(1.9rem, 7.2vw, 2.6rem)' }}
                                         >
-                                            Starlings&#8209;trained{' '}
-                                            <span className="cp-words-slot">
-                                                <span className="cp-words-word">care partner</span>
-                                                <span className="cp-words-word">care organization</span>
-                                                <span className="cp-words-word">youth specialist</span>
-                                                <span className="cp-words-word">trusted partner</span>
-                                                <span className="cp-words-word">community leader</span>
-                                                <span className="cp-words-word">care partner</span>
-                                            </span>
+                                            <span className="block">Starlings&#8209;trained</span>
+                                            <span className="block text-[#e57c6e] italic">care partner</span>
                                         </h2>
 
-                                        <div className="w-10 h-px mb-4" style={{ background: 'rgba(68,138,125,0.35)' }} />
+                                        <div className="mx-auto mb-4 h-px w-10" style={{ background: 'rgba(68,138,125,0.35)' }} />
 
                                         {/* Description — fuller copy, matches the desktop version */}
                                         <p className="text-[13px] font-medium leading-relaxed mb-5" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '94%' }}>
@@ -784,10 +881,7 @@ const ResourcesView: React.FC = () => {
                                 </div>
 
                                 {/* BOTTOM: accordion cards — solid black, full-bleed edge-to-edge */}
-                                <div
-                                    className="relative bg-black"
-                                    style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}
-                                >
+                                <div className="relative -mx-4 bg-black overflow-hidden">
                                     <div className="px-4 pt-4 pb-5">
 
                                         {/* Divider */}
@@ -860,18 +954,21 @@ const ResourcesView: React.FC = () => {
                                                         </div>
                                                     </div>
 
-                                                    {/* Title preview row — visible when collapsed */}
-                                                    <div className="flex items-center gap-2.5 px-3.5 py-3">
-                                                        <span
-                                                            className="text-[8px] font-black uppercase tracking-widest flex-shrink-0 px-2 py-0.5 rounded-full"
-                                                            style={{ background: isActive ? 'rgba(68,138,125,0.22)' : 'rgba(68,138,125,0.10)', color: isActive ? '#7ec5b8' : 'rgba(68,138,125,0.55)' }}
-                                                        >
-                                                            {config.label}
-                                                        </span>
-                                                        <span className="flex-1 min-w-0 text-white font-black text-[13px] leading-snug truncate">
-                                                            {resource.title}
-                                                        </span>
-                                                    </div>
+                                                    {/* Collapsed label only. When open, the screenshot connects
+                                                        directly to the browser chrome and the title appears once below. */}
+                                                    {!isActive && (
+                                                        <div className="flex items-center gap-2.5 px-3.5 py-3">
+                                                            <span
+                                                                className="text-[8px] font-black uppercase tracking-widest flex-shrink-0 px-2 py-0.5 rounded-full"
+                                                                style={{ background: 'rgba(68,138,125,0.10)', color: 'rgba(126,197,184,0.72)' }}
+                                                            >
+                                                                {config.label}
+                                                            </span>
+                                                            <span className="flex-1 min-w-0 truncate text-[13px] font-black leading-snug text-white">
+                                                                {resource.title}
+                                                            </span>
+                                                        </div>
+                                                    )}
 
                                                     {/* Expandable: screenshot + info — grid-rows GPU trick */}
                                                     <div
@@ -880,9 +977,9 @@ const ResourcesView: React.FC = () => {
                                                     >
                                                         <div className="min-h-0">
                                                             {/* Screenshot 16:9 */}
-                                                            <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                                            <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
                                                                 {resource.imageUrl ? (
-                                                                    <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top" />
+                                                                    <img src={resource.imageUrl} alt={resource.title} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
                                                                 ) : (
                                                                     <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0c2420 0%, #081410 100%)' }}>
                                                                         <div className="text-[#448a7d]/25 scale-[3]">{ICONS.Heart}</div>
@@ -918,10 +1015,10 @@ const ResourcesView: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div>}
 
                             {/* ── DESKTOP: Full-width side-by-side flashlight panel ── */}
-                            <div
+                            {!isMobileViewport && <div
                                 ref={cpAccordionRef}
                                 className="hidden md:block relative overflow-hidden"
                                 style={{ width: '100vw', marginLeft: 'calc(50% - 50vw)' }}
@@ -1158,7 +1255,7 @@ const ResourcesView: React.FC = () => {
                                     </div>{/* closes right column */}
                                 </div>{/* closes main row */}
                                 </div>{/* closes content wrapper */}
-                            </div>{/* closes flashlight panel */}
+                            </div>}{/* closes flashlight panel */}
                         </section>
                         )}
 
@@ -1239,7 +1336,7 @@ const ResourcesView: React.FC = () => {
 
 
                             {/* APP STORE EXPANDABLE CARDS For Mid-Screens (Tablet / 13inch) - 768px to 1245px */}
-                            <div className="hidden md:block xl:hidden mt-8 mb-16 px-2">
+                            {!isMobileViewport && <div className="hidden md:block xl:hidden mt-8 mb-16 px-2">
                                 {/* Grid of Closed Cards */}
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                                     {COMMUNITY_BUCKETS.map((bucket) => {
@@ -1267,12 +1364,17 @@ const ResourcesView: React.FC = () => {
                                 </div>
 
 
-                            </div>
+                            </div>}
                             {/* MOBILE: Horizontal Pill Rail + Content Panel */}
-                            <div className="md:hidden mt-6">
+                            {isMobileViewport && <div className="md:hidden mt-6">
 
-                                {/* Compact category grid — all categories visible without horizontal scrolling */}
-                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                <div className="mb-2 flex items-center justify-between px-1">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1e3a34]/55">Browse by type</p>
+                                    <p className="text-[10px] font-bold text-[#448a7d]">Swipe →</p>
+                                </div>
+
+                                {/* One-thumb category rail keeps the directory compact and preserves a visible next-card cue. */}
+                                <div className="no-scrollbar -mx-4 mb-4 flex max-w-[calc(100%+2rem)] snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain px-4 pb-2" role="group" aria-label="Resource categories">
                                     {COMMUNITY_BUCKETS.map((bucket) => {
                                         const count = communityBucketResources[bucket.id].length;
                                         const isActive = activeCommunityIndex === bucket.id;
@@ -1280,9 +1382,10 @@ const ResourcesView: React.FC = () => {
                                             <motion.button
                                                 key={bucket.id}
                                                 onClick={() => setActiveCommunityIndex(isActive ? null : bucket.id)}
+                                                aria-pressed={isActive}
                                                 animate={{ scale: isActive ? 1.04 : 1 }}
                                                 transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                                                className={`relative flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border transition-colors duration-200 ${
+                                                className={`relative flex min-h-14 min-w-[8.25rem] snap-start items-center justify-start gap-2.5 rounded-xl border px-3 py-3 text-left transition-colors duration-200 ${
                                                     isActive
                                                         ? `${bucket.bg} border-transparent shadow-md`
                                                         : 'bg-white border-gray-100 shadow-sm'
@@ -1293,14 +1396,10 @@ const ResourcesView: React.FC = () => {
                                                         isActive ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-500'
                                                     }`}>{count}</span>
                                                 )}
-                                                <motion.div
-                                                    className={isActive ? 'text-white' : bucket.color}
-                                                    animate={{ y: [0, -8, 0], scale: [1, 1.15, 1] }}
-                                                    transition={{ duration: 1.8, repeat: Infinity, ease: [0.45, 0, 0.55, 1], delay: COMMUNITY_BUCKETS.indexOf(bucket) * 0.22, repeatDelay: 0.6 }}
-                                                >
+                                                <div className={`${isActive ? 'text-white scale-105' : bucket.color} transition-transform duration-200`}>
                                                     {React.cloneElement(bucket.icon as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}
-                                                </motion.div>
-                                                <span className={`text-[10px] font-black leading-tight text-center px-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                                                </div>
+                                                <span className={`pr-2 text-[10px] font-black leading-tight ${isActive ? 'text-white' : 'text-gray-600'}`}>
                                                     {bucket.label}
                                                 </span>
                                             </motion.button>
@@ -1352,7 +1451,8 @@ const ResourcesView: React.FC = () => {
                                                     </div>
                                                     <button
                                                         onClick={() => setActiveCommunityIndex(null)}
-                                                        className="w-8 h-8 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 active:scale-95 transition-colors shadow-sm"
+                                                        className="min-h-11 min-w-11 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 hover:border-red-200 active:scale-95 transition-colors shadow-sm"
+                                                        aria-label="Close category"
                                                     >
                                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -1373,7 +1473,7 @@ const ResourcesView: React.FC = () => {
                                                                 : activeCommunityIndex === OTHER_BUCKET_ID
                                                                     ? '/add-resource?mode=recommend'
                                                                 : `/add-resource?mode=recommend&type=${activeCommunityIndex}`}
-                                                            className="inline-flex px-6 py-2.5 rounded-full bg-[#e8f3f1] text-[#448a7d] font-black uppercase tracking-widest text-[10px] hover:bg-[#d5e8e4] transition-colors"
+                                                            className="inline-flex min-h-11 items-center px-6 py-2.5 rounded-full bg-[#e8f3f1] text-[#448a7d] font-black uppercase tracking-widest text-[10px] hover:bg-[#d5e8e4] transition-colors"
                                                         >
                                                             Recommend One
                                                         </Link>
@@ -1397,10 +1497,10 @@ const ResourcesView: React.FC = () => {
                                     </AnimatePresence>
                                 </div>
 
-                            </div>
+                            </div>}
 
                             {/* DESKTOP XL: restored side-by-side rail design */}
-                            <div className="hidden xl:flex gap-10 mt-10 items-start min-h-[760px]">
+                            {!isMobileViewport && <div className="hidden xl:flex gap-10 mt-10 items-start min-h-[760px]">
                                 <div className="w-[230px] flex-shrink-0">
                                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400 px-1 mb-3">Browse by type</p>
                                     <div className="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm overflow-hidden">
@@ -1604,26 +1704,26 @@ const ResourcesView: React.FC = () => {
                                         )}
                                     </AnimatePresence>
                                 </div>
-                            </div>
+                            </div>}
                         </section>
 
                         {/* PARTNERS SECTION */}
                         {alignedPartners.length > 0 && (
-                            <section>
-                                <div className="mb-12 md:mb-16 lg:mb-20">
+                            <section className="[content-visibility:auto] [contain-intrinsic-size:1px_900px]">
+                                <div className="mb-8 md:mb-16 lg:mb-20">
                                     {/* Accent bar */}
                                     <div className="h-1.5 md:h-2 w-20 md:w-32 bg-gradient-to-r from-[#e57c6e] to-[#d46a5c] rounded-full mb-6 md:mb-8" />
                                     
-                                    <div className="space-y-4 md:space-y-6">
-                                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl">
+                                    <div className="space-y-3 md:space-y-6">
+                                        <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-[#1e3a34] italic tracking-tight leading-tight max-w-4xl break-words [overflow-wrap:anywhere]">
                                             Starlings-Aligned Partners
                                         </h2>
                                         
                                         <div className="space-y-3 md:space-y-4 max-w-3xl">
-                                            <p className="text-lg md:text-xl text-gray-700 font-semibold leading-relaxed">
+                                            <p className="text-base md:text-xl text-gray-700 font-semibold leading-relaxed">
                                                 Organizations reviewed by Starlings that offer <span className="text-[#e57c6e] font-black">resources and support</span> for youth and adults affected by parental substance use.
                                             </p>
-                                            <p className="text-base md:text-lg text-gray-600 font-medium leading-relaxed">
+                                            <p className="text-sm md:text-lg text-gray-600 font-medium leading-relaxed">
                                                 They are independent and not affiliated with or trained by Starlings. <span className="font-black">Inclusion does not imply endorsement</span> — we encourage you to explore what feels right for you.
                                             </p>
                                             <div className="flex items-center gap-2 pt-2">
@@ -1632,7 +1732,7 @@ const ResourcesView: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8">
                                     {alignedPartners.map((resource) => {
                                         const config = typeConfig[resource.type] || typeConfig.website;
                                         return (
@@ -1641,17 +1741,17 @@ const ResourcesView: React.FC = () => {
                                                 href={resource.url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="relative bg-white rounded-[3rem] shadow-[0_20px_50px_-15px_rgba(229,124,110,0.15)] hover:shadow-[0_30px_60px_-15px_rgba(229,124,110,0.25)] hover:-translate-y-2 transition-all duration-500 border-2 border-[#e57c6e]/10 group flex flex-col sm:flex-row h-full overflow-hidden"
+                                                className="relative bg-white rounded-2xl shadow-sm md:rounded-[3rem] md:shadow-[0_20px_50px_-15px_rgba(229,124,110,0.15)] md:hover:shadow-[0_30px_60px_-15px_rgba(229,124,110,0.25)] md:hover:-translate-y-2 transition-all duration-300 md:duration-500 border border-[#e57c6e]/15 md:border-2 md:border-[#e57c6e]/10 group flex flex-col sm:flex-row h-full overflow-hidden [content-visibility:auto] [contain-intrinsic-size:1px_430px]"
                                             >
-                                                <div className="absolute top-6 left-6 z-20 flex gap-2">
+                                                <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 flex gap-2">
                                                     <div className="bg-white/90 text-[#e57c6e] shadow-sm text-[10px] font-black uppercase tracking-widest px-4 py-2 flex items-center gap-1.5 rounded-full">
                                                         {ICONS.ShieldCheck} Verified
                                                     </div>
                                                 </div>
 
-                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] h-64 sm:h-auto bg-[#f0f7f5] flex-shrink-0 relative overflow-hidden">
+                                                <div className="w-full sm:w-2/5 sm:min-w-[240px] aspect-[16/9] sm:aspect-auto sm:h-auto bg-[#f0f7f5] flex-shrink-0 relative overflow-hidden">
                                                     {resource.imageUrl ? (
-                                                        <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
+                                                        <img src={resource.imageUrl} alt={resource.title} loading="lazy" decoding="async" className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-700 ease-out" />
                                                     ) : (
                                                         <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-[#e57c6e]/20">
                                                             <div className="scale-150">{ICONS.Heart}</div>
@@ -1660,7 +1760,7 @@ const ResourcesView: React.FC = () => {
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 sm:bg-gradient-to-r sm:from-transparent sm:to-black/5"></div>
                                                 </div>
 
-                                                <div className="p-8 sm:p-10 flex flex-col flex-grow justify-center relative z-10 bg-white sm:-ml-6 sm:rounded-l-[3rem] shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
+                                                <div className="p-5 md:p-8 sm:p-10 flex flex-col flex-grow justify-center relative z-10 bg-white sm:-ml-6 sm:rounded-l-[3rem] sm:shadow-[-10px_0_30px_-10px_rgba(0,0,0,0.05)]">
                                                     <div className="flex flex-wrap items-center gap-3 mb-4">
                                                         <span className={`text-[10px] text-white shadow-sm font-black uppercase tracking-widest px-3 py-1.5 rounded-full ${config.color}`}>
                                                             {config.label}
@@ -1671,13 +1771,13 @@ const ResourcesView: React.FC = () => {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <h3 className="text-[#1e3a34] font-black text-3xl tracking-tight mb-4 group-hover:text-[#e57c6e] transition-colors leading-tight">
+                                                    <h3 className="text-[#1e3a34] font-black text-2xl md:text-3xl tracking-tight mb-3 md:mb-4 group-hover:text-[#e57c6e] transition-colors leading-tight break-words [overflow-wrap:anywhere]">
                                                         {resource.title}
                                                     </h3>
                                                     <p className="text-gray-500 text-sm leading-relaxed flex-grow font-medium">
                                                         {resource.description}
                                                     </p>
-                                                    <div className="mt-8 flex items-center gap-2 text-[#e57c6e] font-bold text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                                                    <div className="mt-5 md:mt-8 flex min-h-11 items-center gap-2 text-[#e57c6e] font-bold text-xs md:text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
                                                         Visit Partner <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                                     </div>
                                                 </div>

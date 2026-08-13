@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService } from '../services/api.ts';
+import { apiService, isValidWebUrl, normalizeUrlInput } from '../services/api.ts';
 import { LocationSearchResult, ResourceType } from '../types.ts';
 import { HELP_OPTIONS, ICONS, supportsResourceImage } from '../constants.tsx';
 import LoadingBar from '../components/LoadingBar.tsx';
@@ -41,11 +41,10 @@ const ShareView: React.FC = () => {
 
   const [formData, setFormData] = useState({
     promptA: '',
-    promptB: '',
-    promptC: '',
     alias: '',
     anonymous: false,
     what_helped: [] as string[],
+    otherHelp: '',
 
     // Resource fields
     resourceTitle: '',
@@ -119,7 +118,8 @@ const ShareView: React.FC = () => {
       ...prev,
       what_helped: prev.what_helped.includes(option)
         ? prev.what_helped.filter(o => o !== option)
-        : [...prev.what_helped, option]
+        : [...prev.what_helped, option],
+      ...(option === 'Other' && prev.what_helped.includes(option) ? { otherHelp: '' } : {}),
     }));
   };
 
@@ -139,13 +139,13 @@ const ShareView: React.FC = () => {
     if (shareType === 'note') {
       return formData.selectedLocation !== null &&
         selectedCity !== '' &&
-        (formData.promptA.trim() !== '' || formData.promptB.trim() !== '');
+        formData.promptA.trim() !== '';
     } else {
       // Location is optional for resources — unlike a note, a resource
       // recommendation doesn't need to be tied to a place (e.g. a website,
       // book, or app that anyone anywhere can use).
       return formData.resourceTitle.trim() !== '' &&
-        formData.resourceUrl.trim() !== '' &&
+        isValidWebUrl(formData.resourceUrl) &&
         formData.resourceDescription.trim().split(/\s+/).filter(Boolean).length <= 500 &&
         (!imageRequired || formData.resourceImageUrl.trim() !== '');
     }
@@ -153,11 +153,16 @@ const ShareView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid()) return;
     setErrorMessage('');
+    if (!isFormValid()) {
+      if (shareType === 'resource' && formData.resourceUrl.trim() && !isValidWebUrl(formData.resourceUrl)) {
+        setErrorMessage('Enter a valid website, such as website.com or https://website.com.');
+      }
+      return;
+    }
 
     const fullText = shareType === 'note'
-      ? `${formData.promptA} ${formData.promptB} ${formData.promptC}`.toLowerCase()
+      ? `${formData.promptA} ${formData.what_helped.includes('Other') ? formData.otherHelp : ''}`.toLowerCase()
       : `${formData.resourceTitle} ${formData.resourceDescription} ${formData.resourceAuthor}`.toLowerCase();
 
     if (apiService.hasBannedContent(fullText)) {
@@ -169,11 +174,12 @@ const ShareView: React.FC = () => {
     let result;
 
     if (shareType === 'note') {
-      const combinedMessage = [
-        formData.promptA ? `One thing that helped me was ${formData.promptA}.` : '',
-        formData.promptB ? `A message I'd tell someone else is ${formData.promptB}.` : '',
-        formData.promptC ? `A support or system that helped was ${formData.promptC}.` : ''
-      ].filter(Boolean).join(' ');
+      const combinedMessage = formData.promptA.trim();
+      const helpTags = formData.what_helped
+        .filter(option => option !== 'Other')
+        .concat(formData.what_helped.includes('Other') && formData.otherHelp.trim()
+          ? [formData.otherHelp.trim()]
+          : []);
 
       result = await apiService.submitPost({
         city: selectedCity,
@@ -181,7 +187,7 @@ const ShareView: React.FC = () => {
         lat: parseFloat(formData.selectedLocation!.lat),
         lng: parseFloat(formData.selectedLocation!.lon),
         message: combinedMessage,
-        what_helped: formData.what_helped,
+        what_helped: helpTags,
         alias: formData.anonymous ? 'Anonymous' : formData.alias?.trim() || undefined
       });
     } else {
@@ -211,7 +217,7 @@ const ShareView: React.FC = () => {
 
       result = await apiService.submitResource({
         title: formData.resourceTitle,
-        url: formData.resourceUrl,
+        url: normalizeUrlInput(formData.resourceUrl),
         type: formData.resourceType,
         description: combinedDesc,
         alias: formData.resourceAnonymous ? 'Anonymous' : formData.resourceAlias?.trim() || undefined,
@@ -243,7 +249,9 @@ const ShareView: React.FC = () => {
         </div>
         <h2 className="text-4xl font-black text-[#1e3a34] mb-4 italic tracking-tight">Submission Received.</h2>
         <p className="text-gray-500 font-medium md:text-lg mb-8 max-w-md mx-auto">
-          Thank you for sharing your light. Your note has been received and will be treated with care. This community is stronger because you're in it.
+          {shareType === 'note'
+            ? "Thank you for sharing your light. Your note has been received and will be treated with care. This community is stronger because you're in it."
+            : 'Thank you for recommending a resource. Our team will review it for safety and fit before it appears publicly.'}
         </p>
         <button
           onClick={() => navigate('/map')}
@@ -369,15 +377,19 @@ const ShareView: React.FC = () => {
             <>
               <section className="space-y-4">
                 <div className="flex justify-between items-baseline">
-                  <label htmlFor="promptA" className="block text-[#1e3a34] font-black text-xl italic">Share your note</label>
+                  <div>
+                    <label htmlFor="promptA" className="block text-[#1e3a34] font-black text-xl italic">Leave a note</label>
+                    <p className="mt-1 text-sm font-medium leading-relaxed text-[#1e3a34]/65">Share something that helped, offer encouragement, or write what you wish someone had told you.</p>
+                  </div>
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">
                     {formData.promptA.trim().split(/\s+/).filter(Boolean).length}/500 words
                   </span>
                 </div>
                 <textarea
                   id="promptA"
+                  required
                   className={`w-full p-8 bg-gray-50 border-2 ${formData.promptA.trim().split(/\s+/).filter(Boolean).length > 500 ? 'border-red-400' : 'border-transparent focus:border-[#448a7d]/30'} rounded-[2rem] focus:bg-white focus:outline-none min-h-[160px] md:min-h-[220px] max-[400px]:min-h-[120px] text-xl font-medium text-[#1e3a34] max-[400px]:text-base transition-all shadow-inner shadow-gray-200/50`}
-                  placeholder="One thing that helped me was..."
+                  placeholder="Write your note here..."
                   value={formData.promptA}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -420,7 +432,10 @@ const ShareView: React.FC = () => {
 
               <section className="space-y-4">
                 <div className="flex items-baseline justify-between">
-                  <label htmlFor="promptA" className="block text-[#1e3a34] font-black text-xl italic">What helped?</label>
+                  <div>
+                    <p className="text-[#1e3a34] font-black text-xl italic">If you'd like, tag anything that helped</p>
+                    <p className="mt-1 text-sm font-medium text-[#1e3a34]/60">These optional tags help others find notes that may feel relevant.</p>
+                  </div>
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Optional</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -444,6 +459,20 @@ const ShareView: React.FC = () => {
                     </label>
                   ))}
                 </div>
+                {formData.what_helped.includes('Other') && (
+                  <div className="pt-1">
+                    <label htmlFor="otherHelp" className="mb-2 block text-sm font-black text-[#1e3a34]">What else helped?</label>
+                    <input
+                      id="otherHelp"
+                      type="text"
+                      maxLength={60}
+                      value={formData.otherHelp}
+                      onChange={(e) => setFormData(prev => ({ ...prev, otherHelp: e.target.value }))}
+                      placeholder="e.g. time outdoors"
+                      className="w-full rounded-2xl bg-gray-50 px-5 py-4 font-medium text-[#1e3a34] outline-none transition-colors focus:bg-white focus:ring-2 focus:ring-[#448a7d]"
+                    />
+                  </div>
+                )}
               </section>
             </>
           )}
@@ -482,12 +511,14 @@ const ShareView: React.FC = () => {
                 <label htmlFor="resourceUrl" className="block text-[#1e3a34] font-black text-xl italic">Link / URL <span className="text-[#e57c6e]">*</span></label>
                 <input
                   id="resourceUrl"
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   required
-                  placeholder="https://..."
+                  placeholder="website.com or https://website.com"
                   className="w-full px-8 py-5 bg-gray-50 border-2 border-transparent focus:border-[#448a7d]/30 rounded-[1.5rem] text-lg font-medium text-[#1e3a34] focus:outline-none focus:bg-white transition-all shadow-inner shadow-gray-200/50"
                   value={formData.resourceUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, resourceUrl: e.target.value }))}
+                  onBlur={() => setFormData(prev => ({ ...prev, resourceUrl: normalizeUrlInput(prev.resourceUrl) }))}
                 />
               </section>
 

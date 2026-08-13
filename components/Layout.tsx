@@ -2,18 +2,58 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ICONS, COLORS, EASE_OUT_EXPO } from '../constants.tsx';
-import { StarlingFlock } from './StarlingFlock';
+
+const StarlingFlock = React.lazy(() =>
+  import('./StarlingFlock').then(module => ({ default: module.StarlingFlock }))
+);
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [ambientReady, setAmbientReady] = useState(false);
+  const [quickExitEnabled, setQuickExitEnabled] = useState(() => {
+    try {
+      return window.sessionStorage.getItem('starlings_quick_exit') === 'enabled';
+    } catch {
+      return false;
+    }
+  });
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const location = useLocation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  const leaveSite = () => {
+    setIsMenuOpen(false);
+    window.location.replace('https://www.google.com/');
+  };
+
+  const toggleQuickExit = () => {
+    setQuickExitEnabled(current => {
+      const next = !current;
+      try {
+        if (next) window.sessionStorage.setItem('starlings_quick_exit', 'enabled');
+        else window.sessionStorage.removeItem('starlings_quick_exit');
+      } catch { /* storage can be unavailable in private browsing */ }
+      return next;
+    });
+  };
+
   useEffect(() => {
     setIsMenuOpen(false);
     document.getElementById('main-content')?.focus({ preventScroll: true });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const supportsAmbientFlock = location.pathname === '/' || location.pathname === '/resources';
+    if (!supportsAmbientFlock) {
+      setAmbientReady(false);
+      return;
+    }
+    // Let essential content, fonts, and controls paint before loading the
+    // decorative canvas—especially important on lower-powered phones.
+    const delay = location.pathname === '/resources' ? 800 : 500;
+    const timer = window.setTimeout(() => setAmbientReady(true), delay);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -152,7 +192,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       >
         Skip to content
       </a>
-      {location.pathname !== '/map' && <StarlingFlock />}
+      {/* The landing page carries the full flock. Resources uses a quieter
+          profile; forms, guidelines, and the map remain visually still. */}
+      {(location.pathname === '/' || location.pathname === '/resources') && ambientReady && (
+        <React.Suspense fallback={null}>
+          <StarlingFlock variant={location.pathname === '/resources' ? 'quiet' : 'landing'} />
+        </React.Suspense>
+      )}
 
       {/* Mobile full-screen nav overlay */}
       <AnimatePresence>
@@ -163,7 +209,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.32, ease: EASE_OUT_EXPO }}
-            className="md:hidden fixed inset-0 z-[9999] bg-[#0f2620] overflow-y-auto flex flex-col"
+            className="lg:hidden fixed inset-0 z-[9999] bg-[#0f2620] overflow-y-auto flex flex-col"
             style={{ scrollbarWidth: 'none' }}
             role="dialog"
             aria-modal="true"
@@ -200,16 +246,29 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   className="w-24 h-auto brightness-0 invert opacity-85"
                 />
               </Link>
-              <button
-                ref={closeButtonRef}
-                onClick={() => setIsMenuOpen(false)}
-                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/18 active:scale-95 transition-all"
-                aria-label="Close menu"
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={leaveSite}
+                  className={`${quickExitEnabled ? 'flex' : 'hidden md:flex'} min-h-11 items-center gap-2 rounded-full bg-[#e57c6e] px-4 text-[11px] font-black text-white transition-colors hover:bg-[#d46a5c]`}
+                  aria-label="Quickly leave this website and go to Google"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/>
+                  </svg>
+                  Off the grid
+                </button>
+                <button
+                  ref={closeButtonRef}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/18 active:scale-95 transition-all"
+                  aria-label="Close menu"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
             </motion.div>
 
             {/* Eyebrow */}
@@ -270,6 +329,35 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               })}
             </nav>
 
+            <button
+              type="button"
+              role="switch"
+              aria-checked={quickExitEnabled}
+              onClick={toggleQuickExit}
+              className={`relative z-10 mx-5 mt-5 flex min-h-[72px] items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors md:hidden ${
+                quickExitEnabled
+                  ? 'bg-[#e57c6e]/14 ring-1 ring-inset ring-[#e57c6e]/35'
+                  : 'bg-white/[0.06] hover:bg-white/[0.09]'
+              }`}
+              aria-label={`${quickExitEnabled ? 'Disable' : 'Enable'} quick exit to Google`}
+            >
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${quickExitEnabled ? 'bg-[#e57c6e] text-white' : 'bg-white/10 text-white/60'}`} aria-hidden="true">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/>
+                </svg>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-black text-white">Quick exit</span>
+                  <span className={`text-[10px] font-bold ${quickExitEnabled ? 'text-[#f3a79c]' : 'text-white/35'}`}>{quickExitEnabled ? 'On' : 'Off'}</span>
+                </span>
+                <span className="mt-1 block text-[11px] font-medium leading-snug text-white/55">Keep a one-tap exit to Google in the top bar.</span>
+              </span>
+              <span className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${quickExitEnabled ? 'bg-[#e57c6e]' : 'bg-white/15'}`} aria-hidden="true">
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${quickExitEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </span>
+            </button>
+
             {/* CTA */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -285,7 +373,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
-                Share What Helped
+                Leave a note
               </Link>
               <p className="text-center text-[10px] text-white/22 font-medium mt-3 tracking-wide">
                 Anonymous &amp; always free
@@ -312,7 +400,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <img src={`${import.meta.env.BASE_URL}logo-star.avif`} alt="Starlings" className="w-24 md:w-32 h-auto transition-transform group-hover:scale-105" />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8" aria-label="Primary navigation">
+          <nav className="hidden lg:flex items-center gap-3 xl:gap-6" aria-label="Primary navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -327,19 +415,46 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             ))}
             <Link
               to="/share"
-              className="bg-[#1e3a34] text-white px-7 py-3 rounded-full text-sm font-bold hover:bg-[#2d5a52] transition-all shadow-md shadow-teal-900/10"
+              className="flex h-11 items-center rounded-full bg-[#1e3a34] px-5 text-xs font-black text-white transition-colors hover:bg-[#2d5a52]"
             >
               Share Now
             </Link>
+            <button
+              type="button"
+              onClick={leaveSite}
+              className="group flex h-11 items-center justify-center gap-2 rounded-full bg-[#e57c6e] px-4 text-xs font-black text-white transition-all hover:-translate-y-0.5 hover:bg-[#d46a5c] active:translate-y-0"
+              aria-label="Quickly leave this website and go to Google"
+              title="Leave this website and go to Google"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/>
+                </svg>
+              </span>
+              Off the grid
+            </button>
           </nav>
 
-          <button
-            className="md:hidden p-2 text-[#1e3a34] relative z-[10000]"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {isMenuOpen ? ICONS.X : ICONS.Menu}
-          </button>
+          <div className="flex items-center gap-1 lg:hidden">
+            <button
+              type="button"
+              onClick={leaveSite}
+              className={`${quickExitEnabled ? 'flex' : 'hidden md:flex'} min-h-11 items-center gap-2 rounded-full bg-[#e57c6e] px-3 text-[11px] font-black text-white`}
+              aria-label="Quickly leave this website and go to Google"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/>
+              </svg>
+              Off the grid
+            </button>
+            <button
+              className="relative z-[10000] min-h-11 min-w-11 p-2 text-[#1e3a34]"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMenuOpen ? ICONS.X : ICONS.Menu}
+            </button>
+          </div>
         </div>
       </header>
 

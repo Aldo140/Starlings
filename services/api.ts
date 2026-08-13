@@ -34,12 +34,75 @@ export const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2
   return R * c;
 };
 
+/**
+ * Makes resource links forgiving without weakening URL validation. Youth can
+ * enter "website.ca" or "www.website.ca" and we store a complete HTTPS URL.
+ */
+export const normalizeUrlInput = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+export const isValidWebUrl = (value: string): boolean => {
+  try {
+    const url = new URL(normalizeUrlInput(value));
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.includes('.');
+  } catch {
+    return false;
+  }
+};
+
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwvjawoH1h5oij_-MfoPQBUFZtxFpvmHY3BOhCP5-zXDQoGmvpC2fajwiszsh5Escsa/exec";
+const LIVE_FETCH_TIMEOUT_MS = 8000;
+const LIVE_FETCH_ATTEMPTS = 3;
+const LIVE_FETCH_RETRY_DELAYS_MS = [450, 1100];
+
+/** Prevent a stalled Apps Script request from leaving a loading UI mounted forever. */
+const fetchLiveData = async (url: string): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), LIVE_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+};
+
+const waitForRetry = (delayMs: number): Promise<void> =>
+  new Promise(resolve => window.setTimeout(resolve, delayMs));
+
+/**
+ * Apps Script occasionally has a cold-start or transient redirect failure.
+ * Retry those failures here so every screen gets the same recovery behavior.
+ */
+const fetchLiveJsonArray = async (url: string): Promise<unknown[]> => {
+  let lastError: unknown = new Error('Live request failed');
+
+  for (let attempt = 0; attempt < LIVE_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetchLiveData(url);
+      if (!response.ok) throw new Error(`Live request returned HTTP ${response.status}`);
+      const payload: unknown = await response.json();
+      if (!Array.isArray(payload)) throw new Error('Live request returned an invalid payload');
+      if (payload.length === 0) throw new Error('Live request returned an empty payload');
+      return payload;
+    } catch (error) {
+      lastError = error;
+      const retryDelay = LIVE_FETCH_RETRY_DELAYS_MS[attempt];
+      if (retryDelay !== undefined) await waitForRetry(retryDelay);
+    }
+  }
+
+  throw lastError;
+};
+
 const EXPECTED_SPREADSHEET_ID = "18Vzy15shBjz0u3ei0n_eLSmMONplb66rC5XvDLyExXM";
 
 // Cache management
-const CACHE_KEY = 'starlings_approved_posts_v3';
-const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v7';
+const CACHE_KEY = 'starlings_approved_posts_v4';
+const RESOURCE_CACHE_KEY = 'starlings_approved_resources_v8';
 const QA_CACHE_KEY = 'starlings_approved_qa_v1';
 const REFLECTION_CACHE_KEY = 'starlings_approved_reflections_v1';
 const FLAGGED_WORDS_CACHE_KEY = 'starlings_flagged_words_v1';
@@ -50,14 +113,17 @@ const isLocalhost = typeof window !== 'undefined' && (window.location.hostname =
 // One-time cleanup of stale cache keys from previous versions
 [
   'starlings_approved_posts_v2',
+  'starlings_approved_posts_v3',
   'starlings_approved_resources_v2',
   'starlings_approved_resources_v3',
   'starlings_approved_resources_v4',
   'starlings_approved_resources_v5',
   'starlings_approved_resources_v6',
+  'starlings_approved_resources_v7',
 ].forEach(k => localStorage.removeItem(k));
 
 let inFlightRequest: Promise<Post[]> | null = null;
+let inFlightResourceRequest: Promise<Resource[]> | null = null;
 
 // ── Dynamic flagged-word list (sheet-sourced) ────────────────────────────────
 // Populated once on app boot via apiService.getFlaggedWords().
@@ -209,10 +275,13 @@ const getCachedResources = (): { data: Resource[], timestamp: number } | null =>
     const cached = localStorage.getItem(RESOURCE_CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
-    const age = Date.now() - parsed.timestamp;
-    if (age < CACHE_TTL) return parsed;
-    localStorage.removeItem(RESOURCE_CACHE_KEY);
-    return null;
+    if (!Array.isArray(parsed?.data) || typeof parsed?.timestamp !== 'number' || parsed.data.length === 0) {
+      localStorage.removeItem(RESOURCE_CACHE_KEY);
+      return null;
+    }
+    // Keep expired data available as a last-known-good fallback. Freshness is
+    // checked by callers; a transient network failure must not blank the page.
+    return parsed;
   } catch (e) {
     return null;
   }
@@ -468,7 +537,7 @@ export const apiService = {
     // Make new request and cache the promise to prevent duplicate requests
     inFlightRequest = (async () => {
       try {
-        const res = await fetch(`${GAS_URL}?action=getStories`);
+        const res = await fetchLiveData(`${GAS_URL}?action=getStories`);
         const data = await res.json();
 
         const approvedPosts = Array.isArray(data) ? data : [];
@@ -512,7 +581,8 @@ export const apiService = {
         return [];
       } catch (error) {
         console.error("Error fetching approved posts from Google Sheets:", error);
-        setCachedPosts([]);
+        // A connection failure is not evidence that the community has no
+        // stories. Do not poison the next visit with an empty cache.
         return [];
       } finally {
         inFlightRequest = null;
@@ -634,14 +704,15 @@ export const apiService = {
 
   async getApprovedResources(skipCache?: boolean): Promise<Resource[]> {
     const cached = getCachedResources();
-    if (cached && !skipCache && !isLocalhost) {
+    const cacheIsFresh = cached && Date.now() - cached.timestamp < CACHE_TTL;
+    if (cached && cacheIsFresh && !skipCache && !isLocalhost) {
       // Fire and forget background sync
       (async () => {
         try {
-          const res = await fetch(`${GAS_URL}?action=getResources`);
-          const data = await res.json();
+          const data = await fetchLiveJsonArray(`${GAS_URL}?action=getResources`);
           if (Array.isArray(data) && data.length > 0) {
             const mappedData: Resource[] = data.filter(isValidRawResource).map(normalizeResource);
+            if (mappedData.length === 0) return;
             const unique = new Map<string, Resource>();
             // Put mappedData in FIRST, then inject launch seed resources if they don't overwrite
             mappedData.forEach(r => unique.set(r.id, r));
@@ -655,23 +726,34 @@ export const apiService = {
       return cached.data;
     }
 
-    try {
-      const res = await fetch(`${GAS_URL}?action=getResources`);
-      const data = await res.json();
+    if (inFlightResourceRequest) return inFlightResourceRequest;
 
-      if (Array.isArray(data) && data.length > 0) {
-        const unique = new Map<string, Resource>();
-        data.filter(isValidRawResource).map(normalizeResource).forEach(r => unique.set(r.id, r));
-        SEED_RESOURCES.forEach(m => { if (!unique.has(m.id)) unique.set(m.id, m as Resource); });
-        const finalArr = Array.from(unique.values());
-        setCachedResources(finalArr);
-        return finalArr;
+    inFlightResourceRequest = (async () => {
+      try {
+        const data = await fetchLiveJsonArray(`${GAS_URL}?action=getResources`);
+
+        if (Array.isArray(data) && data.length > 0) {
+          const unique = new Map<string, Resource>();
+          const mappedData = data.filter(isValidRawResource).map(normalizeResource);
+          if (mappedData.length === 0) throw new Error('Live resource payload contained no valid resources');
+          mappedData.forEach(r => unique.set(r.id, r));
+          SEED_RESOURCES.forEach(m => { if (!unique.has(m.id)) unique.set(m.id, m as Resource); });
+          const finalArr = Array.from(unique.values());
+          setCachedResources(finalArr);
+          return finalArr;
+        }
+        return cached?.data.length ? cached.data : SEED_RESOURCES as Resource[];
+      } catch (err) {
+        console.error("Failed to fetch Live_Resources:", err);
+        if (cached?.data.length) return cached.data;
+        return SEED_RESOURCES as Resource[];
       }
-      setCachedResources(SEED_RESOURCES as Resource[]);
-      return SEED_RESOURCES as Resource[];
-    } catch (err) {
-      console.error("Failed to fetch Live_Resources:", err);
-      return SEED_RESOURCES as Resource[];
+    })();
+
+    try {
+      return await inFlightResourceRequest;
+    } finally {
+      inFlightResourceRequest = null;
     }
   },
 

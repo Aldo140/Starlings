@@ -7,6 +7,10 @@ const StarlingFlock = React.lazy(() =>
   import('./StarlingFlock').then(module => ({ default: module.StarlingFlock }))
 );
 
+const CONTACT_RECIPIENT = 'agneschen@starlings.ca';
+const CONTACT_CC = 'jorti104@mtroyal.ca';
+const CONTACT_ENDPOINT = `https://formsubmit.co/ajax/${CONTACT_RECIPIENT}`;
+
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [ambientReady, setAmbientReady] = useState(false);
@@ -78,20 +82,29 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     e.preventDefault();
     setContactStatus('sending');
     try {
-      const res = await fetch('https://formsubmit.co/ajax/programs@starlings.ca', {
+      const res = await fetch(CONTACT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           name: contactForm.name,
           email: contactForm.email,
           message: contactForm.message,
+          _replyto: contactForm.email,
+          _cc: CONTACT_CC,
           _subject: 'Starlings Support Map — New Contact',
+          _template: 'table',
+          _url: 'https://starlingsmap.ca/',
         }),
       });
-      if (res.ok) {
+
+      const data = await res.json().catch(() => null);
+      const providerConfirmed = data?.success === true || data?.success === 'true';
+
+      if (res.ok && providerConfirmed) {
         setContactStatus('sent');
         setContactForm({ name: '', email: '', message: '' });
       } else {
+        console.error('Contact form provider rejected the submission:', data?.message || res.statusText);
         setContactStatus('error');
       }
     } catch {
@@ -564,7 +577,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       {contactStatus === 'error' && (
                         <p className="text-[#e57c6e] text-xs font-bold">
                           Something went wrong. Please try again or email us at{' '}
-                          <a href="mailto:programs@starlings.ca" className="underline">programs@starlings.ca</a>.
+                          <a href={`mailto:${CONTACT_RECIPIENT}`} className="underline">{CONTACT_RECIPIENT}</a>.
                         </p>
                       )}
                       <button

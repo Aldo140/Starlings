@@ -266,6 +266,7 @@ const MapView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
   const [filterMode, setFilterMode] = useState<'all' | 'stories' | 'resources'>('all');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -550,6 +551,7 @@ const MapView: React.FC = () => {
   }, [groupedItems, searchTerm, userLocation, isLocationActive, filterMode]);
 
   const hasActiveSearch = searchTerm.trim().length > 0;
+  const showMobileSearchIcon = isMobileSearchFocused || hasActiveSearch;
   const totalMappedItems = groupedItems.reduce((sum, group) => sum + group.count, 0);
   const globalResourceCount = Math.max(0, allResourceCount - mappableResources.length);
   const mapGroups = filteredGroups.filter(group => group.mappable);
@@ -620,15 +622,47 @@ const MapView: React.FC = () => {
 
         {/* Floating Search */}
         <div className="relative flex-grow shadow-lg rounded-xl pointer-events-auto">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            {ICONS.Search}
-          </div>
+          {showMobileSearchIcon ? (
+            <div
+              className="pointer-events-none absolute left-1 top-1 z-10 flex h-10 w-10 items-center justify-center text-[#448a7d]"
+              aria-hidden="true"
+            >
+              {ICONS.Search}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="absolute left-1 top-1 z-10 flex h-10 w-10 items-center justify-center rounded-lg text-[#448a7d] transition-colors hover:bg-[#e8f3f1] active:bg-[#d5e9e5] disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#448a7d] focus-visible:ring-offset-1"
+              aria-label={refreshing ? 'Refreshing map posts' : 'Refresh map posts'}
+              title={refreshing ? 'Refreshing map posts' : 'Refresh map posts'}
+            >
+              <svg
+                className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 6v5h-5" />
+                <path d="M4 18v-5h5" />
+                <path d="M6.1 9a7 7 0 0 1 11.6-2.6L20 11" />
+                <path d="m4 13 2.3 4.6A7 7 0 0 0 17.9 15" />
+              </svg>
+            </button>
+          )}
           <input
             type="text"
             placeholder="Search city, author, or tag..."
-            className="w-full pl-10 pr-4 py-3 bg-white/95 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-[#448a7d] transition-all text-sm border-0 font-medium text-[#1e3a34] placeholder:text-gray-400"
+            className="w-full pl-12 pr-4 py-3 bg-white/95 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-[#448a7d] transition-all text-sm border-0 font-medium text-[#1e3a34] placeholder:text-gray-500"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setIsMobileSearchFocused(true)}
+            onBlur={() => setIsMobileSearchFocused(false)}
           />
           {searchTerm && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl overflow-hidden z-40 border border-gray-100 flex flex-col pointer-events-auto">

@@ -248,11 +248,13 @@ const getCachedPosts = (): { data: Post[], timestamp: number } | null => {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
-    const age = Date.now() - parsed.timestamp;
-    if (age < CACHE_TTL) return parsed;
-    // Cache expired, clear it
-    localStorage.removeItem(CACHE_KEY);
-    return null;
+    if (!Array.isArray(parsed?.data) || typeof parsed?.timestamp !== 'number' || parsed.data.length === 0) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    // Expired stories remain useful as last-known-good map data when Apps
+    // Script is cold or unavailable. Callers decide whether they are fresh.
+    return parsed;
   } catch (e) {
     console.error('Error reading cache:', e);
     return null;
@@ -521,12 +523,11 @@ export const apiService = {
   },
 
   async getApprovedPosts(skipCache?: boolean): Promise<Post[]> {
+    const cached = getCachedPosts();
+    const cacheIsFresh = cached && Date.now() - cached.timestamp < CACHE_TTL;
     // Return cached data immediately if valid (unless skipping cache for manual refresh or running locally)
-    if (!skipCache && !isLocalhost) {
-      const cached = getCachedPosts();
-      if (cached) {
-        return cached.data;
-      }
+    if (!skipCache && !isLocalhost && cached && cacheIsFresh) {
+      return cached.data;
     }
 
     // Deduplicate: if a request is already in flight, return that promise
@@ -537,8 +538,7 @@ export const apiService = {
     // Make new request and cache the promise to prevent duplicate requests
     inFlightRequest = (async () => {
       try {
-        const res = await fetchLiveData(`${GAS_URL}?action=getStories`);
-        const data = await res.json();
+        const data = await fetchLiveJsonArray(`${GAS_URL}?action=getStories`);
 
         const approvedPosts = Array.isArray(data) ? data : [];
         // Filter out empty / incomplete rows before any further processing.
@@ -577,13 +577,12 @@ export const apiService = {
           return result;
         }
 
-        setCachedPosts([]);
-        return [];
+        throw new Error('Live story payload contained no valid stories');
       } catch (error) {
         console.error("Error fetching approved posts from Google Sheets:", error);
         // A connection failure is not evidence that the community has no
-        // stories. Do not poison the next visit with an empty cache.
-        return [];
+        // stories. Preserve and return the last known complete story set.
+        return cached?.data.length ? cached.data : [];
       } finally {
         inFlightRequest = null;
       }

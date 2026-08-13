@@ -286,8 +286,11 @@ const MapView: React.FC = () => {
   };
 
   useEffect(() => {
+    let retryTimer: number | undefined;
+    let cancelled = false;
+    let receivedStories = false;
+
     const fetchPosts = async () => {
-      setPosts([]);
       setLoading(false);
 
       // Fetch real data in background
@@ -296,15 +299,32 @@ const MapView: React.FC = () => {
         // Let stories reach the map as soon as their request completes. A slow
         // resource-directory request must not hold already-loaded posts back.
         const postsRequest = apiService.getApprovedPosts().then(realPosts => {
-          setPosts(realPosts.filter(post => !isLegacyResourcePost(post)));
+          if (cancelled) return;
+          const validPosts = realPosts.filter(post => !isLegacyResourcePost(post));
+          if (validPosts.length > 0) {
+            receivedStories = true;
+            setPosts(validPosts);
+          }
         });
         // The map needs the current location fields, not a cache-only response.
         // The API still falls back to the last known good data if live sync fails.
         const resourcesRequest = apiService.getApprovedResources(true).then(realResources => {
+          if (cancelled) return;
           setAllResourceCount(realResources.length);
-          setMappableResources(realResources.filter(isMappableResource));
+          const locatedResources = realResources.filter(isMappableResource);
+          if (locatedResources.length > 0) setMappableResources(locatedResources);
         });
         await Promise.all([postsRequest, resourcesRequest]);
+
+        // A first-time visitor may have no story cache during an Apps Script
+        // cold start. Retry in place; never require a manual page refresh.
+        if (!cancelled && !receivedStories) {
+          retryTimer = window.setTimeout(async () => {
+            const recoveredPosts = (await apiService.getApprovedPosts(true))
+              .filter(post => !isLegacyResourcePost(post));
+            if (!cancelled && recoveredPosts.length > 0) setPosts(recoveredPosts);
+          }, 5000);
+        }
       } catch (error) {
         console.error('Fetch failed:', error);
       } finally {
@@ -312,6 +332,10 @@ const MapView: React.FC = () => {
       }
     };
     fetchPosts();
+    return () => {
+      cancelled = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+    };
   }, []);
 
   const handleNearMe = () => {
@@ -354,11 +378,13 @@ const MapView: React.FC = () => {
     setRefreshing(true);
     try {
       const postsRequest = apiService.getApprovedPosts(true).then(freshPosts => {
-        setPosts(freshPosts.filter(post => !isLegacyResourcePost(post)));
+        const validPosts = freshPosts.filter(post => !isLegacyResourcePost(post));
+        if (validPosts.length > 0) setPosts(validPosts);
       });
       const resourcesRequest = apiService.getApprovedResources(true).then(freshResources => {
         setAllResourceCount(freshResources.length);
-        setMappableResources(freshResources.filter(isMappableResource));
+        const locatedResources = freshResources.filter(isMappableResource);
+        if (locatedResources.length > 0) setMappableResources(locatedResources);
       });
       await Promise.all([postsRequest, resourcesRequest]);
     } catch (error) {

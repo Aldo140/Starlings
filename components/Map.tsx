@@ -4,6 +4,14 @@ import 'leaflet/dist/leaflet.css';
 
 let Leaflet: typeof import('leaflet') | null = null;
 
+const MAP_TILE_URL =
+  import.meta.env.VITE_MAP_TILE_URL?.trim() ||
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+const MAP_TILE_ATTRIBUTION =
+  import.meta.env.VITE_MAP_TILE_ATTRIBUTION?.trim() ||
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 interface CityGroup {
   id: string;
   city: string;
@@ -82,13 +90,13 @@ const SupportMap: React.FC<MapProps> = ({ groups, onMarkerClick, selectedGroupId
         center: [54, -98],
         zoom: 4,
         zoomControl: false,
-        attributionControl: false,
+        attributionControl: true,
         preferCanvas: true,
       });
 
-      Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      Leaflet.tileLayer(MAP_TILE_URL, {
         maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        attribution: MAP_TILE_ATTRIBUTION,
       }).addTo(map);
 
       Leaflet.control.zoom({ position: 'topright' }).addTo(map);
